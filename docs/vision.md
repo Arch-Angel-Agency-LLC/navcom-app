@@ -52,6 +52,29 @@ becoming the whole network's capability, immediately.
 An operator with NavCom should be measurably more effective than one without it. If
 that isn't true, the project has failed regardless of how clean the code is.
 
+## How it spreads
+
+Almost everything above needs density. Endorsements matter when you meet operators you
+don't know; presence is compelling at fifty and demoralising at three. So growth isn't a
+milestone that comes after the product works — it's a precondition for the product
+working at all.
+
+It grows along the paths trust already travels here:
+
+- **Endorsing someone who isn't here yet** hands them a claimable credential. The network
+  extends along real working relationships rather than recruitment.
+- **A scrubbed op recap** built to be posted publicly makes the work visible outside the
+  app, without exposing anyone but the person sharing it.
+- **Exports to Herocore** land where the community already reads.
+- **Operators who travel** carry it and seed where they land.
+- **The directory, readable on the open web**, is useful to outreach workers who will
+  never become operators — and legible to people who'd never install a superhero app.
+
+Never through referral rewards, invite quotas, or recruitment pressure. Those would
+attract exactly the personality this community is wariest of, and would poison the
+endorsement layer on contact. Detail in
+[`product/propagation.md`](./product/propagation.md).
+
 ## Why this and not something else
 
 Nobody will build this commercially. There is no money in tooling for volunteers who

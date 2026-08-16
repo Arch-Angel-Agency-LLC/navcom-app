@@ -56,6 +56,15 @@ operator-held backup. Nothing holds an operator captive.
 
 **C10 — Offline is a normal state, not an error.** Degrade visibly; never fail silently.
 
+**C11 — Growth follows existing trust paths.** No referral rewards, invite quotas,
+contact list upload, or proximity pressure. Density is a precondition for most features
+working, so propagation is a correctness concern — but reward-driven recruiting would
+attract the personality this community is wariest of.
+
+**C12 — No city starts empty.** A new metro seeds from public sources at low confidence.
+The first operator somewhere must find a thin and obviously-imperfect starting point,
+never a blank screen.
+
 ---
 
 ## Known conflicts and their resolutions
@@ -91,3 +100,8 @@ Unresolved, and worth flagging as such:
   three. Network-wide visibility (C7) is the mitigation, but the threshold is untested.
 - **Directory maintenance.** Whether operators will keep listings current over time is
   the single largest unproven assumption in the project.
+- **Unclaimed endorsements.** Reaching someone outside the app with "you've been vouched
+  for" could read as recognition or as being volunteered for something. Needs a real
+  answer from operators before it ships.
+- **Seeding quality varies by region.** Public data is good in some metros and nearly
+  absent in others.

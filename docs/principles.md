@@ -40,7 +40,21 @@ mechanics would attract exactly the personality this community is wary of.
 
 There is a wide space between nagging and giving nobody a reason to return. Live in it.
 
-## 4. Never the people served
+## 4. Honest propagation
+
+The network grows along the community's existing trust paths — people who worked
+together, met in person, or already read the same places. Never by manufacturing
+pressure.
+
+No referral rewards, no invite quotas, no contact list upload, no "X operators near
+you," no standing that depends on how many people you brought in. Reward-driven
+recruiting would attract precisely the personality this community is wary of.
+
+Density is a precondition for most of what makes the app worth using, so this is a
+correctness concern rather than a marketing one. See
+[`product/propagation.md`](./product/propagation.md).
+
+## 5. Never the people served
 
 No names, no descriptions, no photographs, no locations of individuals, no medical
 details, no counts tied to identifiable people.
@@ -50,7 +64,7 @@ it, no free-text convention for it, and no feature that would need it.
 
 This is not configurable and does not have a use case that overrides it.
 
-## 5. Pseudonymity is architectural
+## 6. Pseudonymity is architectural
 
 The realistic threat is doxxing, stalking and harassment — not state-grade cryptanalysis.
 Security effort goes into **not holding identifying data in the first place**:
@@ -65,7 +79,7 @@ Security effort goes into **not holding identifying data in the first place**:
 Encryption protects op traffic and duress alerts. It is not a substitute for having
 nothing to leak.
 
-## 6. An honest blank beats a confident guess
+## 7. An honest blank beats a confident guess
 
 The worst failure available to this app is a confident wrong answer that sends someone
 somewhere that turns them away at 10pm.
@@ -75,7 +89,7 @@ somewhere that turns them away at 10pm.
 - Blank renders as "unknown," never as "no restriction"
 - Flagging something as wrong is always easier than fixing it
 
-## 7. The device floor
+## 8. The device floor
 
 **A prepaid Android 8 with ~400MB free.** Some of the most valuable operators are the
 ones with the least device. If it doesn't run there, it doesn't ship.
@@ -83,14 +97,14 @@ ones with the least device. If it doesn't run there, it doesn't ship.
 Practical consequences: small install, no heavy bundled basemaps, no background data on
 cellular without consent, battery treated as a first-class budget.
 
-## 8. Complement, don't replace
+## 9. Complement, don't replace
 
 Teams already use Discord and Signal, and those work. Herocore already hosts patrol logs
 and community presence. NavCom does what those structurally cannot — live operational
 awareness, position, duress, accruing standing, field-current knowledge — and exports to
 them rather than competing.
 
-## 9. Offline is a normal state
+## 10. Offline is a normal state
 
 Not an error condition. Rural operators, dead zones, basements, dying batteries. The
 knowledge layer is fully usable with no signal; anything requiring the network degrades
@@ -102,8 +116,9 @@ visibly rather than failing silently.
 
 When two principles collide, this is the order:
 
-1. **Never the people served** (4) — absolute, overrides everything
-2. **Operator safety** — duress, wipe, pseudonymity (5)
-3. **Accuracy** (6) — better to say "unknown" than to be wrong
+1. **Never the people served** (5) — absolute, overrides everything
+2. **Operator safety** — duress, wipe, pseudonymity (6)
+3. **Accuracy** (7) — better to say "unknown" than to be wrong
 4. **Opt-in** (1) — before removing anything, try making it optional
-5. Everything else
+5. **Honest propagation** (4) — growth never justifies pressure
+6. Everything else

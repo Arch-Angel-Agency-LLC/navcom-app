@@ -83,6 +83,25 @@ and standing intact.
 **Discreet presentation.** Configurable app name and icon, so a glance at a seized or
 borrowed phone doesn't announce affiliation.
 
+## Reach — how it travels
+
+Detail in [`propagation.md`](./propagation.md).
+
+**Endorse someone who isn't here.** Produces a claimable credential you pass along
+yourself. Grows the network along real working relationships instead of recruitment.
+
+**Op recap.** A scrubbed, well-made artifact of your *own* op, built to be posted
+publicly — teammates' callsigns and positions stripped, location coarse, provenance
+marked, no call to action. Generated on request.
+
+**Join by QR, in person.** Scan to join a team or an op. Unspammable by construction.
+
+**Public directory.** Resource data readable on the open web without installing
+anything. Useful to outreach workers who will never be operators.
+
+Never built: referral rewards, invite quotas, contact list upload, "operators near you"
+pressure, or standing that depends on how many people you recruited.
+
 ## Export — no captivity
 
 - Op logs export in a form Herocore can take

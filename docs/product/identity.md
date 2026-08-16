@@ -65,6 +65,20 @@ The trade: no global leaderboard, no discovery-by-reputation. That's an acceptab
 The graph was the single most dangerous artifact the project could have created, and it
 was never the point.
 
+## Endorsing someone who isn't here yet
+
+You can endorse an operator who doesn't use NavCom. The attestation is signed and exists
+regardless; it becomes a **claimable credential** waiting for them.
+
+This is also how the network grows — along real working relationships rather than
+recruitment. See [`propagation.md`](./propagation.md).
+
+- Claiming requires only generating a persona. No account, no verification, no approval
+- Unclaimed endorsements expire, so nothing accumulates against someone uninterested
+- **One delivery, no reminders.** Declining is silent and permanent
+- The endorser passes the credential along however they already talk to that person.
+  The app never holds contact details, so it cannot deliver anything itself
+
 ## What this is not
 
 **It is not a security system, and must not be described as one.** It's a social signal

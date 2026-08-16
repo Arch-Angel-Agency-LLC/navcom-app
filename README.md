@@ -29,6 +29,10 @@ you've worked beside. Years of showing up, and something to show for it.
 **Safety.** Duress alert with SMS fallback. Private incident log for documenting
 harassment aimed at you. Panic wipe that actually wipes.
 
+**Reach.** Endorse an operator who isn't here yet and hand them a claimable credential.
+Post a scrubbed recap of your own op. Join a team by scanning a code, in person. The
+network grows the way trust already travels here.
+
 ## What it never does
 
 - **Records anything about the people being served.** No names, no descriptions, no
@@ -79,6 +83,7 @@ docs/principles.md                  Design rules, and how conflicts get resolved
 docs/product/features.md            The feature set and the operational loop
 docs/product/data-tiers.md          The four tiers and their opposing rules
 docs/product/identity.md            Persona, standing, endorsements-as-credentials
+docs/product/propagation.md         How the network grows, and how it never grows
 docs/product/directory-schema.md    Resource schema, intake taxonomy, staleness model
 docs/research/archetypes.md         Twelve operator archetypes used to stress designs
 docs/research/constraints.md        What the stress tests demand of any design
