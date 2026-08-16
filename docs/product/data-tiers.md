@@ -21,6 +21,10 @@ Your persona, standing, endorsements, contribution credit, op history.
 - Contribution credit is attached to a callsign, never to a person
 - **Panic wipe does not touch this tier.** Losing a seized phone should not erase six
   years of standing. Recovery is via operator-held backup, not an account on a server.
+- **Endorsements are association data** — each names its signer, so a collection maps who
+  has worked with whom. They are encrypted at rest and require unlock to view, and only
+  **burn** destroys them. Panic wipe protects against a phone being searched; burn is
+  what exists for compulsion. See [`identity.md`](./identity.md).
 
 Design test: *after a year of use, what does an operator have that they didn't before?*
 If the answer is nothing, this tier is broken.
@@ -76,7 +80,8 @@ it that way?*
 | Feature | Tier |
 |---|---|
 | Persona, callsign, emblem | Accruing |
-| Endorsements, standing | Accruing |
+| Endorsements, standing | Accruing — encrypted, burn-only |
+| Lightning address | Accruing |
 | Op history, ground covered | Accruing |
 | Contribution credit | Accruing |
 | Who's out tonight | Live |
@@ -90,8 +95,12 @@ it that way?*
 
 ## The rule that ties it together
 
-**Panic wipe destroys the Wipeable tier and nothing else.**
+**Panic wipe destroys the Wipeable tier and nothing else. Burn destroys everything.**
 
-An operator who wipes under duress loses tonight and keeps their decade. That balance is
-the entire reason these tiers exist separately — and it's why a single blanket
-retention rule, in either direction, is the wrong answer.
+An operator who wipes under duress loses tonight and keeps their decade. One who burns
+loses everything deliberately, because the situation demanded it. That balance is the
+entire reason these tiers exist separately — and it's why a single blanket retention
+rule, in either direction, is the wrong answer.
+
+State the boundary plainly to operators. Someone who believes panic wipe is total when
+it isn't is worse off than someone who knows exactly where the line sits.

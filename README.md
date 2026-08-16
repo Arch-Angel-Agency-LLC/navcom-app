@@ -33,6 +33,14 @@ harassment aimed at you. Panic wipe that actually wipes.
 Post a scrubbed recap of your own op. Join a team by scanning a code, in person. The
 network grows the way trust already travels here.
 
+**Support.** An optional Lightning address on your card — receive help as your callsign,
+without a donation platform demanding your legal name. The app never touches funds and
+never shows totals to anyone.
+
+**Visibility.** Ghost, Team, or Open. One choice sets the switches; every switch stays
+yours to change, and nobody can see which you picked. Ghost is a complete configuration,
+not a lesser one.
+
 ## What it never does
 
 - **Records anything about the people being served.** No names, no descriptions, no
@@ -83,6 +91,8 @@ docs/principles.md                  Design rules, and how conflicts get resolved
 docs/product/features.md            The feature set and the operational loop
 docs/product/data-tiers.md          The four tiers and their opposing rules
 docs/product/identity.md            Persona, standing, endorsements-as-credentials
+docs/product/visibility.md          Ghost / Team / Open, and the switches underneath
+docs/product/funding.md             Pseudonymous support without a donation platform
 docs/product/propagation.md         How the network grows, and how it never grows
 docs/product/directory-schema.md    Resource schema, intake taxonomy, staleness model
 docs/research/archetypes.md         Twelve operator archetypes used to stress designs

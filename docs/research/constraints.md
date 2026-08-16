@@ -65,6 +65,21 @@ attract the personality this community is wariest of.
 The first operator somewhere must find a thin and obviously-imperfect starting point,
 never a blank screen.
 
+**C13 — Endorsements carry scope tags, never free text.** An endorser explaining *why*
+someone is credible is how that operator's history leaks. The person with the most
+valuable knowledge often has the most to lose from it being described.
+
+**C14 — A credential names only its signer.** *"I vouch for the holder"* — never the
+recipient. Nobody can create a record naming a person who hasn't consented to exist in
+the system.
+
+**C15 — Presets set switches, never override them.** Bundled visibility decisions are how
+operators get exposed without making a bad choice. No preset is visible to anyone else.
+
+**C16 — Funding is independent of visibility, and totals are never shown.** The operator
+who most needs donations may be the one who most needs to stay invisible. Visible totals
+would rebuild the leaderboard we refused, with money as the score.
+
 ---
 
 ## Known conflicts and their resolutions
@@ -100,8 +115,7 @@ Unresolved, and worth flagging as such:
   three. Network-wide visibility (C7) is the mitigation, but the threshold is untested.
 - **Directory maintenance.** Whether operators will keep listings current over time is
   the single largest unproven assumption in the project.
-- **Unclaimed endorsements.** Reaching someone outside the app with "you've been vouched
-  for" could read as recognition or as being volunteered for something. Needs a real
-  answer from operators before it ships.
 - **Seeding quality varies by region.** Public data is good in some metros and nearly
   absent in others.
+- **Whether the op recap is good enough to post.** Propagation depends on operators
+  actually wanting to share it, which makes design quality the mechanism.

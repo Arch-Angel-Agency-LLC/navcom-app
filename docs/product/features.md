@@ -14,8 +14,23 @@ Persona, standing, endorsements, personal record. Full detail in
 
 - Create a persona in under a minute; no account, no email, no phone number
 - Present endorsements to operators you've just met, verifiable offline
-- Endorse people you've worked beside
+- Endorse people you've worked beside — scope tags, never free text
 - Your record: ops run, ground covered, contributions credited, time served
+
+## Visibility — Ghost, Team, Open
+
+One choice at onboarding sets the individual switches; every switch stays adjustable
+afterwards and no preset is ever visible to anyone else. **Ghost is a complete
+configuration** — knowledge, safety kit, personal record, standing, nothing shared.
+Detail in [`visibility.md`](./visibility.md).
+
+## Support — receive without being identified
+
+An optional Lightning address on your card and op recaps. Pseudonymous receipt, which
+no conventional donation platform can offer someone working under a persona.
+
+The app never touches funds and never shows totals to anyone. Independent of visibility
+— available in Ghost. Detail in [`funding.md`](./funding.md).
 
 ## Presence — the network is alive
 

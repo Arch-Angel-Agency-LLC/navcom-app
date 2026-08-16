@@ -16,6 +16,12 @@ Removing it serves only the person who refused; making it optional serves everyo
 
 Defaults lean private. Ceilings stay high.
 
+**Presets set switches; they never override them.** Ghost, Team and Open exist so a new
+operator makes one decision instead of eight — but each underlying switch stays visible
+and independently adjustable, and no preset is ever shown to another operator. A global
+mode would bundle independent decisions, and bundled consent is how people get exposed
+without ever making a bad choice. See [`product/visibility.md`](./product/visibility.md).
+
 ## 2. Two kinds of memory, opposite rules
 
 The single most important architectural distinction in the app. See

@@ -45,12 +45,15 @@ is asked to recruit anyone.
 
 Design requirements:
 
-- The endorsement is a signed attestation that exists whether or not it's ever claimed
-- Claiming it requires only generating a persona — no account, no verification step
-- Unclaimed endorsements expire, so nothing accumulates indefinitely against someone who
-  isn't interested
-- **One endorsement, one delivery.** No reminders, no follow-ups, no second notice.
-  Declining is silent and permanent
+- **The credential names no one but the endorser** — *"I vouch for the holder"*, plus a
+  scope tag and date, binding to whatever persona claims it. Nobody can create a record
+  naming a person who hasn't consented to exist in the system
+- **Inspectable offline before claiming**, with no network call until consent
+- Claiming requires only generating a persona — no account, no verification step
+- **Recognition, not recruitment.** Past tense. Never an invitation to join anything
+- **One delivery. No reminders, no expiry.** Nothing accumulates anywhere, because the
+  system never holds or delivers it — an expiry would only manufacture pressure
+- **The endorser cannot see whether it was claimed.** Declining is silent and permanent
 
 ### 2. The artifact that leaves — primary
 
@@ -122,12 +125,7 @@ Never built, regardless of effectiveness:
 
 ## Open questions
 
-- **Is an unclaimed endorsement welcome?** Reaching someone outside the app with "you've
-  been vouched for" could read as recognition or as being volunteered for something.
-  This needs a real answer from operators before it ships.
-- **What carries the claimable credential?** Any delivery channel implies contact details
-  the app deliberately doesn't hold. Likely resolution: the endorser passes it along
-  themselves, in whatever way they already talk to that person — which keeps the app out
-  of the contact business entirely.
 - **Seeding quality by region.** Public data varies enormously between metros. Some
   cities will seed well and some barely at all.
+- **Whether the recap is good enough to post.** The artifact only propagates if operators
+  actually want to share it. Design quality is the whole mechanism here.

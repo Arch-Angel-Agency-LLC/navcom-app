@@ -30,9 +30,18 @@ This matters, and it's the part most vouching systems get wrong.
 
 ### Axis 1 — Endorsements
 
-Signed statements from operators who have worked beside you. "Worked an op with this
-operator, would again." Optionally scoped — *medic*, *de-escalation*, *reliable in a
-crisis*.
+Signed statements from operators who have worked beside you, carrying a **scope tag** —
+never free text.
+
+`worked with` · `reliable` · `de-escalation` · `medic` · `logistics` ·
+`trained with me`
+
+Free text is prohibited deliberately. An endorser explaining *why* someone is credible
+is how an operator's history leaks — the person with the most valuable knowledge is
+often the one with the most to lose from it being described.
+
+`trained with me` matters more than it looks: it's the cleanest route to first standing
+for a newcomer who has nothing yet.
 
 ### Axis 2 — Contribution
 
@@ -68,16 +77,27 @@ was never the point.
 ## Endorsing someone who isn't here yet
 
 You can endorse an operator who doesn't use NavCom. The attestation is signed and exists
-regardless; it becomes a **claimable credential** waiting for them.
+regardless; it becomes a **claimable credential** they can take up or ignore.
 
 This is also how the network grows — along real working relationships rather than
 recruitment. See [`propagation.md`](./propagation.md).
 
-- Claiming requires only generating a persona. No account, no verification, no approval
-- Unclaimed endorsements expire, so nothing accumulates against someone uninterested
-- **One delivery, no reminders.** Declining is silent and permanent
-- The endorser passes the credential along however they already talk to that person.
-  The app never holds contact details, so it cannot deliver anything itself
+**The credential names no one but the endorser.** It reads *"I vouch for the holder of
+this credential,"* carries a scope tag and a date, and binds to whatever persona claims
+it. An endorser can never create a record naming a person who hasn't agreed to exist in
+the system — which resolves the consent problem at its root rather than managing it.
+
+- **Inspectable offline before claiming.** The recipient reads exactly what it contains
+  and verifies the signature with zero network activity. Nothing phones home before they
+  consent
+- Claiming requires only generating a persona — no account, no verification, no approval
+- **Recognition, not recruitment.** Past tense: someone you worked with vouched for you.
+  Never an invitation to join anything
+- **One delivery, no reminders, no expiry.** Nothing is accumulating anywhere, because
+  the system never holds or delivers it. A countdown would only manufacture pressure
+- **The endorser cannot see whether it was claimed.** Declining is silent and permanent
+- The endorser passes it along however they already talk to that person. The app holds no
+  contact details, so it cannot deliver anything itself
 
 ## What this is not
 
@@ -103,11 +123,27 @@ A lost or seized phone must not erase years of standing.
   identifying information
 - The tradeoff is stated plainly at persona creation: **no backup means no recovery**
 
-## Panic wipe and identity
+## Panic wipe, burn, and what endorsements expose
 
 Panic wipe destroys the [Wipeable tier](./data-tiers.md) — tonight's data. It does not
 destroy identity, because an operator under duress should lose the evening and keep the
 decade.
 
-A separate, deliberate **burn** action exists for destroying the persona itself. It's
-harder to reach, and it warns clearly, because it is irreversible.
+**But endorsements are association data.** Each one names the operator who signed it, so
+a collection of them maps who has worked with whom. That's the artifact we refused to
+build centrally, and it can't be avoided locally — verification requires knowing the
+endorser.
+
+The threat models are different, and the two actions match them:
+
+| | Protects against | Destroys |
+|---|---|---|
+| **Panic wipe** | A taken phone being searched | Wipeable tier only. Identity and standing survive |
+| **Burn** | Compulsion, seizure with intent | Everything, including persona and endorsements |
+
+Endorsements are **encrypted at rest and require unlock to view**, so a casually searched
+phone yields nothing readable. Burn is deliberate, harder to reach, clearly warned, and
+irreversible.
+
+Say this plainly to operators rather than implying panic wipe is total. An operator who
+believes they're covered when they aren't is worse off than one who knows the boundary.
