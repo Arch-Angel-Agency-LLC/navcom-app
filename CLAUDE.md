@@ -23,6 +23,43 @@ propagation, recovery, a second Watchtower — is **out of scope until it works*
 Specs exist only for the MVP surface. If you find yourself needing a spec that isn't in
 [`docs/spec/`](docs/spec/), you are building something out of scope.
 
+## Build
+
+**Node first.** Development happens on the Jetson Orin AGX (custom Linux), which runs the
+whole server side: RelayNode, Mecha Jono, directory host, watch state machine. That's the
+half holding safety, and it's the local available work — prove the loop against the node
+with a crude client (a script, `curl`) before writing a line of UI.
+
+Order: **node + agent → field terminal → console.**
+
+| | Decision | Status |
+|---|---|---|
+| Field Terminal | PWA. No app store, cross-platform from one codebase, instant updates, no FCM in the loop, and it fits the device floor | Decided |
+| UI framework | Svelte — existing team competence, small bundles | Decided |
+| Console | Web app, same delivery. Desktop-shaped, not a large terminal | Decided |
+| Node services | Language open; pick what integrates with Mecha Jono most directly | **Open** |
+| Relay topology | Public relays (zero ops, works now) vs. self-hosted RelayNode (metadata control) | **Open** |
+| Accountability log storage | Append-only, node-local, 90 days | Implementation detail |
+
+**Escalation executor is a separate process from the agent.** Non-negotiable — see
+[`docs/watch/agents.md`](docs/watch/agents.md). A compromised agent must not be able to
+impair escalation.
+
+### Two roles the design requires a human for
+
+- **On-call** — reachable when the board can't raise anyone. Lighter than watch: a phone
+  that might ring, not a shift. Currently concentrated in one person, which is a known
+  risk
+- **Log reviewer** — reads drill results and agent logs on a cadence. Minutes per week,
+  but it cannot be the agent, or verification is theatre
+
+### Not agent work
+
+Directory seed data and field playbooks need humans with local knowledge and real
+de-escalation expertise. **Do not generate playbook content.** The Medic archetype's kill
+trigger is confident wrong guidance, and plausible-sounding safety content is worse than
+none.
+
 ## Invariants
 
 Never violated, no exceptions, no configuration:

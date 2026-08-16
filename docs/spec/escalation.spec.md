@@ -6,10 +6,22 @@ The guarantee: **`Distress` terminates in a human, or the operator is told it co
 [C24, C42, invariant 2]. The ladder is allowed to fail. It is never allowed to fail
 silently.
 
+## Ownership
+
+**The watch state machine owns the ladder. The agent is not in the path.**
+
+The executor MUST be a separate process from the agent, and MUST NOT call it, wait on it,
+or route through it. A degraded, hung, or hostile agent MUST NOT impair escalation in any
+way — this is what makes the safety guarantee structural rather than a promise from an
+entity whose alignment is unverifiable.
+
 ## Trigger
 
 Only a `20911` Distress event. Never a timer, a missed window, an overdue, or an agent's
 assessment [invariant 3].
+
+Escalation is not a decision. No component — human or agent — chooses whether to run the
+ladder; receipt of the event runs it.
 
 ## The ladder
 

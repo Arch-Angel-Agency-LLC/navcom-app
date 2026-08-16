@@ -25,11 +25,13 @@ end of the line when someone is in trouble.
 - Compile op logs and after-action records
 - Monitor conditions — weather triggers, cold and heat emergencies
 - Maintain continuity across human watch handovers
-- **Escalate**
+- Observe an escalation in progress and assist a responding human
 
 ## Must not
 
 - **Be the sole responder to `Distress`.** Ever
+- **Prevent, delay, filter, or decide about an escalation.** It has no such authority
+  because it never holds the decision — see below
 - Judge whether an operator is safe, or decide an overdue is fine
 - Close an overdue check-in without a human reviewing it
 - Give medical, legal, or tactical advice
@@ -44,22 +46,36 @@ end of the line when someone is in trouble.
 - Say when it doesn't know. A confident wrong directory answer at 10pm is the worst
   failure available to this system, and it's worse coming from an agent because it
   carries unearned authority
-- Report escalation honestly at every step
-- Log its own actions for human review
+- Never misrepresent escalation status. The state machine reports the ladder; if the agent
+  is asked about one, it reflects the real state or says it doesn't know
+- Log its own actions for human review, including inaction
 
-## Escalation
+## Escalation is not an agent action
 
-On `Distress`, with no triage, filtering or assessment:
+**The escalation ladder belongs to the watch state machine, not to the agent.** A
+`20911` Distress event triggers it deterministically, on receipt. No component decides
+whether to escalate, because escalation is not a decision anyone in this system holds.
 
-1. Page every on-call operator through their registered channel
-2. No acknowledgement inside the window → continue down the roster
-3. Roster exhausted → the operator's emergency contact, if they set one
-4. Nothing left → say so plainly. **The ladder may fail; it may not fail quietly**
-5. **Tell the operator what is happening at every step** — "paging", "no answer, trying
-   next", "couldn't reach anyone"
+This is the difference between a bound and a promise. If the agent decided whether to
+escalate, every safety guarantee in these documents would rest on the good behaviour of an
+entity whose alignment is unverifiable by construction. Instead the guarantee is
+structural: **the agent could be entirely compromised and the ladder would still fire.**
 
-Full ladder in [`the-watch.md`](./the-watch.md). The agent executes it; it never decides
-whether to.
+Three consequences that MUST hold:
+
+- **Separate failure domains.** The escalation executor is a distinct process from the
+  agent. A degraded, hung, or hostile agent does not impair escalation
+- **No agent in the path.** The ladder does not call the agent, wait on it, or route
+  through it. The agent may observe, and may assist a responding human — nothing more
+- **Escalation survives agent death.** Failure mode 6 in
+  [`../spec/escalation.spec.md`](../spec/escalation.spec.md) is a test, not an aspiration
+
+The agent's remaining role in an emergency is small and honest: it may notice a `Distress`
+in the board state and surface it to whoever holds watch. It cannot start, stop, slow, or
+shape what happens next.
+
+Full ladder in [`the-watch.md`](./the-watch.md) and
+[`../spec/escalation.spec.md`](../spec/escalation.spec.md).
 
 An operator who knows nobody is coming can act on that. One who believes help is en route
 when it isn't has been misled at the worst possible moment.
