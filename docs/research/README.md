@@ -6,6 +6,7 @@ Background that informs the design. Useful as input, not as authority.
 
 | | |
 |---|---|
+| [`lore.md`](./lore.md) | **Read first.** Fiction as design source, and why |
 | [`archetypes.md`](./archetypes.md) | Twelve operator archetypes for stress-testing designs |
 | [`constraints.md`](./constraints.md) | What those stresses demand of any feature |
 | [`prior-art.md`](./prior-art.md) | What already exists, and what it teaches |

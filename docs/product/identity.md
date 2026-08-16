@@ -34,7 +34,11 @@ Signed statements from operators who have worked beside you, carrying a **scope 
 never free text.
 
 `worked with` · `reliable` · `de-escalation` · `medic` · `logistics` ·
-`trained with me`
+`trained with me` · `can take watch`
+
+`can take watch` is the qualification for holding the board — granted by operators who
+have worked with you, using the standing model rather than introducing a rank. See
+[`../watch/the-watch.md`](../watch/the-watch.md).
 
 Free text is prohibited deliberately. An endorser explaining *why* someone is credible
 is how an operator's history leaks — the person with the most valuable knowledge is

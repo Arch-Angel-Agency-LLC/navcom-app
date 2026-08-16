@@ -2,103 +2,88 @@
 
 ## The destination
 
-**NavCom is what's open on your phone on patrol night.**
+**It's 11pm on a Tuesday and the Watchtower is up.**
 
-You arrive in a city you've never worked. You open NavCom and there are four people out
-within twenty miles. You've never met any of them. Their personas carry endorsements
-from operators you *have* worked beside, so you know what you're walking into. You join
-the op. The team view shows you where everyone is, because tonight you chose to share.
+Two operators are out in your city and one in Portland. You can see all three on the
+board: callsign, area, time out, last contact. You're not patrolling — you're on station,
+and tonight that's the job.
 
-Someone asks the network which shelter takes dogs after 10pm. Three people know. The
-answer is in the directory ninety seconds later, and it's still there in four years,
-attributed to a callsign, correct because people keep it correct.
+A `Query` comes in. Someone's outside a shelter that turned them away and there's a woman
+with a dog waiting on the answer. You have the whole directory in front of you, both
+hands free, and you send back the two places within a mile that take animals after 10pm.
+Ninety seconds, start to finish. She sleeps inside.
 
-You clock out. The log wrote itself. It joins six years of ops that are *yours* — ground
-covered, nights worked, what you learned, who vouched for you. Nobody knows your legal
-name. Nobody ever asked.
+At 2am you hand watch to Mecha Jono and go to bed. The board is still held. Timers still
+run. At 3:40 an operator goes overdue and the agent wakes you, because that's the one
+thing it isn't allowed to decide on its own.
+
+Everyone stands down by four. The logs wrote themselves.
 
 That's the thing being built.
 
+## Why this and not an app
+
+Every version of this that started from existing software became a reskin — of ATAK, of
+a mutual aid tool, of a social network. The reason is structural: commercial products are
+shaped by what scales and monetises, and **a volunteer taking a console shift is neither.**
+
+So the model came from fiction, where organisations are shaped by what makes them work.
+Monitor duty from the Watchtower. Oracle running overwatch for people in the field.
+Comms discipline instead of chat. See [`research/lore.md`](./research/lore.md).
+
+The result is a shape you cannot buy: an asymmetric two-application system joined by a
+duty relationship, with an agent making the watch continuous.
+
 ## What accrues
 
-An app you can leave without losing anything is an app you'll leave. NavCom is designed
-so that use compounds:
+**Board time counts.** Whoever takes watch is doing the work, not supporting the people
+doing the work. Console hours sit in the record beside ground covered.
 
-**Your persona gains history.** Callsign, city, the date you started, ops behind you.
-Not a profile you fill out — a record you earn.
+**Standing is self-held and portable.** Endorsements from operators you've worked beside
+travel with you to any city, presented on demand, verified offline. No central graph
+exists to breach or subpoena.
 
-**Your standing is portable and self-held.** Endorsements from people you've worked with
-are signed attestations *you* carry and present. They travel with you to any city. No
-central graph exists to be breached, sold or subpoenaed.
+**Contribution is credited.** The intake rule you corrected at 2am is attributed to your
+callsign. An operator with deep lived experience and no social history builds real
+standing without anyone's permission.
 
-**Your contributions are attributed.** The shelter intake rule you corrected at 2am is
-credited to your callsign. The Convert who knows which places actually take people who
-are using builds visible expertise without a legal name ever existing in the system.
+**Knowledge sharpens.** Every unanswerable `Query` is logged as a directory gap — so the
+knowledge layer improves fastest at exactly the points where it failed someone in real
+time.
 
-**Collective knowledge gets sharper.** The directory is more accurate this month than
-last, because operators keep it that way and it shows who did.
+## What it makes possible
 
-## What compounds
+**A post for people who can't be in the field.** Distance, disability, circumstance, or
+simply being better at a console than on a street. The network needs them more than it
+needs another body on patrol, and until now there was nothing for them to hold.
 
-The point isn't information. It's **leverage** — one operator's hard-won knowledge
-becoming the whole network's capability, immediately.
+**Coverage on nights a volunteer roster can't cover.** A handful of people cannot watch
+every night indefinitely, and the uncovered nights are exactly the nights people are out.
+An agent turns "nobody is watching" into "something is watching and knows who to wake."
 
-- One person confirms an intake time; everyone in the city has it before their next run.
-- One person's supply surplus meets another's shortage without a group chat thread.
-- A question at 2am reaches the handful of people who actually know the answer.
-- A new operator in a strange city inherits years of accumulated local knowledge on
-  install.
+**Working with operators you've never met.** You arrive in a strange city, present
+endorsements from people they recognise, and join the board.
 
-An operator with NavCom should be measurably more effective than one without it. If
-that isn't true, the project has failed regardless of how clean the code is.
+**Nobody out there alone unless they choose it.** An operator running Ghost shares
+nothing and is still a full participant — but the ones who want someone behind them can
+have that, by name, tonight.
 
-## How it spreads
+## Success
 
-Almost everything above needs density. Endorsements matter when you meet operators you
-don't know; presence is compelling at fifty and demoralising at three. So growth isn't a
-milestone that comes after the product works — it's a precondition for the product
-working at all.
+**Year 1** — One Watchtower, one city, a roster that fills most nights and an agent that
+covers the rest. Operators there would notice immediately if it went down.
 
-It grows along the paths trust already travels here:
+**Year 2** — Multiple Watchtowers, operators travelling between them, the endorsement
+layer doing real work between people who've never met.
 
-- **Endorsing someone who isn't here yet** hands them a claimable credential. The network
-  extends along real working relationships rather than recruitment.
-- **A scrubbed op recap** built to be posted publicly makes the work visible outside the
-  app, without exposing anyone but the person sharing it.
-- **Exports to Herocore** land where the community already reads.
-- **Operators who travel** carry it and seed where they land.
-- **The directory, readable on the open web**, is useful to outreach workers who will
-  never become operators — and legible to people who'd never install a superhero app.
-
-Never through referral rewards, invite quotas, or recruitment pressure. Those would
-attract exactly the personality this community is wariest of, and would poison the
-endorsement layer on contact. Detail in
-[`product/propagation.md`](./product/propagation.md).
-
-## Why this and not something else
-
-Nobody will build this commercially. There is no money in tooling for volunteers who
-work for free. That's precisely why it's worth doing, and why it has to be built by
-someone inside the community rather than sold to it.
-
-The existing options are a forum for after-the-fact patrol logs, a group chat that
-can't see the street, and official resource listings that are wrong. Between them sits
-the actual work, unserved.
-
-## What success looks like
-
-**Year 1** — One city runs on it. Operators there would notice if it disappeared.
-
-**Year 2** — Operators travelling between cities use it to work with people they've
-never met, and the endorsement layer is what makes that safe.
-
-**Year 3** — It's the default. New operators are handed it on day one, and the local
-knowledge it carries is worth more than any single feature in it.
+**Year 3** — Taking watch is a recognised way to serve. New operators are handed a
+terminal on day one, and the accumulated local knowledge is worth more than any single
+feature in it.
 
 ## The line we don't cross
 
-Everything above is worth building. None of it is worth recording a single detail about
-a person being served, or exposing an operator's legal identity, or shipping a confident
-wrong answer that gets someone turned away in the cold.
+None of it is worth recording a detail about a person being served, exposing an
+operator's legal identity, letting an agent decide someone in trouble is fine, or shipping
+a confident wrong answer that leaves someone outside in the cold.
 
-Those aren't trade-offs to be balanced. They're the walls the rest is built inside.
+Those aren't trade-offs to balance. They're the walls the rest is built inside.

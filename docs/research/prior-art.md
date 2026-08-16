@@ -29,8 +29,28 @@ maintained by people who were there last night.
 
 **Discord / Signal** — What teams already use for conversation, and it works well.
 
-*Teaches:* don't build chat. Build what a chat app structurally cannot: live operational
-awareness, position, duress, accruing standing, and knowledge that outlives the scroll.
+*Teaches:* don't build chat. Build what a chat app structurally cannot: a signal protocol
+with defined responders and response windows, a held board, duress with a guaranteed
+human terminus, and knowledge that outlives the scroll.
+
+---
+
+## Watch systems
+
+The closest real analogues to the [watch model](../watch/the-watch.md), and why none of
+them is what we're building.
+
+| | |
+|---|---|
+| **Dispatch / CAD** (EMS, fire) | Closest functional match — a console operator holding a board of units in the field. Institutional, employment-based, and assumes authority over the people it dispatches |
+| **On-call rotation** (PagerDuty et al.) | The duty-roster and escalation-ladder mechanics, applied to infrastructure rather than people |
+| **Safety check-in apps** (Noonlight, bSafe) | Timer-and-escalation, but with a commercial monitoring centre rather than a peer |
+| **Amateur radio net control** | Genuinely close in spirit — a volunteer holds net control for a session, calls stations, keeps a log. Ceremony, discipline, and no hierarchy |
+
+*Teaches:* the escalation ladder is a solved problem — copy it. The **volunteer,
+pseudonymous, peer-held** version doesn't exist commercially, because donated console
+shifts are unmonetisable and unautomatable. Net control is the nearest living ancestor,
+and it's a hobby practice rather than a product.
 
 ---
 

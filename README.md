@@ -1,110 +1,101 @@
 # NavCom
 
-**Field operations app for real-life superheroes and volunteer street outreach.**
+**The Watchtower.** Someone is always on watch while operators are out.
 
-Your callsign. Your team. Who's out tonight. What's actually open. What happened, and
-what you learned — kept, so the next person doesn't learn it the hard way.
+Not an app people check. A post someone holds, and a terminal in the pocket of whoever's
+on the street.
 
 ---
 
-## What it does
+## The model
 
-**Identity.** A persona that's yours — callsign, emblem, city, the date you started.
-Keys live on your device. Your legal name never enters the system, because there's no
-field for it.
+**Someone is on watch.** A named human at a console, or [Mecha Jono](./docs/watch/agents.md)
+holding the board when no human is on station. When you signal, something answers.
 
-**Presence.** See that the network is alive. Who's out tonight, in your city and across
-the country. Visibility is yours to set, down to invisible.
+**You sign on when you go out.** The watch sees you: area, duration, last contact. You
+signal as needed. You stand down when you're home, and someone confirms it.
 
-**Ops.** Start or join an op. Live team view, opt-in per session. Check in. Call for
-help. When you clock out, the log is already written.
+**You ask the watch instead of searching.** Standing outside a closed shelter at 10pm
+with someone who needs a bed, you don't tap through a database one-handed in the cold.
+You send `Query`, and someone with a full console and both hands free answers.
 
-**Knowledge.** The directory of what's actually open and who they'll take — pets,
-sobriety, ID, curfew, intake times. Field playbooks. What you learn at 2am becomes
-everyone's capability by morning.
+That relationship — a support operator with situational awareness backing field operators
+with local awareness — is the product. Everything else serves it.
 
-**Record.** Ops run, ground covered, knowledge contributed, endorsements from people
-you've worked beside. Years of showing up, and something to show for it.
+## Two applications
 
-**Safety.** Duress alert with SMS fallback. Private incident log for documenting
-harassment aimed at you. Panic wipe that actually wipes.
+**[The Console](./docs/watch/console.md)** — desktop-shaped, for whoever holds watch. The
+board, the full directory, the ability to raise operators. Runs on an always-on node
+alongside the relay and the agent.
 
-**Reach.** Endorse an operator who isn't here yet and hand them a claimable credential.
-Post a scrubbed recap of your own op. Join a team by scanning a code, in person. The
-network grows the way trust already travels here.
+**[The Field Terminal](./docs/watch/field-terminal.md)** — five screens, one hand, dark,
+cold, offline. Status, signal, directory, playbook, log. Nothing else.
 
-**Support.** An optional Lightning address on your card — receive help as your callsign,
-without a donation platform demanding your legal name. The app never touches funds and
-never shows totals to anyone.
+They are not the same app at different sizes. They are different instruments for opposite
+situations.
 
-**Visibility.** Ghost, Team, or Open. One choice sets the switches; every switch stays
-yours to change, and nobody can see which you picked. Ghost is a complete configuration,
-not a lesser one.
+## Watch states
 
-## What it never does
+An operator always knows what's actually behind them before going out.
 
-- **Records anything about the people being served.** No names, no descriptions, no
-  photographs, no medical details. This app describes services and operators, never
-  recipients. There is no field for it and there never will be.
-- **Nags.** No streaks, no guilt, no "you haven't been active in 60 days," no push
-  notifications routed through Google or Apple.
-- **Asks who you really are.** Ever.
+| | |
+|---|---|
+| **Station** | A named human is at the console |
+| **Automated + on-call** | Agent holds the board; a human is reachable |
+| **Automated** | Agent holds the board; no human committed |
+| **Dark** | No watch. Field terminal runs standalone |
 
-## Principles
+Automated is normal, not a failure. What's never acceptable is an operator believing a
+human is watching when none is.
 
-**Opt-in, not absent.** Some operators share position; some never will. Both get a full
-app. Features have visibility settings instead of being cut.
+## The rules that don't move
 
-**Two kinds of memory, opposite rules.** Your identity, standing and contributions
-accrue and are meant to last. Positions, incident logs and anything about tonight are
-wipeable on command. Confusing these is how tools become either useless or dangerous.
+**A `Distress` signal terminates in a human, or tells the operator it couldn't.** The
+agent's job in an emergency is to raise someone, not to handle it — and every step of
+that escalation is reported back honestly.
 
-**Honest retention.** The app earns opens by reflecting something real — the network is
-active, your team is out, someone answered your question. Never by manufacturing
-urgency.
+**Nothing is ever recorded about the people being served.** No names, no descriptions, no
+photographs, no medical detail. This system describes services and operators, never
+recipients. There is no field for it and there never will be.
 
-**An honest blank beats a confident guess.** A wrong answer that sends someone somewhere
-that turns them away at 10pm is the worst thing this app can do. Volatile data always
-shows its age. "Call first" is a first-class answer.
+**Duress is always deliberate, never inferred.** Overdue nudges the watch; it never
+escalates on its own. Alarm fatigue would destroy the one mechanism where failure means
+someone is hurt.
 
-**Pseudonymity is the security product.** The realistic threat is doxxing, stalking and
-harassment — so: no real names, no phone numbers, no email, no central social graph, no
-database worth seizing.
+**No feed, no browsing people, no comments, anywhere.** Every social primitive must answer
+an operational question or it doesn't exist.
 
-**The device floor is a prepaid Android 8 with 400MB free.** Not a developer's phone.
+**Watch is a post, not a rank.** No clearance levels, no hierarchy, no operator who sees
+more by status.
 
-## Where it's going
+**Pseudonymity is architectural.** No legal names, phone numbers or email anywhere in the
+system. Keys on device. Nothing on a server worth seizing.
 
-Read [`docs/vision.md`](./docs/vision.md) for the destination this is built toward.
-
-## Status
-
-Early. Identity and presence first, then ops, then the knowledge layer. The resource
-directory is being validated with live data in parallel — see
-[`docs/product/directory-schema.md`](./docs/product/directory-schema.md).
-
-## Repository
+## Documentation
 
 ```
-docs/vision.md                      Where this is going and what it becomes
-docs/principles.md                  Design rules, and how conflicts get resolved
-docs/product/features.md            The feature set and the operational loop
-docs/product/data-tiers.md          The four tiers and their opposing rules
-docs/product/identity.md            Persona, standing, endorsements-as-credentials
-docs/product/visibility.md          Ghost / Team / Open, and the switches underneath
-docs/product/funding.md             Pseudonymous support without a donation platform
-docs/product/propagation.md         How the network grows, and how it never grows
-docs/product/directory-schema.md    Resource schema, intake taxonomy, staleness model
-docs/research/archetypes.md         Twelve operator archetypes used to stress designs
-docs/research/constraints.md        What the stress tests demand of any design
-docs/research/prior-art.md          What exists, and what it teaches us
-data/resources.seed.csv             Importable directory columns
+docs/vision.md                     Where this is going
+docs/principles.md                 Design rules, and how conflicts resolve
+docs/watch/the-watch.md            Roles, states, duty, escalation, qualification
+docs/watch/signals.md              The protocol — six signals, defined responses
+docs/watch/console.md              The Console, and the box it runs on
+docs/watch/field-terminal.md       The Field Terminal
+docs/watch/agents.md               Mecha Jono; what an agent may and may not hold
+docs/product/identity.md           Persona, standing, endorsements-as-credentials
+docs/product/data-tiers.md         Four tiers with opposing retention rules
+docs/product/visibility.md         Ghost / Team / Open, and the switches underneath
+docs/product/directory-schema.md   Resource schema, intake taxonomy, staleness model
+docs/product/funding.md            Pseudonymous support without a donation platform
+docs/product/propagation.md        How the network grows, and how it never grows
+docs/research/lore.md              Fiction as design source — read this first
+docs/research/archetypes.md        Twelve operator archetypes for stress-testing
+docs/research/constraints.md       What those stresses demand
+docs/research/prior-art.md         What exists, and what it teaches
 ```
 
-## Contributing
-
-Most valuable contribution right now is **local knowledge** — if you do outreach and you
-know which listings are wrong, that's the thing this project needs most.
+New here? Read [`docs/research/lore.md`](./docs/research/lore.md) before proposing
+anything. It explains why this isn't shaped like the software you're used to, and what
+happens if someone "fixes" that.
 
 ---
 

@@ -3,6 +3,13 @@
 The knowledge layer's core data. Lives in the [Collective tier](./data-tiers.md):
 shared, replicated, cached offline in full, attributed to contributing callsigns.
 
+**Primarily a Console instrument.** The full directory — search, filters, map — belongs to
+whoever holds watch, answering [`Query`](../watch/signals.md) for operators in the field.
+The Field Terminal carries a deliberately simpler cached copy as fallback.
+
+**Every unanswerable `Query` is logged as a directory gap.** The knowledge layer improves
+fastest at exactly the points where it failed someone in real time.
+
 ## Hard rule
 
 **Never record information about the people being served.** No names, no descriptions,

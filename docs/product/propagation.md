@@ -32,6 +32,20 @@ rails or they don't exist.
 
 ---
 
+## The watch changes what growth means
+
+Density isn't only about field operators. **A Watchtower needs people willing to hold the
+board**, and that's a different recruitment problem with a better answer: it opens a post
+to people who can't patrol at all — distance, disability, circumstance, or simply being
+better at a console than on a street.
+
+That widens the addressable community well beyond people who go out at night, and it's
+the most honest pitch the project has: *you don't have to patrol to be useful; someone
+has to be watching.*
+
+An agent covers the nights nobody signs up, so a thin roster is survivable while it
+grows.
+
 ## Mechanisms
 
 ### 1. Endorsement as invitation — primary

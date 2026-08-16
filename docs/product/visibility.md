@@ -44,6 +44,18 @@ Each is independently settable regardless of preset:
 | Op recap generation | off · on request |
 | Lightning address | off · on — **outside presets entirely** |
 
+## The watch sees what you sign on with
+
+Signing on for a shift shares area, expected duration and contact times with **whoever
+holds the board** — that's the point of being watched, and it's scoped to the watch
+rather than broadcast.
+
+- **Ghost operators can still sign on.** Watch sees you're out and roughly where; nobody
+  else does. Being watched over and being visible to the network are different things
+- Position sharing remains separately opt-in, per session
+- Signing on is always a deliberate act. An operator who doesn't sign on isn't watched,
+  and the terminal never does it automatically
+
 ## Funding sits outside visibility
 
 The operator who most needs donations may be the one who most needs to stay invisible.

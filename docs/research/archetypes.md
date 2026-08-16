@@ -120,6 +120,28 @@ seeing the country is the point.
 
 ---
 
+## Who takes watch
+
+The [watch](../watch/the-watch.md) needs someone who will stay awake, stay reachable and
+answer. That's a different aptitude from field work, and the roster splits accordingly.
+
+**Naturals:** the **Trainer** (already the person newcomers call), the **Medic**
+(methodical, high standards, motivated by consequence), the **Skeptic** (vigilant, and
+watch gives his suspicion somewhere useful to go), and the **Outpost** — isolated from
+local field work but perfectly able to hold a board for operators three states away.
+
+**Situational:** the **Team Lead** wants the board but must not treat it as command. The
+**Quartermaster** and **Connector** would cover shifts reliably.
+
+**No:** the **Heart** shouldn't hold a post requiring dependability across her cycles.
+The **Public Face** is out most nights. The **Ghost** won't take responsibility for
+others, and shouldn't be asked.
+
+**The Convert is the interesting case.** She has the best directory knowledge in the
+network, which makes her an outstanding `Query` responder — but a prepaid phone and an
+unstable schedule make a full shift unrealistic. Suggests watch should be *shareable*:
+someone can answer queries without holding the whole board.
+
 ## Coverage
 
 | Risk surface | Archetype |

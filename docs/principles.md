@@ -1,130 +1,124 @@
 # Principles
 
-Design rules, and how conflicts get resolved. When a decision is contested, it gets
-settled here rather than by whoever argues longest.
+Design rules, and how conflicts resolve. When a decision is contested it gets settled
+here rather than by whoever argues longest.
 
 ---
 
-## 1. Opt-in, not absent
+## 1. The watch is the product
 
-Operators disagree fundamentally about visibility. Some share position freely; others
-will never share anything and still deserve a full app.
+Everything attaches to the duty relationship: a named party responsible for operators who
+are out, and operators who signal rather than browse. A feature that doesn't serve that
+relationship is probably somebody else's product.
 
-**The resolution is always a visibility setting, never a deletion.** A feature that some
-operators refuse is a feature with an off switch — not a feature that nobody gets.
-Removing it serves only the person who refused; making it optional serves everyone.
+## 2. No feed. No browsing people. No comments.
 
-Defaults lean private. Ceilings stay high.
+Anywhere, ever. No scrolling timeline, no discoverable directory of operators, no replies
+or threads on anything.
 
-**Presets set switches; they never override them.** Ghost, Team and Open exist so a new
-operator makes one decision instead of eight — but each underlying switch stays visible
-and independently adjustable, and no preset is ever shown to another operator. A global
-mode would bundle independent decisions, and bundled consent is how people get exposed
-without ever making a bad choice. See [`product/visibility.md`](./product/visibility.md).
+Social products are optimised for the feed; operational tools are optimised for the
+moment of need. This rule does more anti-drift work than every other rule combined — if a
+feature needs a feed, it's the wrong feature.
 
-## 2. Two kinds of memory, opposite rules
+Discovery is contextual only: operators active near you tonight, or present at an op
+you're in. Answers to questions become directory or playbook entries — knowledge, not
+discussion.
 
-The single most important architectural distinction in the app. See
-[`product/data-tiers.md`](./product/data-tiers.md).
+## 3. Every social primitive answers an operational question
 
-- **Things that should last:** persona, standing, endorsements, contributions, op
-  history. These accrue. Losing them is the failure.
-- **Things that must vanish:** live positions, incident logs, anything about tonight.
-  These are wipeable on command. Retaining them is the failure.
+Presence isn't "the network is alive" — it's **who can I actually reach tonight**.
+Standing isn't reputation — it's **can I work with this stranger**. If a primitive can't
+be phrased as an operational question, cut it.
 
-Applying one rule to both produces either a tool that can't build anything or a tool
-that's dangerous to carry.
+## 4. Automation holds the board; a human holds the responsibility
 
-## 3. Honest retention
+Agents may run timers, answer lookups, route requests and escalate. They may never be the
+end of the line when someone is in trouble, judge whether an operator is safe, or be
+presented ambiguously as a person.
 
-The app earns opens by **reflecting something real**: the network is active, your team
-is out, someone answered your question, a listing near you changed.
-
-It never manufactures urgency. No streaks, no badges, no leaderboards, no "you haven't
-patrolled in 60 days," no engagement notifications. Beyond being unpleasant, competitive
-mechanics would attract exactly the personality this community is wary of.
-
-There is a wide space between nagging and giving nobody a reason to return. Live in it.
-
-## 4. Honest propagation
-
-The network grows along the community's existing trust paths — people who worked
-together, met in person, or already read the same places. Never by manufacturing
-pressure.
-
-No referral rewards, no invite quotas, no contact list upload, no "X operators near
-you," no standing that depends on how many people you brought in. Reward-driven
-recruiting would attract precisely the personality this community is wary of.
-
-Density is a precondition for most of what makes the app worth using, so this is a
-correctness concern rather than a marketing one. See
-[`product/propagation.md`](./product/propagation.md).
+**`Distress` terminates in a human, or tells the operator it couldn't.**
 
 ## 5. Never the people served
 
 No names, no descriptions, no photographs, no locations of individuals, no medical
-details, no counts tied to identifiable people.
+detail. This system describes services and operators, never recipients.
 
-This app describes **services and operators**. Never recipients. There is no field for
-it, no free-text convention for it, and no feature that would need it.
+Not configurable. No use case overrides it.
 
-This is not configurable and does not have a use case that overrides it.
+## 6. Opt-in, not absent
 
-## 6. Pseudonymity is architectural
+Operators disagree fundamentally about visibility, and both extremes get a complete
+system. The resolution is always a setting, never a deletion — removing a feature serves
+only the person who refused it.
 
-The realistic threat is doxxing, stalking and harassment — not state-grade cryptanalysis.
-Security effort goes into **not holding identifying data in the first place**:
+Presets set switches and never override them. No preset is visible to another operator.
+Defaults lean private; ceilings stay high.
 
-- No legal names, phone numbers or email addresses
-- Keys generated and held on device
-- No central social graph — standing is self-held and presented (see
-  [`product/identity.md`](./product/identity.md))
-- No push notification services that reveal recipients to third parties
-- Nothing on a server worth seizing
+## 7. Two kinds of memory, opposite rules
 
-Encryption protects op traffic and duress alerts. It is not a substitute for having
-nothing to leak.
+Identity, standing, contributions and board time **accrue** — losing them is the failure.
+Positions, incident logs and tonight's data are **wipeable** — retaining them is the
+failure. See [`product/data-tiers.md`](./product/data-tiers.md).
 
-## 7. An honest blank beats a confident guess
+Panic wipe destroys tonight and preserves the decade. Burn destroys everything, and only
+burn reaches endorsements — because they carry association data.
 
-The worst failure available to this app is a confident wrong answer that sends someone
-somewhere that turns them away at 10pm.
+## 8. Duress is deliberate; overdue only nudges
 
-- Volatile data always displays its age
-- Stale volatile data displays as "call first," never as its old value
-- Blank renders as "unknown," never as "no restriction"
-- Flagging something as wrong is always easier than fixing it
+Never inferred from silence, missed windows or inactivity. Overdue makes the watch
+contact you; only a human reviewing it can raise it further.
 
-## 8. The device floor
+People are late for ordinary reasons far more often than dangerous ones, and alarm
+fatigue would destroy the one mechanism where failure means someone is hurt.
 
-**A prepaid Android 8 with ~400MB free.** Some of the most valuable operators are the
-ones with the least device. If it doesn't run there, it doesn't ship.
+## 9. An honest blank beats a confident guess
 
-Practical consequences: small install, no heavy bundled basemaps, no background data on
-cellular without consent, battery treated as a first-class budget.
+The worst failure available here is a confident wrong answer that leaves someone outside
+at 10pm. Volatile data shows its age; stale data reads "call first"; blank renders as
+"unknown," never as absence of restriction; flagging is always easier than fixing.
 
-## 9. Complement, don't replace
+This binds agents hardest — a wrong answer carries unearned authority coming from one.
 
-Teams already use Discord and Signal, and those work. Herocore already hosts patrol logs
-and community presence. NavCom does what those structurally cannot — live operational
-awareness, position, duress, accruing standing, field-current knowledge — and exports to
-them rather than competing.
+## 10. Pseudonymity is architectural
 
-## 10. Offline is a normal state
+The realistic threat is doxxing, stalking and harassment. Security effort goes into **not
+holding identifying data**: no legal names, phone numbers or email; keys on device; no
+central social graph; no third-party push; local inference only; nothing on a server
+worth seizing.
 
-Not an error condition. Rural operators, dead zones, basements, dying batteries. The
-knowledge layer is fully usable with no signal; anything requiring the network degrades
-visibly rather than failing silently.
+## 11. Watch is a post, not a rank
+
+No clearance levels, no hierarchy, no operator who sees more by status. Whoever holds the
+board has it; when they stand down they don't outrank anyone.
+
+## 12. The field never hard-depends on the watch
+
+Dark is survivable. Cached directory, playbooks, local logging, SMS duress fallback. The
+watch makes an operator more effective; its absence must never leave them worse off than
+carrying no app at all.
+
+## 13. Honest retention, honest propagation
+
+The system earns opens by reflecting something real — a signal awaiting response, someone
+out tonight. Never manufactured urgency: no streaks, badges, leaderboards, or absence
+commentary.
+
+Growth follows existing trust paths. No referral rewards, invite quotas, contact upload,
+or standing that depends on recruitment.
+
+## 14. The device floor
+
+A prepaid Android 8 with ~400MB free. Some of the most valuable operators have the least
+device. If it doesn't run there, it doesn't ship.
 
 ---
 
 ## Resolving conflicts
 
-When two principles collide, this is the order:
-
-1. **Never the people served** (5) — absolute, overrides everything
-2. **Operator safety** — duress, wipe, pseudonymity (6)
-3. **Accuracy** (7) — better to say "unknown" than to be wrong
-4. **Opt-in** (1) — before removing anything, try making it optional
-5. **Honest propagation** (4) — growth never justifies pressure
-6. Everything else
+1. **Never the people served** (5) — absolute
+2. **Operator safety** — escalation, duress, wipe, pseudonymity (4, 8, 10)
+3. **Accuracy** (9) — "unknown" beats wrong
+4. **The field runs standalone** (12)
+5. **Opt-in** (6) — try optional before removing
+6. **No feed** (2) — growth never justifies it
+7. Everything else

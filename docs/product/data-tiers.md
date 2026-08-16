@@ -31,7 +31,12 @@ If the answer is nothing, this tier is broken.
 
 ## Live — the thing happening now
 
-Presence, active op state, positions during an op, check-in status, duress alerts.
+The watch board, signals in flight, who's signed on, positions during an op, overdue
+state, duress alerts.
+
+**The board is Live, not stored.** When a shift ends, board state hands over or expires —
+it is never a queryable history of who was out where. What survives into the record is
+the operator's own op log, on their own device.
 
 - Ephemeral by construction — published to relays as non-stored events, not written to a
   database
@@ -81,7 +86,10 @@ it that way?*
 |---|---|
 | Persona, callsign, emblem | Accruing |
 | Endorsements, standing | Accruing — encrypted, burn-only |
+| Board time on watch | Accruing |
 | Lightning address | Accruing |
+| Watch state, board contents | Live |
+| Signals in flight | Live |
 | Op history, ground covered | Accruing |
 | Contribution credit | Accruing |
 | Who's out tonight | Live |

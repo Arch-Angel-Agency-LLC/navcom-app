@@ -102,6 +102,24 @@ that looks authoritative is more dangerous than no data.
 **C22 — The recap never discloses team size or collective activity**, and carries no
 impact claims. Understatement is both more shareable and more honest.
 
+**C23 — The watch state is always visible before sign-on.** An operator believing a human
+is watching when none is has been misled at the worst possible moment.
+
+**C24 — `Distress` terminates in a human, or reports that it couldn't.** No triage, no
+filtering, no agent assessment. Every escalation step is reported back to the operator.
+
+**C25 — Agents are always identified as agents.** In the watch state, in every
+acknowledgement, in the log. Never ambiguous, never impersonating.
+
+**C26 — No cloud inference on operational data.** Signals, positions, queries and board
+state are the network's complete operational picture. Local inference only.
+
+**C27 — The board is Live, never stored.** Watch state hands over or expires. There is no
+queryable history of who was out where.
+
+**C28 — Watch is shareable.** Answering queries must be possible without holding the whole
+board, so operators who can't commit a full shift can still contribute their knowledge.
+
 ---
 
 ## Known conflicts and their resolutions
