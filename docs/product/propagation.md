@@ -67,9 +67,21 @@ Design requirements:
 
 - Contains only the sharing operator's own activity — never teammates' callsigns,
   positions, or presence
+- **Never discloses team size or that anyone else was there.** "Team of six" leaks op
+  scale and pattern even with every name stripped
 - Coarse location at best; no route, no timing detail
 - Carries a quiet mark of provenance. No call to action, no download link, no referral code
 - Generated on request, never automatically
+
+**Understatement is the aesthetic.** Time, place, activity, what was done — and nothing
+more. No impact claims, no "we helped X people," no inflated numbers. This isn't a
+compromise between shareable and honest: restraint is what reads as credible, so the
+operator with professional standards for their feed and the operator who finds
+overstatement distasteful want the same artifact.
+
+The quality bar is set by whoever has the most demanding feed. If it isn't good enough
+for them to post, propagation doesn't happen at all — which makes visual design the
+mechanism here, not decoration.
 
 ### 3. Export to Herocore
 
@@ -107,8 +119,20 @@ opening an empty directory is the failure that ends adoption there.
 and community correction upgrades it from there. This is honest because the schema
 already encodes `method: website` as low confidence and displays it as such.
 
+**Seeded entries must look visibly different from operator-verified ones** — not merely
+carry different metadata. Public listings are wrong precisely in the intake-rule
+dimensions that matter most, so seeded data that *looks* authoritative is more dangerous
+than an empty screen.
+
+**Onboarding offers a verification task.** Verify five local listings — offered once,
+never a gate, never repeated. It teaches the app, contributes real local data, and turns
+the emptiest moment in a new city into someone's first contribution.
+
 The first operator in a city should find a thin, clearly-imperfect, obviously-useful
 starting point — never a blank screen.
+
+Rural regions are the hard case: worst public data *and* fewest operators to correct it.
+Expect some areas to stay thin, and don't let the app imply that thinness is failure.
 
 ---
 

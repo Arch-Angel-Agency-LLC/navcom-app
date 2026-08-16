@@ -36,7 +36,7 @@ Each is independently settable regardless of preset:
 
 | Switch | Values |
 |---|---|
-| Presence | off · team · city · network |
+| Presence | off · team · city · network — team is useful at 3 operators, network needs far more |
 | Position sharing | off · per-op opt-in (never persistent) |
 | Position precision | coarse · precise |
 | Card discoverability | off · team · network |

@@ -67,6 +67,10 @@ Consequences:
   sell, subpoena or leak.
 - **Verification is local and offline.** You show your endorsements; my device verifies
   the signatures against the endorsing callsigns. Works with no signal.
+- **Provenance is shown by name; never a count.** The UI surfaces *which* operators
+  endorsed, prominently — never a score, total, or aggregate. You trust someone because
+  you recognise who vouched for them. A number invites gaming and turns a generous
+  endorser's volume into noise; a name makes that volume self-evidently weak signal.
 - **Revocation is possible** — endorsers can publish a revocation, checked when online.
 - **You choose what to present.** Show everything, or only what's relevant to this op.
 
@@ -111,7 +115,13 @@ Honest limits:
 - **Endorsements can be traded or given carelessly.** Some operators will endorse
   generously for social reasons. Treat volume as noise and provenance as signal.
 - **Absence of standing means nothing.** New and private operators are legitimate. The
-  UI must never present an unendorsed operator as suspect — only as unknown.
+  UI must never present an unendorsed operator as suspect — only as unknown. An operator
+  running Ghost is unendorsed by choice.
+
+**Where infiltration is the actual threat — protest support, hostile environments — the
+answer is out-of-band verification, not this app.** Say so plainly rather than letting a
+credential carry weight it can't hold. Standing raises the cost of showing up as a
+stranger; it does not establish that someone is safe.
 
 ## Recovery
 

@@ -80,6 +80,28 @@ operators get exposed without making a bad choice. No preset is visible to anyon
 who most needs donations may be the one who most needs to stay invisible. Visible totals
 would rebuild the leaderboard we refused, with money as the score.
 
+**C17 — Correction works offline and queues.** Discovery happens at the worst moment for
+connectivity and the most urgent moment for action. A path that needs signal is a path
+that goes unused.
+
+**C18 — Design for the minority who maintain; free-riding stays costless.** Maintenance
+comes from a small core with direct motivation plus crews where a lead assigns it. A
+directory demanding reciprocity gets abandoned by the people it most needs.
+
+**C19 — Team presence and network presence are separate features.** Team is useful at
+three operators; network needs density that doesn't exist early. When live counts are
+thin, aggregate over time — "0 operators active" is true and destructive.
+
+**C20 — Endorsement provenance by name, never a count.** Trust follows recognising the
+endorser. A number invites gaming; a name makes a generous endorser's volume
+self-evidently weak signal.
+
+**C21 — Seeded entries are visually distinct, not merely tagged.** Low-confidence data
+that looks authoritative is more dangerous than no data.
+
+**C22 — The recap never discloses team size or collective activity**, and carries no
+impact claims. Understatement is both more shareable and more honest.
+
 ---
 
 ## Known conflicts and their resolutions
@@ -105,16 +127,20 @@ Thin and correct beats comprehensive and rotting.
 
 Unresolved, and worth flagging as such:
 
-- **Sybil resistance is weak.** Keys are free to generate. Endorsement value rests on
-  recognising endorsers, which doesn't scale to strangers. Acceptable for now;
-  revisit if impersonation appears.
-- **Cold start in a new city.** A directory with nothing local is worth little. Seeding
-  from public sources plus community correction is the plan; whether correction actually
-  happens is the thing to watch.
-- **Presence density.** Presence is compelling with fifty operators and depressing with
-  three. Network-wide visibility (C7) is the mitigation, but the threshold is untested.
-- **Directory maintenance.** Whether operators will keep listings current over time is
-  the single largest unproven assumption in the project.
+- **Sybil resistance is weak, and stays weak by choice.** Keys are free to generate, and
+  every technical countermeasure worth having would require identity or history — which
+  excludes the operators with the most valuable knowledge. The answer is social:
+  provenance over count (C20), and out-of-band verification where infiltration is the
+  real threat. Revisit only if impersonation actually appears.
+- **Cold start in a new city.** Mitigated by seeding, visual distinction (C21) and the
+  onboarding verification task — but whether correction actually happens is still the
+  thing to watch.
+- **Presence density.** Addressed by splitting team from network presence and aggregating
+  over time (C19). The threshold at which a live network count stops being depressing is
+  untested.
+- **Directory maintenance.** Still the single largest unproven assumption in the project.
+  C17 and C18 improve the odds; they don't settle it. Rural regions are the hard case —
+  worst public data and fewest operators to fix it.
 - **Seeding quality varies by region.** Public data is good in some metros and nearly
   absent in others.
 - **Whether the op recap is good enough to post.** Propagation depends on operators

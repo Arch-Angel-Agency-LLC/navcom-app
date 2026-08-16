@@ -114,6 +114,9 @@ somewhere that turns them away.
 4. **Anyone can flag in one tap** without being able to fully update — reporting must
    always be easier than fixing
 5. **Blank renders as "unknown,"** never as absence of a restriction
+6. **Seeded entries look visibly different from operator-verified ones.** A confidence
+   tag in the data model doesn't help someone scanning a list at 10pm. Low-confidence
+   data that *looks* authoritative is more dangerous than no data at all
 
 ---
 
@@ -124,7 +127,23 @@ Corrections are credited to the contributing callsign, building
 identity attached. Anonymous contribution is always available for operators who want no
 attribution at all.
 
+**Correction must work offline and queue for sync.** The moment an operator discovers a
+listing is wrong is the moment of worst connectivity and highest urgency — outside a
+closed shelter, at night, with someone waiting. A correction path that needs signal or a
+form is a correction path that never gets used.
+
 Reporting that something is wrong requires one tap and no account.
+
+### Who actually maintains this
+
+Not everyone, and the design shouldn't pretend otherwise. Maintenance comes from a small
+core with direct motivation — operators who bear the consequences of bad data, plus crews
+where a lead assigns it — while most people only ever read.
+
+**Design for the minority who contribute and make free-riding completely costless.**
+Nothing in the app should pressure, shame, or gate a read-only operator. A directory that
+demands reciprocity gets abandoned by the people it most needs to reach.
+
 
 ---
 

@@ -36,14 +36,24 @@ The app never touches funds and never shows totals to anyone. Independent of vis
 
 The feature that makes the app worth opening when nothing is scheduled.
 
+**Team presence and network presence are different features with different thresholds.**
+Team presence is valuable at three operators and ships first. Network presence needs
+density that doesn't exist early on.
+
 - **Who's out tonight** — your team, your city, or the wider network
 - **Visibility levels:** off · team · city · network. Default is team.
 - Coarse by default. Presence means "active," not "here is my position."
 - Travelling? See who's active where you're going, before you arrive.
 
+**When live counts are thin, aggregate over time instead.** "47 operators across 12
+cities this month" is honest and encouraging. "0 operators active" is equally true and
+actively damages the product. Show the live network count only above a threshold; below
+it, show the month.
+
 Deliberately excluded: activity leaderboards, streaks, "days since last op." Presence
 reflects tonight only, and an operator who has been away for months returns to no
-commentary whatsoever.
+commentary whatsoever — in a small network, absence is conspicuous, which makes this
+matter more rather than less.
 
 ## Ops — the work
 
@@ -71,9 +81,17 @@ position; falls back to SMS where there's no data. Works with a locked screen.
 requirements, curfew, intake windows, capacity signals. Cached in full for offline use.
 Schema in [`directory-schema.md`](./directory-schema.md).
 
-- One-tap flagging when something's wrong — always easier than fixing it
+- **One-tap flagging, offline, queued for sync.** The moment an operator discovers a
+  listing is wrong is the moment of worst connectivity and highest urgency — standing
+  outside a closed shelter at 10pm with someone who needs a bed. If correcting requires
+  signal or a form, it never happens
 - Volatile data shows its age; stale data reads "call first"
+- Seeded entries look visibly different from operator-verified ones
 - Corrections credited to the contributing callsign
+
+**Verify five listings.** Offered once during onboarding, never a gate and never
+repeated. Teaches the app, contributes real local data, and turns an empty new city into
+someone's first contribution.
 
 **Field playbooks.** De-escalation, first aid, rights, cold-weather guidance,
 overdose response. Versioned, offline, authored by operators who actually train people.
@@ -107,7 +125,8 @@ yourself. Grows the network along real working relationships instead of recruitm
 
 **Op recap.** A scrubbed, well-made artifact of your *own* op, built to be posted
 publicly — teammates' callsigns and positions stripped, location coarse, provenance
-marked, no call to action. Generated on request.
+marked, no call to action, no disclosure that anyone else was there. Understated by
+design: time, place, activity, what was done. No impact claims. Generated on request.
 
 **Join by QR, in person.** Scan to join a team or an op. Unspammable by construction.
 
@@ -130,10 +149,12 @@ Nothing here holds an operator hostage. The app has to earn its place every nigh
 ## Build order
 
 1. **Identity** — persona, keys, record. Useful alone.
-2. **Presence** — the network becomes visible. Requires relays.
+2. **Team presence** — valuable at three operators. Requires relays.
 3. **Ops** — sessions, team view, check-in, duress, logs.
 4. **Knowledge** — directory and playbooks, with attribution.
 5. **Standing** — endorsements, held and presented.
+6. **Network presence** — once density justifies it; aggregate view until then.
 
 Identity first because it's what makes the app theirs, and because it's the substrate
-everything else attaches to.
+everything else attaches to. Network presence last because it's the one feature that
+gets *worse* the earlier it ships.
