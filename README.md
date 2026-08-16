@@ -88,7 +88,8 @@ docs/product/directory-schema.md   Resource schema, intake taxonomy, staleness m
 docs/product/funding.md            Pseudonymous support without a donation platform
 docs/product/propagation.md        How the network grows, and how it never grows
 docs/research/lore.md              Fiction as design source — read this first
-docs/research/archetypes.md        Twelve operator archetypes for stress-testing
+docs/research/archetypes.md        Twelve field-operator archetypes
+docs/research/ecosystem-roster.md  Watch, analysts, agents, infrastructure, adversaries
 docs/research/constraints.md       What those stresses demand
 docs/research/prior-art.md         What exists, and what it teaches
 ```

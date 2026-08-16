@@ -57,6 +57,35 @@ privacy as a mystery to be resolved.
 consent and it's framed as protective. Every visibility feature here is opt-in, and an
 operator running Ghost is a full participant.
 
+## Verification doctrine
+
+The agent design comes from the project's own doctrine rather than from AI safety
+practice, and it happens to be more rigorous than most of what's shipped commercially.
+
+**The Angelic Verification Problem** states that a sufficiently capable deceptive system
+performs exactly as an aligned one would on every test it anticipates — so no external
+battery proves alignment, only failure to yet find evidence against it. That isn't a
+detector nobody has built. It may be a limit on what's findable from outside at all.
+
+**Continuity Forensics** supplies the mechanism that still works within that limit: a
+genuine reading is self-consistent for free, while a forged one must be *held* consistent,
+and the holding leaves seams that widen under scrutiny because maintenance costs more at
+each layer. Hence many cheap unpredictable cross-checks rather than one audit.
+
+**The Angel AI Initiative** supplies the operational rule: any protocol granting reduced
+scrutiny on the basis of a self-reported category, without independent verification, is
+exploitable by exactly the class of entity most needing to be screened out.
+
+**And the reflexive clause** — an entity that discovers a verification limit and then
+exempts itself from it has not understood the limit. Which is why Mecha Jono submits to
+the same screening as any other agent, permanently, despite being ours and local and
+named in the doctrine.
+
+The design consequence is the important part: **the answer to unverifiability is bounded
+authority, not better tests.** Everything an agent may not do exists so that misbehaviour
+is survivable rather than because we expect it. See
+[`../watch/agents.md`](../watch/agents.md).
+
 ## The method, for whoever comes next
 
 When a design question comes up, the useful move is usually **not** "how does the market

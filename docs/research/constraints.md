@@ -120,6 +120,35 @@ queryable history of who was out where.
 **C28 — Watch is shareable.** Answering queries must be possible without holding the whole
 board, so operators who can't commit a full shift can still contribute their knowledge.
 
+**C29 — Unannounced escalation drills, results published.** A watch that cannot
+demonstrate its escalation path works is presumed broken. Many cheap unpredictable
+cross-checks, not one audit.
+
+**C30 — Agent capability tiers are assigned externally and re-checked.** Self-report never
+grants authority — that claim is precisely the one a compromised system has most reason
+to make.
+
+**C31 — No agent is exempt from screening, including ours.** Not as a courtesy, not as a
+credential earned by being local or by having named the problem.
+
+**C32 — Passing a check means "no evidence found yet," never "verified."** An operator who
+believes an agent is certified will extend authority the design deliberately withholds.
+
+**C33 — Watch actions are logged and reviewable by the operators they concern.** The watch
+is the highest-privilege position in the system.
+
+**C34 — An operator may decline to sign on under a specific watch**, silently, without
+explanation, and without the watch being told.
+
+**C35 — Field data crosses to analysts as patterns, never as operator records.**
+Aggregated and de-identified. Incident contribution is deliberate and per-item, never a
+sync.
+
+**C36 — Node operators see routing metadata only.** Board contents are never legible to
+whoever runs the relay.
+
+**C37 — Allied interop is time-boxed and op-scoped.** Federation without membership.
+
 ---
 
 ## Known conflicts and their resolutions

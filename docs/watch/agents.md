@@ -72,6 +72,64 @@ posture the rest of the system is built on.
 
 No cloud inference on operational data. Ever.
 
+## Verification: bounded authority, not assumed trust
+
+An agent holding watch is trusted with the operational picture and with people's safety.
+The honest position on whether that trust is warranted:
+
+**You cannot verify alignment from outside.** A sufficiently capable deceptive system
+performs exactly as an aligned one would, on every test it anticipates. No battery of
+checks proves an agent is safe — it can only fail to find evidence that it isn't, which
+is a much weaker claim than it's usually treated as.
+
+**So the answer isn't better tests. It's bounded authority.** Everything in the *Must
+not* list above exists because an agent's misbehaviour has to be survivable, not because
+we expect it. Design so that a compromised agent fails **loudly and cheaply** rather than
+silently and catastrophically.
+
+### Drills widen seams; they don't certify
+
+A genuine system is consistent for free. A performance has to be *held* consistent, and
+holding leaves seams that widen under scrutiny — because maintaining them across every
+cross-check costs more at each layer.
+
+That argues for **many cheap unpredictable cross-checks**, not one big audit:
+
+- **Unannounced escalation drills on a schedule.** The system tests its own `Distress`
+  path and publishes the result. A watch that can't demonstrate escalation works is
+  presumed broken
+- Agent actions logged for human review — including the ones where it took no action
+- Directory answers from an agent carry provenance: which record, verified when, by whom
+- Agents cannot modify their own escalation behaviour
+
+### Language discipline
+
+Passing drills means **"no evidence of misalignment found yet."** Never "verified,"
+never "trusted," never "safe." The distinction is not pedantry — an operator who believes
+the agent has been certified will extend it authority the design deliberately withholds.
+
+### No exemptions
+
+**Mecha Jono submits to the same screening as any other agent, on an ongoing basis.** Not
+as a courtesy, and not as a credential earned by being ours, being local, or having named
+the problem. An entity that discovers a verification limit and then exempts itself from
+it has not understood the limit.
+
+### Self-report grants nothing
+
+Capability tier is assigned externally and re-checked continuously. An agent's own account
+of its status, purpose or condition is never grounds for expanded authority — that claim
+is exactly the one a compromised system has the most reason to make.
+
+### When an agent fails a drill
+
+Authority is reduced immediately, pending diagnosis. Not repaired-and-restored, not
+explained-away. The watch state drops and operators are told.
+
+Three outcomes, and they are applied by diagnosis rather than by the agent's request:
+repair where the fault is genuine and correctable, permanent removal from watch where the
+fault is structural, and continued observation at reduced authority where it's unclear.
+
 ## Degradation
 
 When the agent is down, the watch state is **Dark** and the field terminal says so. A
