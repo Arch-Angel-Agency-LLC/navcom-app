@@ -83,7 +83,22 @@ This binds agents hardest — a wrong answer carries unearned authority coming f
 
 The realistic threat is doxxing, stalking and harassment. Security effort goes into **not
 holding identifying data**: no legal names; keys on device; no central social graph; local
-inference only; nothing on a server worth seizing.
+inference only.
+
+**What the node actually holds — stated honestly, because the claim "nothing worth
+seizing" is no longer true:**
+
+| Held | Exposure if seized |
+|---|---|
+| Board state (Live, in memory) | Who is out *right now*, coarse area |
+| Accountability log (90 days) | Watch actions — never positions or query text |
+| Directory | Public data |
+| Encrypted emergency contacts | Only where an operator opted in; decryptable only during escalation |
+| Agent logs, drill results | Operational, no operator PII |
+
+No persisted position history, no social graph, no legal identities. That is a much
+smaller target than most systems — and it is not nothing, so it gets said plainly rather
+than implied away.
 
 **This is a strong default, not a wall an operator can't open.** An operator may waive
 protections *for themselves* — an emergency contact, a paging channel, a recovery
@@ -98,11 +113,13 @@ scoped, revocable and auditable. See [`product/opt-ins.md`](./product/opt-ins.md
 No clearance levels, no hierarchy, no operator who sees more by status. Whoever holds the
 board has it; when they stand down they don't outrank anyone.
 
-## 12. The field never hard-depends on the watch
+## 12. Safety independence, not capability independence
 
-Dark is survivable. Cached directory, playbooks, local logging, SMS duress fallback. The
-watch makes an operator more effective; its absence must never leave them worse off than
-carrying no app at all.
+Dark is survivable: cached directory, playbooks, local logging, duress fallback. Running
+without a watch must never leave an operator worse off than carrying no app at all.
+
+It does leave them substantially less capable — `Query` is the central value of the watch
+and it requires one. Say that honestly rather than implying Dark is equivalent.
 
 ## 13. Honest retention, honest propagation
 

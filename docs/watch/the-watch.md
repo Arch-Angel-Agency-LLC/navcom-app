@@ -52,15 +52,19 @@ a *condition of the on-call role* — being on-call means being reachable, and t
 whole content of the commitment. An operator who won't register a channel isn't on-call,
 which is a legitimate choice. See [`../product/opt-ins.md`](../product/opt-ins.md).
 
-1. **Page every on-call operator** through the channel each of them registered. No triage,
-   no filtering, no assessment
-2. **No acknowledgement inside the window** → continue down the on-call roster
-3. **Roster exhausted** → the operator's own emergency contact, if they set one.
-   Device-initiated where the phone is responsive; from the box where the operator opted
-   into storing the number
-4. **Nothing left** → say so plainly: *"couldn't reach anyone."* Never silence
-5. **Report every step to the operator as it happens** — "paging", "no answer, trying
-   next", "couldn't reach anyone"
+1. **Page every on-call operator at once**, through the channel each registered. Parallel,
+   not serial — in an emergency you want everyone, and walking a roster one at a time
+   wastes the only resource that matters. No triage, no filtering, no assessment
+2. **No acknowledgement inside the window** → the operator's own emergency contact, if
+   they set one. Device-initiated where the phone is responsive; from the box where the
+   operator opted into storing the number
+3. **Nothing left** → say so plainly: *"couldn't reach anyone."* Never silence
+4. **Report every step to the operator as it happens** — "paging 2 on-call", "no answer,
+   trying your contact", "couldn't reach anyone"
+
+Acknowledgement means a human explicitly accepting. Delivery receipts and app-opens don't
+count — someone whose phone buzzed is not someone who woke up. Full state machine in
+[`../spec/escalation.spec.md`](../spec/escalation.spec.md).
 
 An operator in trouble who knows nobody is coming can act on that. One who believes help
 is en route when it isn't isn't merely unhelped; they're misled at the worst possible
@@ -111,5 +115,27 @@ Dark is survivable and the Field Terminal must stay genuinely useful in it:
 - Duress falls back to SMS to the operator's own contact
 - Everything logged locally, synced when a watch comes back up
 
-**Design rule: the field never hard-depends on the watch.** The watch makes an operator
-more effective; its absence must never make them less safe than having no app at all.
+**Design rule: safety independence, not capability independence.**
+
+Running Dark must never leave an operator worse off than carrying no app at all — the
+safety kit, the cached directory and the playbooks all still work.
+
+It does leave them substantially **less capable**. `Query` is the central value of the
+watch and it requires a watch; without one the terminal is a cached directory searched
+one-handed in the cold, which is exactly the problem the watch exists to solve. Say that
+honestly rather than implying Dark is equivalent.
+
+## Watch accountability
+
+The watch is the highest-privilege position in the system: it sees who is out, where, and
+when. That access is granted on trust, and trust needs a check.
+
+- **Watch actions are logged and reviewable by the operators they concern** — acked,
+  answered, marked overdue, contacted, escalated, and the inaction where an overdue passed
+  untouched
+- The log records **actions, never positions**. Reviewing a watch shows *"acknowledged
+  your sign-on 21:04, answered your query 22:41, no escalation"* — not a movement history
+- **An operator may decline to sign on under a specific watch**, silently, without
+  explanation, and without the watch being told
+
+Tier detail in [`../product/data-tiers.md`](../product/data-tiers.md).

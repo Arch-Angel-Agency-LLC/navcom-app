@@ -83,7 +83,9 @@ doxxed.
 *"Show me exactly what leaves my phone or I'm not installing it."*
 
 → **Requires:** every network call explainable and auditable via proxy. No analytics, no
-third-party push. Documented data tiers. Win him and adoption follows.
+third-party telemetry. Documented data tiers, and an honest inventory of what the node
+holds. Push only where he opted into escalation paging himself. Win him and adoption
+follows.
 
 ### 9. Cusp of Revolution — Scorpio (Water Fixed) + Sagittarius (Fire Mutable)
 **The Protest Medic.** Street medic and legal observer at demonstrations.

@@ -11,14 +11,20 @@ Non-negotiable. A design that violates one of these is wrong regardless of its m
 
 | | Constraint | Source |
 |---|---|---|
-| **H1** | No data about the people being served — no field, no convention, no exception | Medic, ethics |
+| **H1** | No data about the people being served — no field, no convention, no exception* | Medic, ethics |
 | **H2** | Panic wipe destroys the wipeable tier completely; identity survives | Protest Medic |
 | **H3** | No legal names anywhere. Contact details only where an operator opts in for themselves | Skeptic, Convert |
 | **H4** | Duress is always deliberate, never inferred from silence | Heart |
 | **H5** | Volatile data displays its age; stale reads "call first" | Medic |
 | **H6** | Runs on a prepaid Android 8 with ~400MB free | Convert |
 | **H7** | Knowledge layer fully usable offline | Outpost |
-| **H8** | Every network call auditable; no third-party analytics or push | Skeptic |
+| **H8** | Every network call auditable; no third-party analytics. No push except opt-in `Distress` paging to on-call operators | Skeptic |
+
+\* **H1 is a rule about what the system offers, not something software can enforce.**
+Field notes are free text and an operator can write anything. What the design guarantees
+is that no field, schema, or feature ever invites it — and that guidance says so plainly.
+Claiming enforcement we don't have would be the kind of overclaim this project keeps
+catching.
 
 ## Design constraints
 
@@ -116,6 +122,11 @@ state are the network's complete operational picture. Local inference only.
 
 **C27 — The board is Live, never stored.** Watch state hands over or expires. There is no
 queryable history of who was out where.
+
+*Resolves against C33 by separation:* the **board** (who's out, where, now) is Live and
+expires. The **accountability log** (what the watch did — acked, answered, escalated) is
+append-only and retained, and records actions without positions, areas, or query text.
+Spec in [`../spec/watch-state.spec.md`](../spec/watch-state.spec.md).
 
 **C28 — Watch is shareable.** Answering queries must be possible without holding the whole
 board, so operators who can't commit a full shift can still contribute their knowledge.

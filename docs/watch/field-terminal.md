@@ -53,8 +53,10 @@ Those live on the console, or nowhere.
 With no watch and no signal, the terminal still does real work: cached directory,
 playbooks, local logging, and duress falling back to SMS to the operator's own contact.
 
-**The field never hard-depends on the watch.** The watch makes an operator more
-effective; its absence must never leave them worse off than carrying no app at all.
+**Safety independence, not capability independence.** Running Dark must never leave an
+operator worse off than carrying no app at all — but it does leave them substantially less
+capable, because `Query` is the point of having a watch. Dark is survivable, not
+equivalent.
 
 ## Safety actions
 

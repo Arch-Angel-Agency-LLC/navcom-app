@@ -68,13 +68,16 @@ an operational question or it doesn't exist.
 **Watch is a post, not a rank.** No clearance levels, no hierarchy, no operator who sees
 more by status.
 
-**Pseudonymity is architectural.** No legal names. Keys on device. Nothing on a server
-worth seizing. An operator may waive protections for themselves — an emergency contact, a
-paging channel, a recovery method — but never for a third party.
+**Pseudonymity is architectural.** No legal names. Keys on device. No persisted position
+history, no social graph, no legal identities — and `principles.md` states plainly what
+the node *does* hold rather than claiming there's nothing worth seizing. An operator may
+waive protections for themselves, never for a third party.
 
 ## Documentation
 
 ```
+CLAUDE.md                          Operating brief — scope, invariants, anti-patterns
+docs/spec/                         Normative specs (MVP surface only)
 docs/vision.md                     Where this is going
 docs/principles.md                 Design rules, and how conflicts resolve
 docs/watch/the-watch.md            Roles, states, duty, escalation, qualification

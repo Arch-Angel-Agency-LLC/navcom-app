@@ -8,6 +8,7 @@ either useless (nothing accumulates) or dangerous (everything is retained).
 | **Accruing** | Permanent | Device + operator-held backup | Survives | Losing it |
 | **Live** | Minutes to hours | Relay, ephemeral | N/A — already gone | Persisting it |
 | **Wipeable** | Until wiped | Device only | **Destroyed** | Retaining it |
+| **Accountability** | 90 days | Node, append-only | Survives | Recording positions in it |
 | **Collective** | Permanent | Shared, public-ish | Survives | Going stale |
 
 ---
@@ -64,6 +65,28 @@ anything about tonight.
 
 Design test: *if this phone is taken, what does it give up?* Ideally nothing beyond the
 existence of the app.
+
+## Accountability — the thing that keeps the watch honest
+
+What the watch and the agent *did*. Append-only, retained 90 days by default, and
+deliberately separate from the board.
+
+```
+timestamp · actor · actor_kind · action · subject · outcome
+```
+
+- Records **actions, never positions.** No areas, no query text, no movement
+- Each operator can review entries where they are the subject
+- Agent inaction is logged too — an overdue that passed without contact is an entry
+- Survives panic wipe; destroyed by burn
+
+**Why it exists:** the watch is the highest-privilege position in the system, and an
+operator who signed on under someone should be able to see what that someone did with the
+board. Without this, "trust the watch" is an assertion rather than a check.
+
+**Why it isn't the board:** the board expires because a queryable history of who was out
+where is the artifact most dangerous to this community. Actions can be retained safely;
+positions cannot.
 
 ## Collective — the thing everyone builds
 
