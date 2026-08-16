@@ -68,8 +68,9 @@ an operational question or it doesn't exist.
 **Watch is a post, not a rank.** No clearance levels, no hierarchy, no operator who sees
 more by status.
 
-**Pseudonymity is architectural.** No legal names, phone numbers or email anywhere in the
-system. Keys on device. Nothing on a server worth seizing.
+**Pseudonymity is architectural.** No legal names. Keys on device. Nothing on a server
+worth seizing. An operator may waive protections for themselves — an emergency contact, a
+paging channel, a recovery method — but never for a third party.
 
 ## Documentation
 
@@ -86,6 +87,7 @@ docs/product/data-tiers.md         Four tiers with opposing retention rules
 docs/product/visibility.md         Ghost / Team / Open, and the switches underneath
 docs/product/directory-schema.md   Resource schema, intake taxonomy, staleness model
 docs/product/funding.md            Pseudonymous support without a donation platform
+docs/product/opt-ins.md            Everything the system could hold about you
 docs/product/propagation.md        How the network grows, and how it never grows
 docs/research/lore.md              Fiction as design source — read this first
 docs/research/archetypes.md        Twelve field-operator archetypes

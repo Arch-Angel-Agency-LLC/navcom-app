@@ -13,7 +13,7 @@ Non-negotiable. A design that violates one of these is wrong regardless of its m
 |---|---|---|
 | **H1** | No data about the people being served — no field, no convention, no exception | Medic, ethics |
 | **H2** | Panic wipe destroys the wipeable tier completely; identity survives | Protest Medic |
-| **H3** | No legal names, phone numbers or email addresses anywhere in the system | Skeptic, Convert |
+| **H3** | No legal names anywhere. Contact details only where an operator opts in for themselves | Skeptic, Convert |
 | **H4** | Duress is always deliberate, never inferred from silence | Heart |
 | **H5** | Volatile data displays its age; stale reads "call first" | Medic |
 | **H6** | Runs on a prepaid Android 8 with ~400MB free | Convert |
@@ -148,6 +148,25 @@ sync.
 whoever runs the relay.
 
 **C37 — Allied interop is time-boxed and op-scoped.** Federation without membership.
+
+**C38 — An operator may waive protections for themselves; never for a third party.** Own
+contact details are theirs to trade for capability. Data about people being served is
+not, because they never consented and aren't in the room to choose.
+
+**C39 — Every opt-in is off by default, honestly priced at the point of decision,
+encrypted, scoped, revocable and auditable.** The app is fully functional with all of
+them off, and nothing implies otherwise.
+
+**C40 — A paging channel is a condition of the on-call role.** Being on-call means being
+reachable; without a channel the escalation ladder is a promise that cannot be kept.
+Declining to register one means not being on-call, which is legitimate.
+
+**C41 — Engagement notifications are banned; safety paging is not.** Conflating them left
+the ladder unable to wake anyone. Only `Distress` escalation may page, and only operators
+who asked to be reachable.
+
+**C42 — The escalation ladder may fail, but never quietly.** No contact and an empty
+roster still produces the truth: "couldn't reach anyone."
 
 ---
 

@@ -82,9 +82,16 @@ This binds agents hardest — a wrong answer carries unearned authority coming f
 ## 10. Pseudonymity is architectural
 
 The realistic threat is doxxing, stalking and harassment. Security effort goes into **not
-holding identifying data**: no legal names, phone numbers or email; keys on device; no
-central social graph; no third-party push; local inference only; nothing on a server
-worth seizing.
+holding identifying data**: no legal names; keys on device; no central social graph; local
+inference only; nothing on a server worth seizing.
+
+**This is a strong default, not a wall an operator can't open.** An operator may waive
+protections *for themselves* — an emergency contact, a paging channel, a recovery
+method — when the capability is worth the exposure to them. Nobody may waive them for a
+third party, which is why rule 5 stays absolute and this one doesn't.
+
+Every such choice is off by default, honestly priced at the point of decision, encrypted,
+scoped, revocable and auditable. See [`product/opt-ins.md`](./product/opt-ins.md).
 
 ## 11. Watch is a post, not a rank
 
@@ -102,6 +109,11 @@ carrying no app at all.
 The system earns opens by reflecting something real — a signal awaiting response, someone
 out tonight. Never manufactured urgency: no streaks, badges, leaderboards, or absence
 commentary.
+
+**Engagement notifications are banned; safety paging is not.** The distinction matters —
+conflating them once left the escalation ladder with no way to wake anyone. An on-call
+operator being paged for a `Distress` has explicitly asked to be reachable. Nothing else
+in the system may notify anyone about anything.
 
 Growth follows existing trust paths. No referral rewards, invite quotas, contact upload,
 or standing that depends on recruitment.

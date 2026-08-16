@@ -51,11 +51,15 @@ end of the line when someone is in trouble.
 
 On `Distress`, with no triage, filtering or assessment:
 
-1. Wake the on-call human immediately
-2. No answer inside the window → page the next on the roster
-3. Roster exhausted → fall back to the operator's own SMS emergency contact
-4. **Tell the operator what is happening at every step** — "paging", "no answer, trying
-   next", "couldn't reach anyone, falling back to your contact"
+1. Page every on-call operator through their registered channel
+2. No acknowledgement inside the window → continue down the roster
+3. Roster exhausted → the operator's emergency contact, if they set one
+4. Nothing left → say so plainly. **The ladder may fail; it may not fail quietly**
+5. **Tell the operator what is happening at every step** — "paging", "no answer, trying
+   next", "couldn't reach anyone"
+
+Full ladder in [`the-watch.md`](./the-watch.md). The agent executes it; it never decides
+whether to.
 
 An operator who knows nobody is coming can act on that. One who believes help is en route
 when it isn't has been misled at the worst possible moment.

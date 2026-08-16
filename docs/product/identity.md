@@ -129,13 +129,20 @@ stranger; it does not establish that someone is safe.
 
 ## Recovery
 
-A lost or seized phone must not erase years of standing.
+A lost or seized phone must not erase years of standing. Three options, all opt-in, none
+required — see [`opt-ins.md`](./opt-ins.md).
 
-- Identity and endorsements export as an encrypted operator-held backup — a file or a
-  printed recovery code, kept wherever the operator chooses
-- No server-side recovery, because that would require an account, which would require
-  identifying information
-- The tradeoff is stated plainly at persona creation: **no backup means no recovery**
+- **Operator-held backup.** Identity and endorsements export as an encrypted file or
+  printed recovery code, kept wherever the operator chooses. No third party involved
+- **Social recovery.** Shares distributed among operators who have endorsed you; a
+  threshold of them can restore your persona. Fits a network already built on
+  endorsement, and needs no server to hold anything
+- **Nothing.** A legitimate choice, stated plainly at persona creation: **no recovery
+  method means no recovery**
+
+There is no account-based recovery, because an account would require identifying
+information. But "we don't hold an account" was never a reason to let someone lose a
+decade of standing to a dropped phone — the operator chooses their own tradeoff.
 
 ## Panic wipe, burn, and what endorsements expose
 

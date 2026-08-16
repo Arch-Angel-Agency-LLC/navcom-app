@@ -45,13 +45,29 @@ watching when none is.
 **A `Distress` signal must terminate in a human, or tell the operator it couldn't.**
 
 This is the one rule automation does not get to relax. The agent's job in an emergency is
-to raise someone, not to handle it:
+to raise someone, not to handle it.
 
-1. Wake the on-call human immediately. No triage, no filtering, no assessment
-2. If no answer within the response window, page down the on-call roster
-3. If the roster is exhausted, fall back to the operator's own SMS emergency contact
-4. **Tell the operator what happened at every step.** "Paging" then "no answer, trying
-   next" then "couldn't reach anyone — falling back to your contact"
+**The ladder only works if someone can actually be woken.** A paging channel is therefore
+a *condition of the on-call role* — being on-call means being reachable, and that's the
+whole content of the commitment. An operator who won't register a channel isn't on-call,
+which is a legitimate choice. See [`../product/opt-ins.md`](../product/opt-ins.md).
+
+1. **Page every on-call operator** through the channel each of them registered. No triage,
+   no filtering, no assessment
+2. **No acknowledgement inside the window** → continue down the on-call roster
+3. **Roster exhausted** → the operator's own emergency contact, if they set one.
+   Device-initiated where the phone is responsive; from the box where the operator opted
+   into storing the number
+4. **Nothing left** → say so plainly: *"couldn't reach anyone."* Never silence
+5. **Report every step to the operator as it happens** — "paging", "no answer, trying
+   next", "couldn't reach anyone"
+
+An operator in trouble who knows nobody is coming can act on that. One who believes help
+is en route when it isn't isn't merely unhelped; they're misled at the worst possible
+moment.
+
+**An operator with no emergency contact and an empty roster still gets the truth.** The
+ladder is allowed to fail. It is not allowed to fail quietly.
 
 An operator in trouble who knows nobody is coming can act on that. One who believes help
 is en route when it isn't isn't merely unhelped; they're misled at the worst possible
