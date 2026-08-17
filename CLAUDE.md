@@ -60,6 +60,36 @@ de-escalation expertise. **Do not generate playbook content.** The Medic archety
 trigger is confident wrong guidance, and plausible-sounding safety content is worse than
 none.
 
+## Session 1 — definition of done
+
+Build the smallest thing that proves the loop. **No UI.** A node process and a CLI client.
+
+Read [`docs/spec/bootstrap.spec.md`](docs/spec/bootstrap.spec.md) first — identity and
+config are decided there, don't re-derive them.
+
+Done when all of these pass, by hand, against a public relay:
+
+1. Node starts, generates or loads the Watchtower key, publishes `10910` with
+   `state: automated`
+2. Client sends `on-station` (area, 2h duration) → appears on the board within **2s**
+3. Board entry shows callsign, area, `expected_until`, `last_contact`
+4. Client sends `query` → receives `20912` within **5s** with `responder_kind` set
+5. Client sends `stood-down` → entry clears from the board
+6. Kill the node → client renders **dark** (absence of `10910` is Dark, not ambiguity)
+7. Restart the node → board is empty. **It must not have persisted** [C27]
+
+Point 7 is a real test, not a formality. If board state survives a restart, the design has
+already drifted.
+
+Answers may be hardcoded at this stage. Wiring Mecha Jono in is session 2, and it is one
+function call — everything in [`docs/watch/agents.md`](docs/watch/agents.md) is about what
+happens *around* that call, not inside it.
+
+**Escalation is not in session 1**, and when it comes it does not get the same treatment:
+write the seven failure-mode tests in
+[`docs/spec/escalation.spec.md`](docs/spec/escalation.spec.md) before shipping it. Move
+fast on the loop; be careful on the ladder.
+
 ## Invariants
 
 Never violated, no exceptions, no configuration:

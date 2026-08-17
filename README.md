@@ -77,7 +77,7 @@ waive protections for themselves, never for a third party.
 
 ```
 CLAUDE.md                          Operating brief — scope, invariants, anti-patterns
-docs/spec/                         Normative specs (MVP surface only)
+docs/spec/                         Normative specs (MVP surface only) — bootstrap first
 docs/vision.md                     Where this is going
 docs/principles.md                 Design rules, and how conflicts resolve
 docs/watch/the-watch.md            Roles, states, duty, escalation, qualification

@@ -19,6 +19,7 @@ confident format.
 
 | | |
 |---|---|
+| [`bootstrap.spec.md`](./bootstrap.spec.md) | Identity, config, discovery — **read first** |
 | [`signals.spec.md`](./signals.spec.md) | Event kinds, payloads, encryption, acknowledgement |
 | [`watch-state.spec.md`](./watch-state.spec.md) | Board model, TTLs, overdue, handover |
 | [`escalation.spec.md`](./escalation.spec.md) | The ladder as a state machine |
