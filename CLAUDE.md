@@ -34,7 +34,8 @@ Order: **node + agent → field terminal → console.**
 
 | | Decision | Status |
 |---|---|---|
-| Field Terminal | PWA. No app store, cross-platform from one codebase, instant updates, no FCM in the loop, and it fits the device floor | Decided |
+| Field Terminal | PWA at `navcom.app` — try instantly, no install, fully capable. Cross-platform from one codebase, instant updates, fits the device floor | Decided |
+| Native mobile | Android/iOS at Mk1, for the two things a PWA **cannot** do: `Distress` from a locked screen [signals.spec] and SMS duress fallback when Dark. Not a capability tier — the web app stays complete | Decided, deferred |
 | UI framework | Svelte — existing team competence, small bundles | Decided |
 | Console | Web app, same delivery. Desktop-shaped, not a large terminal | Decided |
 | Node services | Language open; pick what integrates with Mecha Jono most directly | **Open** |
@@ -44,6 +45,15 @@ Order: **node + agent → field terminal → console.**
 **Escalation executor is a separate process from the agent.** Non-negotiable — see
 [`docs/watch/agents.md`](docs/watch/agents.md). A compromised agent must not be able to
 impair escalation.
+
+**Signal, crypto and board logic go in a shared core before any client is written.** Three
+surfaces — web, Android, iOS — over one library, so a payload change is one edit rather
+than three. Decide this before the first client, not after the second.
+
+**The install prompt is where every banned pattern would re-enter.** No banners, no "get
+the app," no feature withheld to pressure an install. The only honest pitch is the true
+one, stated once where it's relevant: *installing adds lock-screen `Distress` and SMS
+fallback.* An operator who stays on the web is a complete operator [C1, principle 6].
 
 ### Two roles the design requires a human for
 
