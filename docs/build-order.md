@@ -42,16 +42,24 @@ against a public relay. Definition of done in [`../CLAUDE.md`](../CLAUDE.md).
 no keys, no relay, no daemon — which is what makes it the correct parallel work rather
 than a distraction from the build order.
 
-| | Step | Notes |
+| | Step | Status |
 |---|---|---|
-| A1 | Scaffold | SvelteKit, static adapter, in `web/`. Budgets per [`delivery.md`](delivery.md) |
-| A2 | Directory core | Schema types, CSV→JSON at build, per-field-group staleness, derived confidence. Pure logic, unit tested |
-| A3 | Directory UI | All six display rules literally. Rule 4 is a stated gap |
-| A4 | Docs surface | Renders the repo markdown |
-| A5 | Status page | Reads *"escalation not yet built — no drills run"* until it isn't. Omits holder callsign |
-| A6 | Deploy | Static host |
+| A1 | Scaffold — SvelteKit, static adapter, in `web/` | **done** |
+| A2 | Directory core — staleness, confidence, parsing. Pure logic, 30 tests | **done** |
+| A3 | Directory UI — all six display rules. Rule 4 is a stated gap | **done** |
+| A4 | Docs surface — renders the repo markdown at build time | **done** |
+| A5 | Status page — says *"escalation not built, no drills run"* until it isn't | **done** |
+| A6 | Deploy | needs a host |
 
-A1 and A2 depend on no outstanding decision and can start immediately.
+`npm run verify` in `web/` runs tests, build and budget together.
+
+**Measured:** 37 pages, worst page 8.0 kB gzipped, **zero JavaScript delivered** — every
+page works with scripting disabled. Budget is enforced by `web/scripts/budget.mjs`, which
+measures what a browser downloads for a page rather than what sits in `build/`; those
+differ sharply here, because the client build still emits chunks no page ever loads.
+
+**What is left before this is a real site:** directory data, and a host. Everything else
+works.
 
 ## Gated on session 1 passing
 

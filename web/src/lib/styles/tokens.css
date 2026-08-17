@@ -1,0 +1,130 @@
+/*
+ * Design tokens.
+ *
+ * Contrast is pushed harder than the documents this shares an identity with, because the
+ * reader may be outdoors, on a cheap screen, in sun or in the dark. Legibility beats
+ * elegance every time here.
+ */
+
+:root {
+  --ground: #f1f3f5;
+  --surface: #ffffff;
+  --sunk: #e7eaee;
+  --ink: #12161c;
+  --muted: #4e5661;
+  --faint: #767f8c;
+  --line: #ccd2d9;
+  --line-strong: #a8b0ba;
+
+  --accent: #8a5406;
+  --accent-soft: #f7edda;
+  --ok: #235c40;
+  --ok-soft: #dfeee7;
+  --stop: #8f3025;
+  --stop-soft: #f8e5e2;
+
+  --font-display: "Iowan Old Style", Charter, "Bitstream Charter", Georgia, serif;
+  --font-body: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+
+  --measure: 40rem;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --ground: #0f1318;
+    --surface: #161b22;
+    --sunk: #0a0e12;
+    --ink: #e7eaef;
+    --muted: #9aa3b0;
+    --faint: #6f7885;
+    --line: #272e38;
+    --line-strong: #3c4450;
+
+    --accent: #eaa645;
+    --accent-soft: #2b2114;
+    --ok: #62c191;
+    --ok-soft: #14261e;
+    --stop: #e57e6d;
+    --stop-soft: #2b1814;
+  }
+}
+
+:root[data-theme="dark"] {
+  --ground: #0f1318;
+  --surface: #161b22;
+  --sunk: #0a0e12;
+  --ink: #e7eaef;
+  --muted: #9aa3b0;
+  --faint: #6f7885;
+  --line: #272e38;
+  --line-strong: #3c4450;
+
+  --accent: #eaa645;
+  --accent-soft: #2b2114;
+  --ok: #62c191;
+  --ok-soft: #14261e;
+  --stop: #e57e6d;
+  --stop-soft: #2b1814;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  background: var(--ground);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 17px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+a { color: var(--accent); text-underline-offset: 2px; }
+a:focus-visible, :focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+
+h1, h2, h3 { font-family: var(--font-display); font-weight: 600; text-wrap: balance; margin: 0; }
+p { margin: 0; }
+ul { margin: 0; padding: 0; list-style: none; }
+
+.wrap {
+  max-width: 48rem;
+  margin: 0 auto;
+  padding: 0 1.1rem 5rem;
+}
+
+.eyebrow {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.mono { font-family: var(--font-mono); }
+
+/* Reusable notices ------------------------------------------------------- */
+
+.notice {
+  border: 1px solid var(--line-strong);
+  background: var(--surface);
+  padding: 0.9rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  font-size: 0.94rem;
+}
+.notice--warn { border-color: var(--accent); background: var(--accent-soft); }
+.notice--stop { border-color: var(--stop); background: var(--stop-soft); color: var(--stop); }
+.notice__label {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
