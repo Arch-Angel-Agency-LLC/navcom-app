@@ -4,6 +4,12 @@ A stress-testing roster for field operations tooling. Deliberately weighted towa
 operators who refuse, break or abandon software, because that's what surfaces
 requirements early.
 
+The operators are [RLSH and volunteer patrol networks](../positioning.md) — people who go
+out under a callsign, on their own time, with no agency behind them. The roster was built
+against street outreach work, which is what most of them are actually doing when they're
+out. Four of the twelve are RLSH-native as written — the Ghost, the Skeptic, the Protest
+Medic, the Public Face — and the rest hold because it's the same night.
+
 Structured on zodiac cusp pairings (element + modality) as the Archangel Agency class
 convention. The astrology is scaffolding; the requirements are the point.
 

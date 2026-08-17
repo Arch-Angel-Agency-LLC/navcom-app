@@ -97,11 +97,17 @@ The quality bar is set by whoever has the most demanding feed. If it isn't good 
 for them to post, propagation doesn't happen at all — which makes visual design the
 mechanism here, not decoration.
 
-### 3. Export to Herocore
+### 3. Export to Herocore — primary
 
 Op logs export in a form the community's existing hub accepts. Every exported log lands
 where the entire community already reads, which is propagation through the incumbent
 rather than against it.
+
+**Primary because the audience is already there.**
+[Herocore](../research/prior-art.md) is where RLSH post patrol logs today, which makes it
+the shortest path between NavCom existing and the people it's built for knowing that it
+does. It also sets the relationship correctly: NavCom captures the patrol as it happens
+and hands the record to where the community already gathers. Complement, never compete.
 
 ### 4. In-person QR join
 
@@ -119,8 +125,12 @@ propagation is a side effect of the features being good.
 Resource data readable on the open web without installing anything.
 
 Outreach workers, street medics and mutual aid groups find it useful on its own terms;
-some become operators. It also makes the project legible to people who would never
-install something described as a superhero app.
+some become operators.
+
+**This is the bridge, not an apology.** NavCom is built for
+[RLSH](../positioning.md) and says so plainly. The directory is the part that's useful to
+anyone facing the same night — no install, no account, readable on the open web — which
+reaches adjacent communities on their own terms without diluting who the app is for.
 
 ---
 

@@ -7,6 +7,7 @@ Background that informs the design. Useful as input, not as authority.
 | | |
 |---|---|
 | [`lore.md`](./lore.md) | **Read first.** Fiction as design source, and why |
+| [`what-fiction-skips.md`](./what-fiction-skips.md) | The problems no story has to solve — where original design lives |
 | [`archetypes.md`](./archetypes.md) | Twelve field-operator archetypes for stress-testing designs |
 | [`ecosystem-roster.md`](./ecosystem-roster.md) | Watch, analysts, agents, infrastructure, outside, adversaries |
 | [`constraints.md`](./constraints.md) | What those stresses demand of any feature |
@@ -14,8 +15,9 @@ Background that informs the design. Useful as input, not as authority.
 
 ## How to use the archetypes
 
-They're a **stress-testing device**, constructed from published material about volunteer
-street outreach — not interviews, not evidence about real people.
+They're a **stress-testing device**, constructed from published material about real-life
+superhero and volunteer street outreach communities — not interviews, not evidence about
+real people.
 
 The correct use is: *design a feature, then check it against the twelve to find what
 breaks.* Breakage tells you what the feature needs — a visibility setting, an offline

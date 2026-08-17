@@ -1,9 +1,9 @@
 # NavCom
 
-**The Watchtower.** Someone is always on watch while operators are out.
+**The Watchtower** — non-institutional dispatch for volunteer patrol networks.
 
-Not an app people check. A post someone holds, and a terminal in the pocket of whoever's
-on the street.
+Someone is always on watch while operators are out. Not an app people check: a post
+someone holds, and a terminal in the pocket of whoever's on the street.
 
 ---
 
@@ -77,9 +77,12 @@ waive protections for themselves, never for a third party.
 
 ```
 CLAUDE.md                          Operating brief — scope, invariants, anti-patterns
+docs/positioning.md                What this is and who it's for — hand this to someone
 docs/spec/                         Normative specs (MVP surface only) — bootstrap first
 docs/vision.md                     Where this is going
 docs/principles.md                 Design rules, and how conflicts resolve
+docs/ecosystem.md                  Starcom, NavCom, and the Earth Intelligence Network
+docs/lineage.md                    Where the ideas came from, and what we didn't take
 docs/watch/the-watch.md            Roles, states, duty, escalation, qualification
 docs/watch/signals.md              The protocol — six signals, defined responses
 docs/watch/console.md              The Console, and the box it runs on
@@ -99,9 +102,12 @@ docs/research/constraints.md       What those stresses demand
 docs/research/prior-art.md         What exists, and what it teaches
 ```
 
-New here? Read [`docs/research/lore.md`](./docs/research/lore.md) before proposing
-anything. It explains why this isn't shaped like the software you're used to, and what
-happens if someone "fixes" that.
+New here? Start with [`docs/positioning.md`](./docs/positioning.md) — what this is, who
+it's for, and what it deliberately isn't.
+
+Before proposing anything, read [`docs/research/lore.md`](./docs/research/lore.md). It
+explains why this isn't shaped like the software you're used to, and what happens if
+someone "fixes" that.
 
 ---
 

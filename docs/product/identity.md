@@ -21,6 +21,12 @@ What does not exist, anywhere in the system: legal name, phone number, email add
 date of birth, home location, employer, photograph of the operator's face unless they
 deliberately upload one as their emblem.
 
+**Callsign and emblem are the operator's real working identity, not a privacy wrapper.**
+People in this community already work under a name and a mark, often for years before
+encountering NavCom. The pseudonymity is a genuine safety property — but the persona is
+not a stand-in for some truer identity being concealed. It *is* the identity the work is
+done under, and the app treats it with that weight.
+
 There is no account. The keypair generated on the device **is** the identity. Nothing is
 registered with anyone; nothing can be revoked by anyone.
 
