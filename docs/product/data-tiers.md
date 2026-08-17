@@ -78,7 +78,10 @@ timestamp · actor · actor_kind · action · subject · outcome
 - Records **actions, never positions.** No areas, no query text, no movement
 - Each operator can review entries where they are the subject
 - Agent inaction is logged too — an overdue that passed without contact is an entry
-- Survives panic wipe; destroyed by burn
+- **Survives both panic wipe and burn.** It lives on the node, not the device, so no
+  operator action reaches it — and that is deliberate rather than a limitation. A log the
+  watch could cause to be erased would not be a check on the watch [C33]. It expires on
+  its own retention clock and nothing else
 
 **Why it exists:** the watch is the highest-privilege position in the system, and an
 operator who signed on under someone should be able to see what that someone did with the

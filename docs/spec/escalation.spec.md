@@ -112,7 +112,9 @@ A drill MUST be distinguishable from a real distress by the recipient. Producing
 fatigue in the name of testing would defeat the purpose.
 
 **A watch that cannot demonstrate a passing drill is presumed broken**, and the watch
-state degrades until one passes.
+state degrades until one passes. Concretely: `10910` carries `last_drill`, and
+`automated-oncall` publishes as `automated` while the last drill failed or none has run.
+See [`watch-state.spec.md`](./watch-state.spec.md).
 
 Result language: `no evidence of failure` — never `verified` [C32]. A passing drill means
 the path worked this time.

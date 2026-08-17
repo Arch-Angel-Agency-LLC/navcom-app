@@ -73,10 +73,6 @@ moment.
 **An operator with no emergency contact and an empty roster still gets the truth.** The
 ladder is allowed to fail. It is not allowed to fail quietly.
 
-An operator in trouble who knows nobody is coming can act on that. One who believes help
-is en route when it isn't isn't merely unhelped; they're misled at the worst possible
-moment.
-
 ## Duty
 
 **Taking watch.** Explicit and ceremonial. You go on station, the board is yours, and

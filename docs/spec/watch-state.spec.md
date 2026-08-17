@@ -14,13 +14,24 @@ before signing on [C23, invariant 4].
   "holder_kind": "human | agent | null",
   "oncall_count": 2,
   "since": 1755300000,
-  "agent_health": "ok | degraded | down"
+  "agent_health": "ok | degraded | down",
+  "last_drill": { "at": 1755300000, "result": "pass | fail" }
 }
 ```
 
 - `holder_kind` MUST be accurate. An agent MUST NOT be published as `human` [C25]
 - `agent_health: degraded` MUST NOT be published as `ok`. A degraded agent presenting as
   working is the failure this field exists to prevent
+- **`oncall_count` MUST count only operators the ladder could page right now.** An
+  operator whose sole channel is `console-open` with no console open is not counted
+  [C40]. When the count is zero the state MUST be `automated`, never `automated-oncall` —
+  publishing an on-call human the ladder cannot reach is the same class of failure as
+  publishing an agent as a human [C23, invariant 4]
+- **`last_drill` MUST reflect the most recent escalation drill** [C29], and is `null` when
+  none has run. A failed or absent drill means the escalation path is unproven, so
+  `automated-oncall` MUST be published as `automated` until a drill passes — the on-call
+  claim is exactly what a drill tests. `station` is unaffected, because a human is
+  genuinely present regardless of drill state
 - When the node is unreachable, clients render **`dark`** — absence of the event is not
   ambiguity, it is Dark
 
@@ -37,8 +48,12 @@ expected_until  timestamp
 routine_due     timestamp | null
 last_contact    timestamp
 position        {lat, lon, precision_m} | null
-status          active | overdue | distress | stood-down
+status          active | overdue | distress
 ```
+
+A `stood-down` signal is acknowledged and the entry is **removed** from the board.
+Stand-down is not a status an entry rests in, which is why it is absent above — the board
+holds who is out, and someone who has stood down is not out.
 
 ### Lifetimes
 
@@ -48,8 +63,8 @@ status          active | overdue | distress | stood-down
 |---|---|---|
 | Routine interval | 3600s | Set by operator at sign-on; `null` disables |
 | Overdue grace | 1800s | Past `expected_until`, or past `routine_due` |
-| Hard expiry | `expected_until + 14400s` | Entry is dropped regardless of state |
-| Distress hold | Until human closure | A `distress` entry MUST NOT expire automatically |
+| Hard expiry | `expected_until + 14400s` | Entry is dropped — **except** `status = distress` |
+| Distress hold | Until human closure | A `distress` entry MUST NOT expire automatically, and MUST NOT be dropped by hard expiry |
 
 Hard expiry exists so a forgotten sign-on doesn't linger on the board forever. It is not
 a stand-down — the log records expiry, not a completed op.

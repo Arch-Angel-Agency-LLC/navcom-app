@@ -38,8 +38,8 @@ Order: **node + agent → field terminal → console.**
 | UI framework | Svelte — existing team competence, small bundles | Decided |
 | Console | Web app, same delivery. Desktop-shaped, not a large terminal | Decided |
 | Node services | Language open; pick what integrates with Mecha Jono most directly | **Open** |
-| Relay topology | Public relays (zero ops, works now) vs. self-hosted RelayNode (metadata control) | **Open** |
-| Accountability log storage | Append-only, node-local, 90 days | Implementation detail |
+| Relay topology | Public relays for MVP; self-hosted RelayNode at Mk1 — decided in [`bootstrap.spec.md`](docs/spec/bootstrap.spec.md) | Decided |
+| Accountability log storage | Append-only, node-local, 90 days. Record format in [`watch-state.spec.md`](docs/spec/watch-state.spec.md) | Implementation detail |
 
 **Escalation executor is a separate process from the agent.** Non-negotiable — see
 [`docs/watch/agents.md`](docs/watch/agents.md). A compromised agent must not be able to
@@ -104,7 +104,8 @@ Never violated, no exceptions, no configuration:
 4. **The watch state is visible before sign-on.** An operator must never believe a human
    is watching when none is.
 5. **Agents are always identified as agents**, and never the sole responder to `Distress`.
-6. **Panic wipe destroys the Wipeable tier and nothing else.** Burn destroys everything.
+6. **Panic wipe destroys the Wipeable tier and nothing else.** Burn destroys everything on
+   the device. The node-side accountability log is outside both.
 7. **No legal names anywhere.** Contact details only where an operator opted in for
    themselves.
 8. **Volatile data shows its age.** Stale reads "call first"; blank reads "unknown."

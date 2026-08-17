@@ -60,8 +60,10 @@ Identity, standing, contributions and board time **accrue** — losing them is t
 Positions, incident logs and tonight's data are **wipeable** — retaining them is the
 failure. See [`product/data-tiers.md`](./product/data-tiers.md).
 
-Panic wipe destroys tonight and preserves the decade. Burn destroys everything, and only
-burn reaches endorsements — because they carry association data.
+Panic wipe destroys tonight and preserves the decade. Burn destroys everything **on the
+device**, and only burn reaches endorsements — because they carry association data. The
+node-side accountability log is outside both, deliberately: a log an operator could erase
+would not be a check on the watch.
 
 ## 8. Duress is deliberate; overdue only nudges
 
