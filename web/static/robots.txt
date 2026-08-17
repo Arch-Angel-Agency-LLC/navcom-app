@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+
+# The public resource directory is meant to be found. Everything else about NavCom
+# is deliberately not indexable, because there is nothing else here to index.

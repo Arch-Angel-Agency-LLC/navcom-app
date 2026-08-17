@@ -1,0 +1,209 @@
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { describe, expect, it } from 'vitest';
+
+import { confidenceForClass, confidenceForField, isSeeded } from './confidence';
+import { displayField, displayRecord, formatAge } from './display';
+import { parseCsv, parseDirectory, parseDirectoryOrThrow } from './parse';
+import type { ResourceRecord } from './types';
+import { ageInDays, seasonOf } from './volatility';
+
+const SEED_CSV = fileURLToPath(new URL('../../../../data/resources.seed.csv', import.meta.url));
+
+/** Fixed so these tests do not start failing with the passage of time. */
+const NOW = new Date('2026-08-17T12:00:00Z');
+
+function record(over: Partial<ResourceRecord> = {}): ResourceRecord {
+  return { id: 'x', name: 'X', type: 'shelter', flag: 'ok', ...over };
+}
+
+describe('parseCsv', () => {
+  it('handles quoted fields containing commas', () => {
+    const rows = parseCsv('a,b\n1,"hello, world"\n');
+    expect(rows[1]).toEqual(['1', 'hello, world']);
+  });
+
+  it('handles doubled quotes', () => {
+    const rows = parseCsv('a\n"she said ""go"""\n');
+    expect(rows[1]).toEqual(['she said "go"']);
+  });
+});
+
+describe('parseDirectory', () => {
+  const csv = readFileSync(SEED_CSV, 'utf8');
+
+  it('parses the seed file with no issues', () => {
+    const { records, issues } = parseDirectory(csv);
+    expect(issues).toEqual([]);
+    expect(records).toHaveLength(2);
+  });
+
+  it('splits pipe-delimited multi-values', () => {
+    const [shelter] = parseDirectoryOrThrow(csv);
+    expect(shelter.accepts).toEqual(['single_men', 'single_women']);
+    expect(shelter.languages).toEqual(['en', 'es']);
+  });
+
+  it('rejects an unknown enum value rather than defaulting it', () => {
+    const { issues } = parseDirectory('id,name,type,pets\na,A,shelter,maybe\n');
+    expect(issues).toHaveLength(1);
+    expect(issues[0].column).toBe('pets');
+  });
+
+  it('rejects a duplicate id — ids are never reused', () => {
+    const { issues, records } = parseDirectory('id,name,type\na,A,shelter\na,B,meal\n');
+    expect(records).toHaveLength(1);
+    expect(issues[0].message).toMatch(/duplicate/);
+  });
+
+  it('throws at build time rather than shipping a bad row', () => {
+    expect(() => parseDirectoryOrThrow('id,name,type\n,A,shelter\n')).toThrow(/required/);
+  });
+});
+
+describe('confidence', () => {
+  it('in_person within window is high', () => {
+    const r = record({ method: 'in_person', last_verified: '2026-08-14' });
+    expect(confidenceForClass(r, 'volatile', NOW)).toBe('high');
+  });
+
+  it('phone within window is medium', () => {
+    const r = record({ method: 'phone', last_verified: '2026-08-14' });
+    expect(confidenceForClass(r, 'volatile', NOW)).toBe('medium');
+  });
+
+  it('website within window is low', () => {
+    const r = record({ method: 'website', last_verified: '2026-08-14' });
+    expect(confidenceForClass(r, 'volatile', NOW)).toBe('low');
+  });
+
+  it('is per field-group, not per record', () => {
+    // 20 days old: past the 14-day volatile window, inside the 90-day slow window.
+    const r = record({ method: 'in_person', last_verified: '2026-07-28' });
+    expect(confidenceForClass(r, 'volatile', NOW)).toBe('stale');
+    expect(confidenceForClass(r, 'slow', NOW)).toBe('high');
+    expect(confidenceForClass(r, 'static', NOW)).toBe('high');
+  });
+
+  it('a non-ok flag overrides even a fresh in-person verification', () => {
+    const r = record({ method: 'in_person', last_verified: '2026-08-17', flag: 'reported_wrong' });
+    expect(confidenceForClass(r, 'static', NOW)).toBe('suspect');
+  });
+
+  it('treats a missing verification date as stale, not as low', () => {
+    expect(confidenceForClass(record({ method: 'in_person' }), 'static', NOW)).toBe('stale');
+  });
+
+  it('treats a missing method as stale, not as low', () => {
+    expect(confidenceForClass(record({ last_verified: '2026-08-17' }), 'static', NOW)).toBe('stale');
+  });
+
+  it('goes stale on season change even inside the 30-day window', () => {
+    // 2026-05-30 is spring; 2026-06-10 is summer. 11 days apart.
+    const r = record({ method: 'in_person', last_verified: '2026-05-30' });
+    expect(confidenceForClass(r, 'seasonal', new Date('2026-06-10T12:00:00Z'))).toBe('stale');
+    expect(confidenceForClass(r, 'slow', new Date('2026-06-10T12:00:00Z'))).toBe('high');
+  });
+
+  it('marks website and secondhand entries as seeded', () => {
+    expect(isSeeded(record({ method: 'website' }))).toBe(true);
+    expect(isSeeded(record({ method: 'secondhand' }))).toBe(true);
+    expect(isSeeded(record({ method: 'in_person' }))).toBe(false);
+  });
+});
+
+describe('display rules', () => {
+  it('rule 5 — a blank field renders unknown, never as absence of a restriction', () => {
+    const r = record({ method: 'in_person', last_verified: '2026-08-14' });
+    expect(displayField(r, 'pets', NOW)).toEqual({ kind: 'unknown' });
+    expect(displayField(r, 'sex_offender_ok', NOW)).toEqual({ kind: 'unknown' });
+  });
+
+  it('rule 1 — a volatile value always carries its age', () => {
+    const r = record({ method: 'in_person', last_verified: '2026-08-14', hours: '19:00-07:00' });
+    const d = displayField(r, 'hours', NOW);
+    expect(d.kind).toBe('value');
+    if (d.kind === 'value') {
+      expect(d.age).not.toBeNull();
+      expect(d.age!.label).toBe('verified 3 days ago');
+    }
+  });
+
+  it('rule 2 — stale volatile data reads call-first and does not carry the old value', () => {
+    const r = record({ method: 'in_person', last_verified: '2026-07-28', hours: '19:00-07:00' });
+    const d = displayField(r, 'hours', NOW);
+    expect(d.kind).toBe('call-first');
+    expect(JSON.stringify(d)).not.toContain('19:00');
+  });
+
+  it('rule 2 — a slow field of the same record still shows its value', () => {
+    const r = record({ method: 'in_person', last_verified: '2026-07-28', pets: 'yes', hours: '19:00-07:00' });
+    expect(displayField(r, 'hours', NOW).kind).toBe('call-first');
+    expect(displayField(r, 'pets', NOW).kind).toBe('value');
+  });
+
+  it('rule 1 — a volatile value with no ascertainable age reads call-first', () => {
+    const r = record({ method: 'in_person', hours: '19:00-07:00' });
+    expect(displayField(r, 'hours', NOW).kind).toBe('call-first');
+  });
+
+  it('rule 3 — a suspect record surfaces its flag', () => {
+    const r = record({ flag: 'reported_wrong', method: 'phone', last_verified: '2026-08-14' });
+    const d = displayRecord(r, NOW);
+    expect(d.flagFirst).not.toBeNull();
+    expect(d.flagFirst!.flag).toBe('reported_wrong');
+  });
+
+  it('rule 3 — an ok record surfaces nothing', () => {
+    expect(displayRecord(record(), NOW).flagFirst).toBeNull();
+  });
+
+  it('rule 6 — seeded entries are marked for distinct rendering', () => {
+    expect(displayRecord(record({ method: 'website' }), NOW).seeded).toBe(true);
+  });
+
+  it('renders booleans rather than dropping false', () => {
+    const r = record({ referral_required: false, method: 'in_person', last_verified: '2026-08-14' });
+    const d = displayField(r, 'referral_required', NOW);
+    expect(d.kind).toBe('value');
+    if (d.kind === 'value') expect(d.value).toBe('no');
+  });
+});
+
+describe('the seed file end to end', () => {
+  const [shelter, warming] = parseDirectoryOrThrow(readFileSync(SEED_CSV, 'utf8'));
+
+  it('shows the shelter hours with an age', () => {
+    const d = displayField(shelter, 'hours', NOW);
+    expect(d.kind).toBe('value');
+    if (d.kind === 'value') expect(d.age!.label).toBe('verified 3 days ago');
+  });
+
+  it('renders every field of the reported_wrong warming centre as suspect', () => {
+    expect(displayRecord(warming, NOW).flagFirst!.flag).toBe('reported_wrong');
+    expect(confidenceForField(warming, 'pets', NOW)).toBe('suspect');
+    expect(displayField(warming, 'hours', NOW).kind).toBe('call-first');
+  });
+});
+
+describe('helpers', () => {
+  it('counts age in whole days', () => {
+    expect(ageInDays('2026-08-14', NOW)).toBe(3);
+    expect(ageInDays('2026-08-17', NOW)).toBe(0);
+  });
+
+  it('labels ages readably', () => {
+    expect(formatAge(0)).toBe('verified today');
+    expect(formatAge(1)).toBe('verified yesterday');
+    expect(formatAge(3)).toBe('verified 3 days ago');
+    expect(formatAge(60)).toBe('verified 2 months ago');
+    expect(formatAge(400)).toBe('verified 1 year ago');
+  });
+
+  it('knows meteorological seasons', () => {
+    expect(seasonOf(new Date('2026-01-15T00:00:00Z'))).toBe('winter');
+    expect(seasonOf(new Date('2026-04-15T00:00:00Z'))).toBe('spring');
+    expect(seasonOf(new Date('2026-07-15T00:00:00Z'))).toBe('summer');
+    expect(seasonOf(new Date('2026-10-15T00:00:00Z'))).toBe('autumn');
+  });
+});
