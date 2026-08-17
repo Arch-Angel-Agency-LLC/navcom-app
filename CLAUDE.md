@@ -30,7 +30,10 @@ whole server side: RelayNode, Mecha Jono, directory host, watch state machine. T
 half holding safety, and it's the local available work — prove the loop against the node
 with a crude client (a script, `curl`) before writing a line of UI.
 
-Order: **node + agent → field terminal → console.**
+Order: **node + agent → field terminal → console.** One track runs in parallel and is
+ungated — the `navcom.app` static site (directory, docs, status) needs no protocol, keys,
+relay or daemon. Sequence and gates in [`docs/build-order.md`](docs/build-order.md);
+surfaces and budgets in [`docs/delivery.md`](docs/delivery.md).
 
 | | Decision | Status |
 |---|---|---|

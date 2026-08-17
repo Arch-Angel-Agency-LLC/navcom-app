@@ -79,6 +79,8 @@ waive protections for themselves, never for a third party.
 CLAUDE.md                          Operating brief — scope, invariants, anti-patterns
 docs/positioning.md                What this is and who it's for — hand this to someone
 docs/spec/                         Normative specs (MVP surface only) — bootstrap first
+docs/build-order.md                What comes after what, and what gates it
+docs/delivery.md                   How NavCom reaches a device; navcom.app's surfaces
 docs/vision.md                     Where this is going
 docs/principles.md                 Design rules, and how conflicts resolve
 docs/ecosystem.md                  Starcom, NavCom, and the Earth Intelligence Network

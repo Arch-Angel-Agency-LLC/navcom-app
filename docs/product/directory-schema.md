@@ -141,6 +141,24 @@ form is a correction path that never gets used.
 
 Reporting that something is wrong requires one tap and no account.
 
+### Seeding a new metro
+
+**Seed structural facts. Never seed intake rules.**
+
+`name`, `address`, `type`, `phone` and published `hours` are public and checkable, and
+[`propagation.md`](propagation.md) endorses seeding them from public sources at
+`method: website` — low confidence, and visually distinct from operator-verified entries
+[C21].
+
+Everything in §2 is different. `sobriety`, `pets`, `id_required`, `referral_required`,
+`sex_offender_ok`, `curfew` and `belongings` are the fields this directory exists for, and
+they are missing from official listings *precisely because nobody maintains them*. They
+start `unknown` and stay `unknown` until a human with local knowledge verifies them.
+
+A plausible guess in those fields looks like data, reads as authoritative, and sends
+someone somewhere that turns them away. That is the failure this entire schema is shaped
+to prevent.
+
 ### Who actually maintains this
 
 Not everyone, and the design shouldn't pretend otherwise. Maintenance comes from a small
