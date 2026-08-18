@@ -190,6 +190,46 @@ Remaining screens (directory, log review) once the protocol has stopped moving. 
 against an unproven payload gets rewritten when the payload changes, which is the whole
 reason for the gate.
 
+## The accountability log — sprint A done, B/C/D planned
+
+**A — the log is real on the node.** `packages/watchtower/src/daemon/accountability.ts`:
+append-only JSONL, fsynced per entry, chain verified at boot, 90-day retention. Actions are
+written at one site derived from the response actually sent, rather than a call per dispatch
+branch — one branch away from silence is not a property this file can have.
+
+**Two entries record what the watch did not do.** `contact-not-attempted` on every overdue,
+because the spec says the node MUST attempt contact and nothing does; `escalation-not-
+attempted` on every `Distress`, because the ladder is unbuilt. Neither is
+`*-reached-nobody`, which would claim an attempt. They should read badly until they stop
+being true.
+
+**Found while planning it: `entriesAbout()` and `verifyChain()` could not compose.** Every
+chain link points at the entry before it in the *full* log, which is usually about somebody
+else — so a per-operator view can never verify, and an operator is exactly the party who
+cannot be handed the whole log. Both functions existed, read as though they worked together,
+and returned `intact: false` every time. `CompleteLog` is now a distinct type and the
+composition is a **type error**.
+
+That moves the honest claim: chaining closes tampering **for a whole-log reader only**. The
+spec's two-row table is now three rows, and the middle one — selective disclosure — is the
+load-bearing one.
+
+**Also found: neither package type-checked its own tests.** `fakeConfig` was returning a
+`DaemonConfig` missing a required field and nothing complained, which is how a suite drifts
+away from the types it exists to exercise. Both now check `src` and `test`.
+
+**B — selective disclosure.** Merkle tree over entries, periodic signed root in `10910` as a
+`log_root` field rather than a new kind. An operator verifies their own entries against a
+root they saw published, without seeing anyone else's. Omission still needs `countersig`,
+same gate.
+
+**C — retrieval.** `log-review` as a sixth `20910` signal type; `ResponsePayload` gains
+optional `entries` and `proofs`, additive. `20912` is ephemeral, so the log never becomes
+relay-queryable and C27 holds.
+
+**D — the review screen.** `/terminal/log/`, stating plainly what verification does and does
+not prove.
+
 ## Gated on opening past people you personally vetted
 
 **Counter-signed capability.** On-call operators declare their own reachability, drills

@@ -5,7 +5,7 @@ import { newSecretKey, publicKeyOf, secretFromHex, secretToHex } from '../src/cr
 import { open, seal } from '../src/crypto/envelope';
 import { buildWatchStateEvent, capabilitySentence, darkState, pageableNow, publishableWatchState, readWatchState, WATCH_STATE_VERSION } from '../src/events/watch-state';
 import { readWatchStateAt } from '../src/events/watch-state';
-import { appendEntry, entriesAbout, verifyChain } from '../src/log';
+import { appendEntry, asCompleteLog, emptyLog, entriesAbout, verifyChain, type LogOutcome } from '../src/log';
 import { sendDistressUntilAcknowledged } from '../src/transport';
 import { finalizeEvent } from 'nostr-tools/pure';
 import { buildDistress, buildSignal, RESPONSE_WINDOW } from '../src/events/signal';
@@ -270,50 +270,95 @@ describe('the accountability log', () => {
   const actor = { kind: 'human' as const, callsign: 'Raven' };
   const wren = { kind: 'human' as const, callsign: 'Wren', pubkey: 'a'.repeat(64) };
   const otherWren = { kind: 'human' as const, callsign: 'Wren', pubkey: 'b'.repeat(64) };
-  const entry = (outcome: string) => ({
+  const entry = (outcome: LogOutcome) => ({
     at: NOW_S, actor, action: 'acked' as const, subject: wren, outcome
   });
 
   it('chains each entry to the one before it', () => {
-    let log = appendEntry([], entry('acknowledged sign-on'));
-    log = appendEntry(log, entry('answered query'));
+    let log = appendEntry(emptyLog(), entry('acknowledged'));
+    log = appendEntry(log, entry('answered'));
     expect(log[0].prev).toBeNull();
     expect(log[1].prev).toBe(log[0].hash);
     expect(verifyChain(log).intact).toBe(true);
   });
 
   it('detects an entry edited after the fact', () => {
-    let log = appendEntry([], entry('acknowledged sign-on'));
-    log = appendEntry(log, entry('answered query'));
-    const tampered = [...log];
-    tampered[0] = { ...tampered[0], outcome: 'something more flattering' };
+    let log = appendEntry(emptyLog(), entry('acknowledged'));
+    log = appendEntry(log, entry('answered'));
+    const tampered = asCompleteLog([{ ...log[0], outcome: 'contact-made' as const }, log[1]]);
     const check = verifyChain(tampered);
     expect(check.intact).toBe(false);
     expect(check.brokenAt).toBe(0);
   });
 
   it('detects a removed entry', () => {
-    let log = appendEntry([], entry('a'));
-    log = appendEntry(log, entry('b'));
-    log = appendEntry(log, entry('c'));
-    expect(verifyChain([log[0], log[2]]).intact).toBe(false);
+    let log = appendEntry(emptyLog(), entry('acknowledged'));
+    log = appendEntry(log, entry('answered'));
+    log = appendEntry(log, entry('no-answer'));
+    expect(verifyChain(asCompleteLog([log[0], log[2]])).intact).toBe(false);
   });
 
   it('does NOT detect a false entry written at the time', () => {
     // Honest limit. Chaining closes tampering; only a counter-signature by the subject
     // closes fabrication, and nothing counter-signs yet.
-    const log = appendEntry([], entry('contacted the operator, all fine'));
+    const log = appendEntry(emptyLog(), entry('contact-made'));
     expect(verifyChain(log).intact).toBe(true);
     expect(log[0].countersig).toBeUndefined();
   });
 
+  it('cannot record an area, a position or a query text at all', () => {
+    // outcome used to be a free string, and the outcomes this very test file once used
+    // included "contacted the operator, all fine" -- one edit away from carrying a street.
+    // A union removes the channel rather than asking call sites to be careful.
+    const outcomes: LogOutcome[] = ['acknowledged', 'contact-not-attempted', 'went-dark'];
+    for (const o of outcomes) {
+      expect(typeof o).toBe('string');
+    }
+    // @ts-expect-error a free-text outcome no longer compiles
+    expect(() => entry('found them on 4th and Market')).toBeDefined();
+  });
+
+  it('survives retention dropping its oldest entries, given the declared new start', () => {
+    // Rotation leaves the oldest surviving entry pointing at a hash that no longer exists.
+    // Without a declared start that is indistinguishable from tampering -- the log would
+    // accuse itself every 90 days.
+    let log = appendEntry(emptyLog(), entry('acknowledged'));
+    log = appendEntry(log, entry('answered'));
+    log = appendEntry(log, entry('no-answer'));
+
+    const kept = asCompleteLog([log[1], log[2]]);
+    expect(verifyChain(kept).intact, 'should look broken without the declared start').toBe(false);
+    expect(verifyChain(kept, { startsAt: log[0].hash }).intact).toBe(true);
+  });
+
+  it('still catches tampering after a rotation', () => {
+    // The declared start must not become a way to launder an edited history.
+    let log = appendEntry(emptyLog(), entry('acknowledged'));
+    log = appendEntry(log, entry('answered'));
+    log = appendEntry(log, entry('no-answer'));
+
+    const kept = asCompleteLog([{ ...log[1], outcome: 'contact-made' as const }, log[2]]);
+    expect(verifyChain(kept, { startsAt: log[0].hash }).intact).toBe(false);
+  });
+
   it('shows an operator only what concerns them', () => {
-    let log = appendEntry([], entry('x'));
-    log = appendEntry(log, { ...entry('y'), subject: otherWren });
+    let log = appendEntry(emptyLog(), entry('acknowledged'));
+    log = appendEntry(log, { ...entry('answered'), subject: otherWren });
     // Two operators, same callsign, different keys. Matching on the name would return both,
     // and the log would attribute one person's entries to another.
     expect(entriesAbout(log, wren.pubkey)).toHaveLength(1);
     expect(entriesAbout(log, otherWren.pubkey)).toHaveLength(1);
+  });
+
+  it('will not let a filtered view be passed off as a verifiable one', () => {
+    // Found while planning the operator's review screen: entriesAbout() returns entries
+    // whose links point at other people's, so verifyChain() must always reject them. Both
+    // functions existed, read as though they composed, and did not. The type says so now.
+    let log = appendEntry(emptyLog(), entry('acknowledged'));
+    log = appendEntry(log, { ...entry('answered'), subject: otherWren });
+    const mine = entriesAbout(log, wren.pubkey);
+    // @ts-expect-error a filtered view is not a CompleteLog, and cannot be chain-verified
+    expect(() => verifyChain(mine)).toBeDefined();
   });
 });
 

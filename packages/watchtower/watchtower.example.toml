@@ -42,3 +42,16 @@ query_timeout_seconds = 8
 # already use). Everyone NOT listed is silently dropped, not told no.
 # allowed_pubkeys = ["<lowercase 64-char hex pubkey>", "<another one>"]
 allowed_pubkeys = []
+
+[log]
+# The accountability log -- the opposite of the board in every way. The board is Live, in
+# memory, and expires; this is append-only, on disk, and retained. It records actions,
+# never positions, areas or query text.
+#
+# It is what makes the watch answerable to the operators it concerns [C33], so it is not
+# inside either device wipe tier and it is not the watch's to delete.
+path = "/var/lib/navcom/accountability.jsonl"
+
+# Entries older than this are dropped on start. Rotation records the dropped tail's final
+# hash so the chain still verifies afterwards rather than looking tampered with.
+retention_days = 90

@@ -49,6 +49,12 @@ export interface DaemonConfig {
   authorization: {
     allowedPubkeys: string[];
   };
+  log: {
+    /** Where the accountability log lives. Retained, unlike the board. */
+    path: string;
+    /** Entries older than this are dropped on rotation. Spec default is 90 days. */
+    retentionDays: number;
+  };
 }
 
 const DEFAULTS = {
@@ -66,6 +72,10 @@ const DEFAULTS = {
   // waiting past their own client's timeout with the daemon still "working
   // on it" indefinitely.
   queryTimeoutSeconds: 8,
+  // The spec's default. The board is Live and expires; the log is the opposite, and this
+  // is the only number that says how long "retained" means.
+  logRetentionDays: 90,
+  logPath: "/var/lib/navcom/accountability.jsonl",
 };
 
 interface RawToml {
@@ -81,6 +91,10 @@ interface RawToml {
   };
   authorization?: {
     allowed_pubkeys?: string[];
+  };
+  log?: {
+    path?: string;
+    retention_days?: number;
   };
 }
 
@@ -170,6 +184,12 @@ export function loadDaemonConfig(path: string): DaemonConfig {
     },
     authorization: {
       allowedPubkeys: parseAllowedPubkeys(raw.authorization?.allowed_pubkeys, path),
+    },
+    log: {
+      path: raw.log?.path ?? DEFAULTS.logPath,
+      // Same fail-loud rule as every other timing value: a quoted number in TOML is a
+      // string, and a string retention would make every age comparison nonsense.
+      retentionDays: positiveNumber(raw.log?.retention_days, "retention_days", DEFAULTS.logRetentionDays, path),
     },
   };
 }

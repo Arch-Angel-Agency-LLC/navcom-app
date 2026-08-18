@@ -7,15 +7,27 @@
  * **And the watch writes it.** That is a real hole rather than a quibble: a hostile watch
  * that can rewrite its own record defeats the mechanism named as its own mitigation.
  *
- * Two separate problems, closed separately:
+ * Three separate problems, closed separately, and the middle one is the load-bearing one:
  *
- *   tampering    — editing history after the fact. Closed here, by chaining.
- *   fabrication  — writing a false entry at the time. NOT closed here. It needs the
- *                  subject to counter-sign, which is a later sprint and gated on the
- *                  Watchtower opening past people who were personally vetted.
+ *   tampering            — editing history after the fact. Closed here, by chaining, but
+ *                          **only for a reader who holds the whole log.**
+ *   selective disclosure — handing an operator a filtered view they cannot check. NOT
+ *                          closed here. A chain link points at the entry before it in the
+ *                          full log, which is usually about somebody else, so a filtered
+ *                          view can never verify. Closing it needs inclusion proofs against
+ *                          a published root.
+ *   fabrication/omission — writing a false entry, or never writing a true one. NOT closed
+ *                          here. It needs the subject to counter-sign, which is gated on
+ *                          the Watchtower opening past people who were personally vetted.
  *
- * Chaining is about twenty lines and makes retroactive edits detectable. It does not make
- * a lie impossible, and this module does not pretend otherwise.
+ * The middle one was found by trying to build the operator's review screen on top of this
+ * module: `entriesAbout()` produces exactly the shape `verifyChain()` must reject. The two
+ * functions had been written to be used together and could not be. The type system now
+ * says so — see `CompleteLog`.
+ *
+ * Chaining is about twenty lines and makes retroactive edits detectable by whoever can see
+ * everything. It does not make a lie impossible, and it does not help the operator on its
+ * own. This module does not pretend otherwise.
  */
 
 import { sha256 } from '@noble/hashes/sha256';
@@ -33,6 +45,44 @@ export type LogAction =
   | 'drill-run'
   | 'drill-result';
 
+/**
+ * What happened, from a fixed set.
+ *
+ * A free-text outcome is the one field through which an area, a position or a query text
+ * could reach a log that MUST NOT contain any of them [C27]. No amount of care at the call
+ * sites removes that channel; a union does. If a new outcome is genuinely needed, add it
+ * here, where the review is.
+ *
+ * `contact-not-attempted` is the important one: `agents.md` requires inaction to be logged,
+ * and an overdue that passed with nothing done is invisible unless something writes it down.
+ */
+export type LogOutcome =
+  | 'acknowledged'
+  | 'answered'
+  /** Answered with no provenance. The client renders it unverified; the log records that. */
+  | 'answered-unverified'
+  | 'no-answer'
+  | 'held'
+  | 'handed-to-human'
+  | 'handed-to-agent'
+  | 'went-dark'
+  | 'marked-overdue'
+  | 'contact-made'
+  | 'contact-failed'
+  | 'contact-not-attempted'
+  | 'escalation-reached-human'
+  | 'escalation-reached-nobody'
+  /**
+   * Nothing was tried, because the ladder is not built.
+   *
+   * Distinct from `escalation-reached-nobody`, which claims an attempt. Every `Distress`
+   * writes this until the ladder ships, and it should read as damning, because it is.
+   */
+  | 'escalation-not-attempted'
+  | 'pass'
+  | 'fail'
+  | 'error';
+
 export interface LogEntry {
   /** Unix seconds. */
   at: number;
@@ -48,7 +98,7 @@ export interface LogEntry {
    * pubkey; the callsign rides along for reading.
    */
   subject: Author | null;
-  outcome: string;
+  outcome: LogOutcome;
   /**
    * Hex sha256 over this entry plus the previous hash. An edit anywhere breaks every
    * link after it.
@@ -63,6 +113,27 @@ export interface LogEntry {
    * itself into something the affected operator agreed with.
    */
   countersig?: string;
+}
+
+/**
+ * A complete, contiguous log — every entry, in order, from a declared genesis.
+ *
+ * Distinct from `LogEntry[]` on purpose. `verifyChain()` accepts only this, so
+ * `verifyChain(entriesAbout(log, me))` is a **type error** rather than a plausible-looking
+ * call that always returns `intact: false`. That was a real mistake waiting to be made:
+ * both functions existed, read as though they composed, and did not.
+ */
+export type CompleteLog = readonly LogEntry[] & { readonly __complete: unique symbol };
+
+/**
+ * Asserts that these entries are a complete log — typically straight after reading the
+ * node's log file.
+ *
+ * The assertion is explicit and greppable because it cannot be checked here: a file that
+ * has silently lost its tail still parses. `verifyChain()` is what tests the claim.
+ */
+export function asCompleteLog(entries: readonly LogEntry[]): CompleteLog {
+  return entries as CompleteLog;
 }
 
 /** Never positions, areas or query text [C27]. The log records actions, not movements. */
@@ -87,9 +158,14 @@ function digest(entry: NewEntry, prev: string | null): string {
   return bytesToHex(sha256(utf8ToBytes(canonical)));
 }
 
-export function appendEntry(log: LogEntry[], entry: NewEntry): LogEntry[] {
+export function appendEntry(log: CompleteLog, entry: NewEntry): CompleteLog {
   const prev = log.length === 0 ? GENESIS : log[log.length - 1].hash;
-  return [...log, { ...entry, prev, hash: digest(entry, prev) }];
+  return asCompleteLog([...log, { ...entry, prev, hash: digest(entry, prev) }]);
+}
+
+/** An empty log, before anything has happened. */
+export function emptyLog(): CompleteLog {
+  return asCompleteLog([]);
 }
 
 export interface ChainCheck {
@@ -99,14 +175,26 @@ export interface ChainCheck {
   reason: string | null;
 }
 
+export interface VerifyOptions {
+  /**
+   * What the first entry's `prev` should be.
+   *
+   * `null` for a log that still has its original genesis. After retention drops old
+   * entries, the oldest surviving entry points at a hash that no longer exists — which is
+   * indistinguishable from tampering unless the node declares the new start. Rotation
+   * records that hash; verification is given it here.
+   */
+  startsAt?: string | null;
+}
+
 /**
  * Verifies the chain.
  *
  * An operator reviewing entries about themselves can run this and know whether the record
  * has been edited since it was written — without trusting the party that wrote it.
  */
-export function verifyChain(log: LogEntry[]): ChainCheck {
-  let prev: string | null = GENESIS;
+export function verifyChain(log: CompleteLog, opts: VerifyOptions = {}): ChainCheck {
+  let prev: string | null = opts.startsAt ?? GENESIS;
   for (let i = 0; i < log.length; i++) {
     const e = log[i];
     if (e.prev !== prev) {
@@ -124,7 +212,13 @@ export function verifyChain(log: LogEntry[]): ChainCheck {
  * What an operator sees when reviewing a watch: actions, never a movement history.
  *
  * Matched on pubkey. Passing a callsign would return whatever another Raven did.
+ *
+ * **The result is not chain-verifiable and the return type says so.** Its links point at
+ * entries about other people, which this operator must not see and could not check anyway.
+ * Until inclusion proofs ship, an operator reading this is trusting the watch's account of
+ * itself — weaker than the spec's table implied, and worth saying on the screen that
+ * renders it.
  */
-export function entriesAbout(log: LogEntry[], pubkey: string): LogEntry[] {
+export function entriesAbout(log: CompleteLog, pubkey: string): LogEntry[] {
   return log.filter((e) => e.subject?.pubkey === pubkey);
 }

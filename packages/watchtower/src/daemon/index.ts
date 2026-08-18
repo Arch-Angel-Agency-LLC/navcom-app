@@ -2,6 +2,7 @@
 import { loadDaemonConfig } from "./config.js";
 import { loadOrCreateKeypair } from "../shared/identity.js";
 import { WatchtowerDaemon } from "./watchtower.js";
+import { AccountabilityLog } from "./accountability.js";
 
 // Found in review: nothing guarded against a truly unexpected error
 // outside the known try/catch paths inside WatchtowerDaemon. Node's own
@@ -38,7 +39,37 @@ async function main(): Promise<void> {
       `overdue_grace=${config.watch.overdueGrace}s hard_expiry=${config.watch.hardExpiry}s`,
   );
 
-  const daemon = new WatchtowerDaemon({ config, secretKey, pubkey });
+  // The log is opened before the watch starts, and a failure to open it never stops the
+  // watch. An accountability problem must not become an availability one -- that is the
+  // trade a hostile watch would take every time.
+  let log: AccountabilityLog | undefined;
+  try {
+    const opened = AccountabilityLog.open(config.log.path, config.log.retentionDays);
+    log = opened.log;
+    const dropped = log.rotate(Math.floor(Date.now() / 1000));
+    const status = log.status();
+
+    if (!opened.check.intact) {
+      // Shouted, not swallowed. This is what the whole mechanism exists to surface, and
+      // the break is now recorded permanently in the meta file.
+      console.error("[log] ####################################################");
+      console.error(`[log] CHAIN BROKEN at entry ${opened.check.brokenAt}: ${opened.check.reason}`);
+      console.error("[log] The record has been edited since it was written, or lost entries.");
+      console.error("[log] The break is recorded permanently. The watch continues.");
+      console.error("[log] ####################################################");
+    }
+    console.log(
+      `[log] ${config.log.path} — ${status.entries} entr${status.entries === 1 ? "y" : "ies"}, ` +
+        `retention ${config.log.retentionDays}d` +
+        (dropped > 0 ? `, rotated out ${dropped}` : "") +
+        (status.breaks.length > 0 ? `, ${status.breaks.length} recorded break(s)` : ""),
+    );
+  } catch (err: unknown) {
+    console.error(`[log] could not open ${config.log.path}: ${String(err)}`);
+    console.error("[log] the watch will run UNRECORDED. Nothing will be reviewable.");
+  }
+
+  const daemon = new WatchtowerDaemon({ config, secretKey, pubkey, ...(log ? { log } : {}) });
   await daemon.start();
   console.log("[daemon] published watch state (automated). Listening for signals.");
 
@@ -46,7 +77,7 @@ async function main(): Promise<void> {
   const shutdown = (signal: string) => {
     if (shuttingDown) return;
     shuttingDown = true;
-    console.log(`[daemon] received ${signal}, shutting down (board is memory-only, nothing to flush)`);
+    console.log(`[daemon] received ${signal}, shutting down (board is memory-only; the log is already on disk)`);
     daemon
       .stop()
       .then(() => process.exit(0))

@@ -173,16 +173,57 @@ That is a real hole, not a quibble: [the Hostile Watch](../research/ecosystem-ro
 a named adversary whose stated mitigation is this log. A watch that can rewrite its own
 record defeats it.
 
-Two problems, closed separately and honestly:
+**Three** problems, and the middle one was missing from this table until an operator review
+screen was designed against it:
 
 | | |
 |---|---|
-| **Tampering** — editing history afterwards | **Closed.** Each entry hashes its content plus the previous hash, so an edit anywhere breaks every link after it. An operator reviewing entries about themselves can verify the chain without trusting whoever wrote it |
-| **Fabrication** — a false entry written at the time | **Not closed.** Only `countersig` — the subject signing that this is what happened to them — closes it, and nothing counter-signs yet |
+| **Tampering** — editing history afterwards | **Closed for a whole-log reader.** Each entry hashes its content plus the previous hash, so an edit anywhere breaks every link after it |
+| **Selective disclosure** — handing an operator a filtered view they cannot check | **Not closed.** A link points at the entry before it *in the full log*, which is usually about somebody else. Filter to one subject and every link dangles, so the filtered view can never verify. Closing it needs **inclusion proofs against a published root** |
+| **Fabrication / omission** — a false entry written at the time, or a true one never written | **Not closed.** Only `countersig` — the subject signing that this is what happened to them — closes it, and nothing counter-signs yet |
+
+**The middle row is the one that matters here**, because the operator is precisely the party
+who cannot be given the whole log. The earlier version of this table said an operator
+"can verify the chain without trusting whoever wrote it." That was wrong: they could not,
+and the two library functions written to make it possible could not compose. Until inclusion
+proofs ship, an operator reading their entries is reading **the watch's account of itself**,
+and the screen that renders them must say so.
 
 The chain does not make a lie impossible and this spec does not pretend otherwise. Same gate
 as `oncall`: counter-signing ships before the Watchtower opens past people personally
 vetted.
+
+### Retention breaks the chain, and the node declares where
+
+Dropping entries past the retention window leaves the oldest survivor pointing at a hash
+that no longer exists — indistinguishable from tampering. The node MUST record the dropped
+tail's final hash as the **declared start**, and verification MUST be performed against it.
+Without this the log accuses itself every 90 days.
+
+A declared start MUST NOT be usable to launder an edited history: entries after it are still
+chained, so an edit inside the retained window is still caught.
+
+### `outcome` is a closed set, not free text
+
+Free text is the one field through which an area, a position or a query text could reach a
+log that MUST NOT contain any of them. No care at the call sites removes that channel; a
+union does.
+
+Two outcomes record **inaction**, which `agents.md` requires:
+
+- `contact-not-attempted` — an operator went overdue and nothing tried to reach them
+- `escalation-not-attempted` — a `Distress` arrived and no ladder ran
+
+Both are distinct from their "tried and failed" counterparts on purpose. `escalation-
+reached-nobody` claims an attempt; while the ladder is unbuilt, the true entry is
+`escalation-not-attempted`, and it should read badly until it stops being true.
+
+### A broken chain does not stop the watch
+
+A node that finds its own log broken at boot MUST record the break permanently and **keep
+holding the watch**. People's safety depends on the watch running, and a watch that refuses
+to start because its record looks edited has turned an accountability failure into an
+availability one — which is the trade a hostile watch would take every time.
 
 An operator reviewing a watch sees: *acknowledged your sign-on 21:04, answered your query
 22:41, no escalation.* Not a movement history.

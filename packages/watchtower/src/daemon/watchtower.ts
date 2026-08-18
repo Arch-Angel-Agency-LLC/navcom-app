@@ -3,7 +3,7 @@ import { finalizeEvent, verifyEvent } from "nostr-tools/pure";
 import type { Event, EventTemplate } from "nostr-tools/core";
 import { installNodeWebSocket } from "../shared/nostr-node.js";
 import { encryptPayload, decryptPayload } from "../shared/crypto.js";
-import { WATCH_STATE_VERSION } from "@navcom/core";
+import { WATCH_STATE_VERSION, type LogAction, type LogOutcome } from "@navcom/core";
 import { KIND_WATCH_STATE, KIND_SIGNAL, KIND_DISTRESS, KIND_RESPONSE } from "../shared/kinds.js";
 import type {
   AssistPayload,
@@ -15,6 +15,7 @@ import type {
 import { validateOnStationPayload, ValidationError } from "../shared/validate.js";
 import { isAuthorizedOperator } from "./authorization.js";
 import { Board } from "./board.js";
+import { AccountabilityLog } from "./accountability.js";
 import type { DaemonConfig } from "./config.js";
 import { answerQuery } from "./query.js";
 
@@ -31,6 +32,14 @@ export interface WatchtowerDaemonOptions {
    * opening a real network connection.
    */
   pool?: SimplePool;
+  /**
+   * Where actions are recorded [C33].
+   *
+   * Optional so tests can run without touching a disk, and so a daemon whose log could not
+   * be opened still holds the watch -- an accountability failure must not become an
+   * availability one. When absent, `note()` is a no-op and the caller has already shouted.
+   */
+  log?: AccountabilityLog;
 }
 
 const AGENT_HEALTH_OK = "ok" as const;
@@ -79,6 +88,7 @@ export class WatchtowerDaemon {
   private heartbeatHandle: ReturnType<typeof setInterval> | undefined;
   private sweepHandle: ReturnType<typeof setInterval> | undefined;
   private subCloser: { close: (reason?: string) => void } | undefined;
+  private readonly accountability: AccountabilityLog | undefined;
 
   constructor(opts: WatchtowerDaemonOptions) {
     installNodeWebSocket();
@@ -86,6 +96,7 @@ export class WatchtowerDaemon {
     this.secretKey = opts.secretKey;
     this.pubkey = opts.pubkey;
     this.agentName = opts.agentName ?? "watchtower";
+    this.accountability = opts.log;
     this.since = now();
     if (opts.pool) {
       this.pool = opts.pool;
@@ -112,6 +123,35 @@ export class WatchtowerDaemon {
 
   private get relayUrls(): string[] {
     return this.config.relays.urls;
+  }
+
+  /**
+   * Records a watch action.
+   *
+   * The actor is always this node, identified as an agent -- `agents.md` requires an agent
+   * to be identified as one in the log, not only in the watch state and acknowledgements.
+   *
+   * A failure to write is logged and swallowed. It must never take down the watch, and it
+   * must never be silent.
+   */
+  private note(action: LogAction, subject: string | null, outcome: LogOutcome, callsign?: string): void {
+    if (!this.accountability) return;
+    try {
+      this.accountability.record({
+        at: now(),
+        actor: { kind: "agent", callsign: this.agentName, pubkey: this.pubkey },
+        action,
+        // Omitted rather than set to undefined: the subject is keyed on pubkey, and a
+        // callsign is a reading convenience the board may not have yet.
+        subject:
+          subject === null
+            ? null
+            : { kind: "human", pubkey: subject, ...(callsign ? { callsign } : {}) },
+        outcome,
+      });
+    } catch (err: unknown) {
+      console.error(`[log] FAILED TO RECORD ${action}/${outcome}: ${String(err)}`);
+    }
   }
 
   private sign(template: EventTemplate): Event {
@@ -288,7 +328,27 @@ export class WatchtowerDaemon {
       response = { type: "ack", responder: { kind: "agent", callsign: this.agentName }, text: `error: ${message}`, provenance: null };
     }
 
+    this.noteResponse(event.pubkey, response);
     await this.publishResponse(event.pubkey, event.id, response);
+  }
+
+  /**
+   * Records what the watch actually answered, derived from the response itself.
+   *
+   * Single site on purpose: a note() call inside each case of the dispatch is one branch
+   * away from an action that silently never gets recorded, and the log's whole value is
+   * that it is complete.
+   */
+  private noteResponse(operator: string, response: ResponsePayload): void {
+    const callsign = this.board.get(operator)?.callsign;
+    if (response.type === "answer") {
+      // An answer with no provenance renders unverified to the operator; the log says the
+      // same thing, so the two accounts cannot drift apart.
+      this.note("answered", operator, response.provenance ? "answered" : "answered-unverified", callsign);
+      return;
+    }
+    const failed = response.text?.startsWith("error:") ?? false;
+    this.note("acked", operator, failed ? "error" : "acknowledged", callsign);
   }
 
   private async handleDistressEvent(event: Event): Promise<void> {
@@ -297,12 +357,20 @@ export class WatchtowerDaemon {
     // operator sent, never from a missed check-in (that's overdue,
     // which is a nudge, not distress).
     this.board.distress(event.pubkey, now());
+    const callsign = this.board.get(event.pubkey)?.callsign;
+
+    // The ladder does not exist yet, so nothing is attempted and the log says exactly that.
+    // NOT "reached nobody" -- that would claim an attempt. Invariant 2 says Distress
+    // terminates in a human or tells the operator it could not; this records which.
+    this.note("escalated", event.pubkey, "escalation-not-attempted", callsign);
+
     const response: ResponsePayload = {
       type: "ack",
       responder: { kind: "agent", callsign: this.agentName },
       text: null,
       provenance: null,
     };
+    this.note("acked", event.pubkey, "acknowledged", callsign);
     await this.publishResponse(event.pubkey, event.id, response);
   }
 
@@ -339,6 +407,7 @@ export class WatchtowerDaemon {
   }
 
   async start(): Promise<void> {
+    this.note("took-watch", null, "held");
     await this.publishWatchState();
     this.startListening();
     this.heartbeatHandle = setInterval(() => {
@@ -353,7 +422,13 @@ export class WatchtowerDaemon {
       // (60s default) after the actual transition. This is deliberately
       // still just the aggregate overdue_count, same as the regular
       // heartbeat -- no operator identity in this path either.
-      this.board.sweep(now(), this.config.watch.overdueGrace, this.config.watch.hardExpiry, () => {
+      this.board.sweep(now(), this.config.watch.overdueGrace, this.config.watch.hardExpiry, (entry) => {
+        this.note("marked-overdue", entry.operator, "marked-overdue", entry.callsign);
+        // agents.md: log inaction. The spec says the node MUST attempt contact with an
+        // overdue operator; nothing here does, because there is no contact mechanism yet.
+        // An overdue that passed with nothing done is invisible unless something writes it
+        // down, and this is that something. It should read badly until it stops being true.
+        this.note("contacted", entry.operator, "contact-not-attempted", entry.callsign);
         this.publishWatchState().catch((err: unknown) => {
           console.error(`[overdue] notify publish failed: ${String(err)}`);
         });
@@ -366,5 +441,6 @@ export class WatchtowerDaemon {
     if (this.sweepHandle) clearInterval(this.sweepHandle);
     this.subCloser?.close("shutdown");
     this.pool.destroy();
+    this.accountability?.close();
   }
 }

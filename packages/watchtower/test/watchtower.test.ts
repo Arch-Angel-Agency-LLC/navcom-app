@@ -1,4 +1,7 @@
-import { describe, it, expect, vi, afterEach } from "vitest";
+import { describe, it, expect, vi, afterEach, beforeEach } from "vitest";
+import { mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import type { SimplePool } from "nostr-tools/pool";
 import { finalizeEvent, generateSecretKey, getPublicKey } from "nostr-tools/pure";
 import type { Event } from "nostr-tools/core";
@@ -9,6 +12,7 @@ import { KIND_SIGNAL, KIND_DISTRESS, KIND_RESPONSE, KIND_WATCH_STATE } from "../
 import type { ResponsePayload, WatchStatePayload } from "../src/shared/payloads.js";
 import * as authorization from "../src/daemon/authorization.js";
 import * as query from "../src/daemon/query.js";
+import { AccountabilityLog } from "../src/daemon/accountability.js";
 
 /**
  * The one file with zero direct test coverage before this pass, despite
@@ -31,6 +35,9 @@ function fakeConfig(overrides: Partial<DaemonConfig["watch"]> = {}, allowedPubke
       ...overrides,
     },
     authorization: { allowedPubkeys },
+    // Tests that care about the log inject an AccountabilityLog directly; this path is
+    // never opened, so a daemon built from fakeConfig records nothing.
+    log: { path: "/dev/null", retentionDays: 90 },
   };
 }
 
@@ -55,11 +62,21 @@ function fakePool() {
   };
 }
 
-function buildDaemon(configOverrides: Partial<DaemonConfig["watch"]> = {}, allowedPubkeys: string[] = []) {
+function buildDaemon(
+  configOverrides: Partial<DaemonConfig["watch"]> = {},
+  allowedPubkeys: string[] = [],
+  log?: AccountabilityLog,
+) {
   const secretKey = generateSecretKey();
   const pubkey = getPublicKey(secretKey);
   const { pool, publishedEvents, deliver } = fakePool();
-  const daemon = new WatchtowerDaemon({ config: fakeConfig(configOverrides, allowedPubkeys), secretKey, pubkey, pool });
+  const daemon = new WatchtowerDaemon({
+    config: fakeConfig(configOverrides, allowedPubkeys),
+    secretKey,
+    pubkey,
+    pool,
+    ...(log ? { log } : {}),
+  });
   return { daemon, pubkey, secretKey, publishedEvents, deliver };
 }
 
@@ -93,8 +110,12 @@ async function waitForResponse(publishedEvents: Event[], fromIndex = 0): Promise
 }
 
 let activeDaemons: WatchtowerDaemon[] = [];
-async function started(configOverrides: Partial<DaemonConfig["watch"]> = {}, allowedPubkeys: string[] = []) {
-  const ctx = buildDaemon(configOverrides, allowedPubkeys);
+async function started(
+  configOverrides: Partial<DaemonConfig["watch"]> = {},
+  allowedPubkeys: string[] = [],
+  log?: AccountabilityLog,
+) {
+  const ctx = buildDaemon(configOverrides, allowedPubkeys, log);
   await ctx.daemon.start();
   activeDaemons.push(ctx.daemon);
   return ctx;
@@ -104,6 +125,111 @@ afterEach(async () => {
   await Promise.all(activeDaemons.map((d) => d.stop()));
   activeDaemons = [];
   vi.restoreAllMocks();
+});
+
+describe("what the watch writes down", () => {
+  // C33: watch actions are logged and reviewable by the operators they concern. Asserted
+  // against a real file, because the value of this log is that it is on disk after a crash.
+  let dir: string;
+  let opened: AccountabilityLog;
+
+  beforeEach(() => {
+    dir = mkdtempSync(join(tmpdir(), "navcom-daemon-log-"));
+    opened = AccountabilityLog.open(join(dir, "log.jsonl"), 90).log;
+  });
+  afterEach(() => {
+    opened.close();
+    rmSync(dir, { recursive: true, force: true });
+  });
+
+  const outcomes = (pubkey: string) => opened.about(pubkey).map((e) => `${e.action}/${e.outcome}`);
+
+  it("records taking the watch before it starts listening", async () => {
+    await started({}, [], opened);
+    // Subject is null: this is about the watch, not about an operator.
+    expect(opened.all().map((e) => `${e.action}/${e.outcome}`)).toContain("took-watch/held");
+  });
+
+  it("records every acknowledgement against the operator it concerns", async () => {
+    const { pubkey, deliver, publishedEvents } = await started({}, [], opened);
+    const operator = generateSecretKey();
+    const operatorPubkey = getPublicKey(operator);
+
+    deliver(signalEvent(operator, pubkey, "on-station", { callsign: "Wren", area: "Downtown", expected_duration: 7200, routine_interval: null, share_position: false, position: null }));
+    await waitForResponse(publishedEvents);
+
+    expect(outcomes(operatorPubkey)).toContain("acked/acknowledged");
+    // The area was on the wire and must not be in the record.
+    expect(JSON.stringify(opened.all())).not.toContain("Downtown");
+  });
+
+  it("records an answer as unverified when it carried no provenance", async () => {
+    const { pubkey, deliver, publishedEvents } = await started({}, [], opened);
+    const operator = generateSecretKey();
+    const operatorPubkey = getPublicKey(operator);
+
+    deliver(signalEvent(operator, pubkey, "query", { text: "bed tonight, has a dog" }));
+    await waitForResponse(publishedEvents);
+
+    // The client renders this unverified; the log says the same, so the two accounts of
+    // the same answer cannot drift apart.
+    expect(outcomes(operatorPubkey)).toContain("answered/answered-unverified");
+    // And the question itself is not in the record [C27].
+    expect(JSON.stringify(opened.all())).not.toContain("dog");
+  });
+
+  it("records that no contact was attempted on an overdue -- the inaction entry", async () => {
+    // agents.md requires inaction to be logged. The spec says the node MUST attempt contact
+    // with an overdue operator; nothing does, because there is no contact mechanism. An
+    // overdue that passed with nothing done is invisible unless something writes it down.
+    const { pubkey, deliver, publishedEvents } = await started(
+      { overdueGrace: 0, sweepIntervalSeconds: 0.01, hardExpiry: 100000 },
+      [],
+      opened,
+    );
+    const operator = generateSecretKey();
+    const operatorPubkey = getPublicKey(operator);
+
+    deliver(signalEvent(operator, pubkey, "on-station", { callsign: "Wren", area: "Downtown", expected_duration: 1, routine_interval: null, share_position: false, position: null }));
+    await waitForResponse(publishedEvents);
+
+    await vi.waitFor(() => {
+      expect(outcomes(operatorPubkey)).toContain("contacted/contact-not-attempted");
+    }, { timeout: 5000 });
+    expect(outcomes(operatorPubkey)).toContain("marked-overdue/marked-overdue");
+  });
+
+  it("records that no escalation was attempted on a Distress", async () => {
+    // NOT "reached nobody" -- that would claim an attempt was made. The ladder does not
+    // exist, and this entry should read badly until it does.
+    const { pubkey, deliver, publishedEvents } = await started({}, [], opened);
+    const operator = generateSecretKey();
+    const operatorPubkey = getPublicKey(operator);
+
+    deliver(distressEvent(operator, pubkey, "help"));
+    await waitForResponse(publishedEvents);
+
+    expect(outcomes(operatorPubkey)).toContain("escalated/escalation-not-attempted");
+    expect(outcomes(operatorPubkey)).not.toContain("escalated/escalation-reached-nobody");
+  });
+
+  it("keeps two operators with the same callsign apart", async () => {
+    // Callsigns are not unique and there is no registry. Matching on the name in the
+    // mechanism that holds the watch accountable would show one person another's record.
+    const { pubkey, deliver, publishedEvents } = await started({}, [], opened);
+    const a = generateSecretKey();
+    const b = generateSecretKey();
+
+    deliver(signalEvent(a, pubkey, "on-station", { callsign: "Raven", area: "North", expected_duration: 7200, routine_interval: null, share_position: false, position: null }));
+    await waitForResponse(publishedEvents);
+    deliver(signalEvent(b, pubkey, "on-station", { callsign: "Raven", area: "South", expected_duration: 7200, routine_interval: null, share_position: false, position: null }));
+    await waitForResponse(publishedEvents, 1);
+
+    await vi.waitFor(() => {
+      expect(opened.about(getPublicKey(a))).toHaveLength(1);
+      expect(opened.about(getPublicKey(b))).toHaveLength(1);
+    });
+  });
 });
 
 describe("WatchtowerDaemon.start()", () => {

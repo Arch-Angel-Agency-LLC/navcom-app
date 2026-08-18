@@ -8,6 +8,7 @@
 
 import { describe, it, expect, vi } from "vitest";
 import type { SimplePool } from "nostr-tools/pool";
+import type { Event } from "nostr-tools/core";
 import { generateSecretKey, getPublicKey } from "nostr-tools/pure";
 import { sendSignal, sendDistress, waitForResponse } from "../src/transport.js";
 import { seal } from "../src/crypto/envelope.js";
@@ -91,7 +92,7 @@ describe("waitForResponse (found in review)", () => {
     };
     const content = seal(watchtowerSecretKey, clientPubkey, responsePayload);
 
-    let capturedOnEvent: ((event: unknown) => void) | undefined;
+    let capturedOnEvent: ((event: Event) => void) | undefined;
     const pool = fakePool({
       subscribeMany: (_relays, _filter, params) => {
         capturedOnEvent = params.onevent;
@@ -168,7 +169,7 @@ describe("waitForResponse (found in review)", () => {
     const watchtowerSecretKey = generateSecretKey();
     const watchtowerPubkey = getPublicKey(watchtowerSecretKey);
 
-    let capturedOnEvent: ((event: unknown) => void) | undefined;
+    let capturedOnEvent: ((event: Event) => void) | undefined;
     const pool = fakePool({
       subscribeMany: (_relays, _filter, params) => {
         capturedOnEvent = params.onevent;
@@ -180,10 +181,12 @@ describe("waitForResponse (found in review)", () => {
     const promise = waitForResponse(pool, RELAYS, clientSecretKey, clientPubkey, watchtowerPubkey, sentEvent, 20);
 
     // A structurally-event-shaped object with a bogus signature.
+    // Event-shaped with a bogus signature: exactly what a forgery looks like on the wire,
+    // so it is cast in deliberately rather than constructed by finalizeEvent.
     capturedOnEvent?.({
       kind: KIND_RESPONSE, tags: [], content: "garbage", created_at: 1001,
       pubkey: watchtowerPubkey, id: "x".repeat(64), sig: "0".repeat(128),
-    });
+    } as unknown as Event);
 
     await expect(promise).rejects.toThrow(/No response from Watchtower within/);
   });
