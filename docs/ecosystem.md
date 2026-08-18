@@ -190,8 +190,12 @@ broadcast onto stored kinds, that means a name can become permanently public on 
 relays. NavCom's [invariant 1](principles.md) is absolute, and
 [H1](research/constraints.md) already concedes software cannot enforce free text — which is
 exactly why NavCom must not treat an upstream redactor as the enforcement point. **Anything
-NavCom ingests gets filtered on arrival, on NavCom's side, regardless of what the sender
+NavCom ingests must be filtered on arrival, on NavCom's side, regardless of what the sender
 believes it removed.**
+
+*Stated as a requirement, not a shipped capability.* No ingestion exists yet and none is in
+scope until the loop is proven. Recorded now so it is a precondition of building ingestion
+rather than something remembered afterwards.
 
 **4. `entityRef` is exposed in a public tag, and that is worth fixing while it is free.**
 A Finding's `d` tag is `starcom_finding_<entityRef>_<attribute>` — unencrypted and
@@ -219,6 +223,18 @@ in scope — after the loop is proven.
 **`lineage.md` ownership.** It covers where NavCom's ideas came from, including its own
 Steele and Earth Alliance inheritance. Starcom's lineage is not the same lineage, and a
 shared file would flatten two different sets of decisions into one. Keep them separate.
+
+### Addressing, if packages become encrypted
+
+Encrypting to a Watchtower key requires knowing one, and
+[`spec/bootstrap.spec.md`](spec/bootstrap.spec.md) closes the obvious route: *"Nothing
+auto-discovers a Watchtower. There is no directory of nodes, and there should not be one —
+a list of Watchtowers is a list of where operators are."*
+
+So the answer is the path already specified for operators: **the pubkey is handed over out
+of band, once, by a person.** No discovery endpoint, no registry, no NavCom-side service to
+build. Said here because the alternative — Starcom reasonably asking for a lookup API — is
+a request NavCom would have to refuse after the fact.
 
 **Not answered here:** whether Starcom should encrypt, keep broadcasting with a stated
 exception, or something else, is Starcom's call to make against its own requirements. Points
