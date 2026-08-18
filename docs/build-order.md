@@ -97,6 +97,14 @@ publisher and reading as a live watch, and the callsign gap. Its runtime validat
 promoted into core, because a client parsing a response needs the same guarantees the
 daemon needed.
 
+**One transport, not two.** The CLI had its own send-and-wait and the terminal was about to
+grow a second. Two implementations of one wire behaviour agree right up until one of them is
+fixed — and the fix that mattered was `Distress` retrying indefinitely, which only one had.
+`packages/watchtower/src/client/signal.ts` is now a re-export, and the review findings that
+shaped it moved into core **with their tests**: publish-failure reporting, response signature
+verification, and not leaving a timer armed when `subscribeMany` throws synchronously. The
+CLI's `distress` retries until a human answers and stops only on Ctrl-C.
+
 **A stale `packages/core/dist` produced three phantom type errors** in consumers before it
 was made structural rather than remembered: `web` and `packages/watchtower` now rebuild core
 in a `pre`-hook before check, build and test. A build step you have to remember is a build

@@ -4,7 +4,7 @@ import { SimplePool } from "nostr-tools/pool";
 import { installNodeWebSocket } from "../shared/nostr-node.js";
 import { loadOrCreateKeypair } from "../shared/identity.js";
 import { loadClientConfig, type ClientConfig } from "./config.js";
-import { sendSignal, sendDistress, waitForResponse } from "./signal.js";
+import { sendSignal, sendDistressUntilAcknowledged, waitForResponse } from "./signal.js";
 import { checkDark } from "./dark.js";
 import type { OnStationPayload, QueryPayload, ResponsePayload , AssistPayload } from "../shared/payloads.js";
 import { int } from "./parsers.js";
@@ -176,17 +176,50 @@ program
 
 program
   .command("distress")
-  .description("Send a distress signal -- always a deliberate act")
+  .description("Send a distress signal -- always a deliberate act. Retries until a human answers")
   .option("--text <text>", "details")
+  .option("--area <area>", "coarse area, so a responder has somewhere to start")
   .action(async (opts) => {
     await withClient(program.opts(), async ({ pool, config, secretKey, pubkey }) => {
       const start = Date.now();
-      const sent = await sendDistress(pool, config.relays.urls, secretKey, config.watchtower.pubkey, opts.text);
-      console.log("-> DISTRESS");
-      const response = await waitForResponse(
-        pool, config.relays.urls, secretKey, pubkey, config.watchtower.pubkey, sent, RESPONSE_TIMEOUT_MS,
-      );
-      printResponse(response, Date.now() - start);
+
+      // Retries indefinitely, and only Ctrl-C ends it. A single send that gave up after one
+      // timeout was the spec MUST this command had been missing: relays do not store
+      // ephemeral events, so one failed publish is a signal nobody ever receives.
+      const controller = new AbortController();
+      const stop = () => {
+        console.log("\n-- stood down by the operator. Nothing is still trying.");
+        controller.abort();
+      };
+      process.on("SIGINT", stop);
+
+      console.log("-> DISTRESS (Ctrl-C to stand down)");
+      try {
+        const response = await sendDistressUntilAcknowledged(
+          pool, config.relays.urls, secretKey, pubkey, config.watchtower.pubkey,
+          { position: null, area: opts.area ?? null, ...(opts.text ? { text: opts.text } : {}) },
+          {
+            signal: controller.signal,
+            onPhase: (p) => {
+              switch (p.phase) {
+                case "sending": console.log(`   attempt ${p.attempt} sending`); break;
+                case "sent": console.log(`   attempt ${p.attempt} left the client`); break;
+                // The distinction that matters: this one never got off the machine.
+                case "unreachable": console.log(`   attempt ${p.attempt} NEVER LEFT: ${p.error}`); break;
+                case "no-answer": console.log(`   attempt ${p.attempt} sent, no answer`); break;
+                // An agent is never the sole responder to Distress [invariant 5].
+                case "agent-holding":
+                  console.log(`   attempt ${p.attempt} answered by an AGENT (${p.response.responder?.callsign ?? "?"}) -- still looking for a human`);
+                  break;
+                case "acknowledged": break;
+              }
+            }
+          },
+        );
+        printResponse(response, Date.now() - start);
+      } finally {
+        process.off("SIGINT", stop);
+      }
     });
   });
 

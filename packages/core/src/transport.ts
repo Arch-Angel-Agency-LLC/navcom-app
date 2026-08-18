@@ -8,7 +8,7 @@
  */
 
 import type { Event } from 'nostr-tools/core';
-import { finalizeEvent } from 'nostr-tools/pure';
+import { finalizeEvent, verifyEvent } from 'nostr-tools/pure';
 import type { SimplePool } from 'nostr-tools/pool';
 
 import { seal, open } from './crypto/envelope.js';
@@ -27,7 +27,7 @@ async function publishOrThrow(pool: SimplePool, relays: string[], event: Event):
     .map((r) => (r.status === 'rejected' ? String(r.reason) : null))
     .filter((r): r is string => r !== null);
   throw new PublishError(
-    `Reached no relay (${relays.length} tried): ${reasons.join('; ') || 'unknown error'}`
+    `Failed to publish to any relay (${relays.length} tried): ${reasons.join('; ') || 'unknown error'}`
   );
 }
 
@@ -97,24 +97,42 @@ export function waitForResponse(
     };
 
     const timer = setTimeout(
-      () => finish(() => reject(new Error(`No response within ${timeoutMs}ms`))),
+      () => finish(() => reject(new Error(`No response from Watchtower within ${timeoutMs}ms`))),
       timeoutMs
     );
 
-    closer = pool.subscribeMany(
-      relays,
-      { kinds: [KIND_RESPONSE], authors: [watchtower], '#p': [ourPubkey], '#e': [sent.id] },
-      {
-        onevent(event) {
-          try {
-            const payload = open<ResponsePayload>(secret, watchtower, event.content);
-            finish(() => resolve(payload));
-          } catch {
-            // Undecryptable means not for us. Keep waiting rather than failing.
+    try {
+      closer = pool.subscribeMany(
+        relays,
+        {
+          kinds: [KIND_RESPONSE],
+          authors: [watchtower],
+          '#p': [ourPubkey],
+          '#e': [sent.id],
+          // Nothing older than the signal can be an answer to it.
+          since: sent.created_at - 1
+        },
+        {
+          onevent(event) {
+            // Defence in depth, matching the daemon's check on incoming signals. Decryption
+            // already authenticates the sender through NIP-44's shared secret, so this is
+            // not load-bearing — it is an inconsistency worth closing rather than a hole.
+            if (!verifyEvent(event)) return;
+            try {
+              const payload = open<ResponsePayload>(secret, watchtower, event.content);
+              finish(() => resolve(payload));
+            } catch {
+              // Undecryptable means not for us. Keep waiting rather than failing.
+            }
           }
         }
-      }
-    );
+      );
+    } catch (err) {
+      // A synchronous failure (a malformed relay URL, say) would otherwise leave the timer
+      // armed to fire into nothing minutes after the real error was reported.
+      finish(() => reject(err instanceof Error ? err : new Error(String(err))));
+      return;
+    }
     if (done) closer.close();
   });
 }

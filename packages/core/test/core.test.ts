@@ -7,6 +7,7 @@ import { buildWatchStateEvent, capabilitySentence, darkState, pageableNow, publi
 import { readWatchStateAt } from '../src/events/watch-state';
 import { appendEntry, entriesAbout, verifyChain } from '../src/log';
 import { sendDistressUntilAcknowledged } from '../src/transport';
+import { finalizeEvent } from 'nostr-tools/pure';
 import { buildDistress, buildSignal, RESPONSE_WINDOW } from '../src/events/signal';
 import { isUnverified, type ResponsePayload } from '../src/events/response';
 import { KIND_DISTRESS, KIND_RESPONSE, KIND_SIGNAL, KIND_WATCH_STATE, isEphemeral, readTag } from '../src/events/kinds';
@@ -385,16 +386,23 @@ describe('distress keeps trying until a human acknowledges', () => {
             : agent
               ? { kind: 'agent' as const, callsign: 'Mecha Jono' }
               : { kind: 'human' as const, callsign: 'Wren' };
-          queueMicrotask(() =>
-            params.onevent({
+          // Really signed by the Watchtower key: waitForResponse verifies the signature,
+          // so an unsigned fake would be dropped exactly as a forged one should be.
+          const event = finalizeEvent(
+            {
+              kind: KIND_RESPONSE,
+              created_at: Math.floor(Date.now() / 1000),
+              tags: [['p', ourPubkey]],
               content: seal(wt, ourPubkey, {
                 type: 'ack',
                 responder,
                 text: null,
                 provenance: null
               })
-            })
+            },
+            wt
           );
+          queueMicrotask(() => params.onevent(event));
         }
         subs.push(params.onevent);
         return { close() {} };

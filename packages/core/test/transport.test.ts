@@ -1,10 +1,18 @@
+/**
+ * Transport behaviour, every case found by review of the daemon's CLI.
+ *
+ * These moved here with the code. They were written against a second implementation of
+ * send-and-wait that has since been deleted — the findings are what survived, and they are
+ * only meaningful in the package that now owns the behaviour.
+ */
+
 import { describe, it, expect, vi } from "vitest";
 import type { SimplePool } from "nostr-tools/pool";
 import { generateSecretKey, getPublicKey } from "nostr-tools/pure";
-import { sendSignal, sendDistress, waitForResponse } from "../src/client/signal.js";
-import { encryptPayload } from "../src/shared/crypto.js";
-import { KIND_RESPONSE } from "../src/shared/kinds.js";
-import type { ResponsePayload } from "../src/shared/payloads.js";
+import { sendSignal, sendDistress, waitForResponse } from "../src/transport.js";
+import { seal } from "../src/crypto/envelope.js";
+import { KIND_RESPONSE } from "../src/events/kinds.js";
+import type { ResponsePayload } from "../src/events/response.js";
 
 const RELAYS = ["wss://relay.example"];
 
@@ -50,7 +58,7 @@ describe("sendSignal / sendDistress publish-failure reporting (found in review)"
       publish: () => [Promise.reject(new Error("dns failure"))],
     });
 
-    await expect(sendDistress(pool, RELAYS, secretKey, watchtowerPubkey, "help")).rejects.toThrow(
+    await expect(sendDistress(pool, RELAYS, secretKey, watchtowerPubkey, { position: null, area: "north side" })).rejects.toThrow(
       /Failed to publish to any relay/,
     );
   });
@@ -76,9 +84,12 @@ describe("waitForResponse (found in review)", () => {
     const watchtowerPubkey = getPublicKey(watchtowerSecretKey);
 
     const responsePayload: ResponsePayload = {
-      type: "ack", responder: "watchtower", responder_kind: "agent", text: null, provenance: null,
+      type: "ack",
+      responder: { kind: "agent", callsign: "Mecha Jono" },
+      text: null,
+      provenance: null,
     };
-    const content = encryptPayload(watchtowerSecretKey, clientPubkey, responsePayload);
+    const content = seal(watchtowerSecretKey, clientPubkey, responsePayload);
 
     let capturedOnEvent: ((event: unknown) => void) | undefined;
     const pool = fakePool({
