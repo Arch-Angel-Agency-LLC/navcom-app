@@ -179,15 +179,52 @@ screen was designed against it:
 | | |
 |---|---|
 | **Tampering** — editing history afterwards | **Closed for a whole-log reader.** Each entry hashes its content plus the previous hash, so an edit anywhere breaks every link after it |
-| **Selective disclosure** — handing an operator a filtered view they cannot check | **Not closed.** A link points at the entry before it *in the full log*, which is usually about somebody else. Filter to one subject and every link dangles, so the filtered view can never verify. Closing it needs **inclusion proofs against a published root** |
+| **Selective disclosure** — handing an operator a filtered view they cannot check | **Closed**, by inclusion proofs against a published root. A link points at the entry before it *in the full log*, which is usually about somebody else, so a filtered chain view can never verify — but a Merkle proof is `log₂(n)` sibling hashes and discloses nothing about anyone else |
 | **Fabrication / omission** — a false entry written at the time, or a true one never written | **Not closed.** Only `countersig` — the subject signing that this is what happened to them — closes it, and nothing counter-signs yet |
 
 **The middle row is the one that matters here**, because the operator is precisely the party
 who cannot be given the whole log. The earlier version of this table said an operator
-"can verify the chain without trusting whoever wrote it." That was wrong: they could not,
-and the two library functions written to make it possible could not compose. Until inclusion
-proofs ship, an operator reading their entries is reading **the watch's account of itself**,
-and the screen that renders them must say so.
+"can verify the chain without trusting whoever wrote it." That was wrong for a filtered
+view, and the two library functions written to make it possible could not compose.
+
+### `log_root` — the commitment
+
+`10910` carries a Merkle root over the log, republished on the heartbeat:
+
+```json
+"log_root": { "root": "<hex sha256>", "size": 128, "at": 1755300000 }
+```
+
+- Structured as RFC 6962: leaves and internal nodes are domain-separated, and the tree
+  splits at the largest power of two below `n` rather than duplicating a lone trailing leaf.
+  Both are needed; the obvious implementation has neither and is forgeable
+- A leaf is the entry's **stated** chain hash, so the root does not commit to readable
+  content on its own. A verifier MUST recompute the entry's own hash before checking the
+  path. The two are only sound together
+- Null MUST be published when the node keeps no log. *"This watch commits to nothing"* is a
+  fact an operator should be able to read
+- It is a **checkpoint**, not a live value. An entry written since the last heartbeat is
+  genuinely not covered, and `size` is what makes that legible rather than confusing
+
+### Clients MUST keep the roots they have seen
+
+`10910` is replaceable, so a relay serves only the newest. **A node that is the sole
+custodian of the evidence against itself is not being held to anything.**
+
+A client keeps its observations and reports three findings:
+
+| | |
+|---|---|
+| `diverged` | Two different roots at the same tree size. **Nothing legitimate does this** — history was rewritten after being committed to |
+| `shrank` | Fewer entries than a root already seen. Retention does this on a schedule; so does deletion |
+| `stopped` | A watch that was committing to a log no longer is |
+
+These are kept in the accruing tier and survive a panic wipe. A hash says nothing about
+where anyone was, and the record is worth more the further back it goes.
+
+**What none of this closes: omission.** A watch that never writes an entry publishes a root
+over a tree that never contained it, and every proof still verifies. Only `countersig`
+closes that, and the screen rendering a review must say so plainly.
 
 The chain does not make a lie impossible and this spec does not pretend otherwise. Same gate
 as `oncall`: counter-signing ships before the Watchtower opens past people personally

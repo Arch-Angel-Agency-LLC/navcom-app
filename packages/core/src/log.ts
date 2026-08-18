@@ -158,6 +158,16 @@ function digest(entry: NewEntry, prev: string | null): string {
   return bytesToHex(sha256(utf8ToBytes(canonical)));
 }
 
+/**
+ * Recomputes the hash an entry claims, from its content and its stated `prev`.
+ *
+ * Exported so a reader holding a single entry can check it without the rest of the log —
+ * which is precisely what an operator reviewing their own entries has.
+ */
+export function entryHashInput(entry: LogEntry): string {
+  return digest(entry, entry.prev);
+}
+
 export function appendEntry(log: CompleteLog, entry: NewEntry): CompleteLog {
   const prev = log.length === 0 ? GENESIS : log[log.length - 1].hash;
   return asCompleteLog([...log, { ...entry, prev, hash: digest(entry, prev) }]);

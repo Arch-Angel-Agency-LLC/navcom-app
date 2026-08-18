@@ -6,12 +6,14 @@
  * holding message.
  */
 
-import { readWatchStateAt, type WatchStateRead } from '@navcom/core';
+import { readWatchStateAt, type RootAlarm, type WatchStateRead } from '@navcom/core';
 import { loadConfig } from './config';
 import { watchWatchtower, type Connection } from './relay';
+import { recordRoot, rootAlarms } from './roots';
 
 let read = $state<WatchStateRead>(readWatchStateAt(null));
 let connected = $state(false);
+let alarms = $state<RootAlarm[]>([]);
 let connection: Connection | null = null;
 
 export const watch = {
@@ -26,13 +28,30 @@ export const watch = {
     return connected;
   },
 
+  /**
+   * Contradictions this device has seen in what the watch published about its own log.
+   *
+   * Never cleared. A watch that rewrote history cannot make both of its published roots
+   * true, and the operator holding the pair is the only party who can say so.
+   */
+  get alarms(): RootAlarm[] {
+    return alarms;
+  },
+
   /** Starts watching, if this terminal has been given a Watchtower. */
   start(): void {
     const config = loadConfig();
     if (!config) return;
     connection?.close();
+    alarms = rootAlarms();
     connection = watchWatchtower(config, (r) => {
       read = r;
+      // Only a live read tells us anything about the log. A Dark read means we could not
+      // reach the watch, which is not the same as a watch that stopped committing.
+      if (!r.dark) {
+        recordRoot(r.state.log_root);
+        alarms = rootAlarms();
+      }
     });
     connected = true;
   },

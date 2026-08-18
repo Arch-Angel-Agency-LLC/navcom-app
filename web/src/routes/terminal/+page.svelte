@@ -52,6 +52,35 @@
   <h1>Status</h1>
 </header>
 
+{#if watch.alarms.length > 0}
+  <!--
+    Above the watch state, because it changes what the state MEANS. Everything below this
+    is the watch's account of itself, and this says that account has contradicted itself.
+  -->
+  <section class="alarm" data-root-alarm={watch.alarms.at(-1)?.kind}>
+    <h2>This watch contradicted itself</h2>
+    {#each watch.alarms.slice(-3) as a, i (i)}
+      <p>
+        {#if a.kind === 'diverged'}
+          It published two different accounts of its own log at the same length
+          (<span class="mono">{a.was.size}</span> entries). <strong>Nothing legitimate does
+          that.</strong> History was rewritten after it had been committed to.
+        {:else if a.kind === 'shrank'}
+          Its log went from <span class="mono">{a.was.size}</span> entries to
+          <span class="mono">{a.now.size}</span>. Retention does this on a schedule; so does
+          deletion.
+        {:else}
+          It was committing to a log and has stopped.
+        {/if}
+      </p>
+    {/each}
+    <p class="cost">
+      This device recorded it, and keeps it. Signing on under this watch is a decision you
+      are allowed to make either way — but you get to make it knowing.
+    </p>
+  </section>
+{/if}
+
 <!-- The one screen that must work when everything else is down. -->
 <section class="state" style="--tone: {TONE[s.state]}" data-state={s.state}>
   <span class="dot" aria-hidden="true"></span>
@@ -219,6 +248,10 @@
   .actions.single { grid-template-columns: 1fr; }
   .actions :global(.action), .actions button { width: 100%; }
   .primary { border-color: var(--t-station); color: var(--t-station); }
+
+  .alarm { border: 2px solid var(--t-dark); background: var(--t-sunk); padding: 1rem 1.1rem; gap: .5rem; }
+  .alarm h2 { color: var(--t-dark); }
+  .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
 
   .quiet { display: flex; gap: 1.2rem; }
   .quiet a { color: var(--t-faint); font-size: .9rem; text-decoration: none; border-bottom: 1px solid var(--t-line); }

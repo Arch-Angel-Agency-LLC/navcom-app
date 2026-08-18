@@ -218,10 +218,23 @@ load-bearing one.
 `DaemonConfig` missing a required field and nothing complained, which is how a suite drifts
 away from the types it exists to exercise. Both now check `src` and `test`.
 
-**B — selective disclosure.** Merkle tree over entries, periodic signed root in `10910` as a
-`log_root` field rather than a new kind. An operator verifies their own entries against a
-root they saw published, without seeing anyone else's. Omission still needs `countersig`,
-same gate.
+**B — selective disclosure — done.** RFC 6962 Merkle tree in `packages/core/src/merkle.ts`,
+root published as `log_root` on `10910` rather than as a new kind. An operator verifies
+their own entries against a root they saw published, holding `log₂(n)` sibling hashes and
+nothing about anybody else.
+
+Two properties the obvious implementation lacks, both tested: **domain separation**, without
+which an internal node can be passed off as a leaf and membership forged for data never in
+the log; and **no duplicated odd leaf**, without which different logs collide on one root.
+The suite is weighted towards forgeries — swapped content under a valid proof, a proof from
+another tree, a truncated path — because "a valid proof verifies" proves nothing about
+whether an invalid one is rejected.
+
+**The client keeps the roots it has seen**, in the accruing tier, surviving a panic wipe. A
+replaceable `10910` means a relay serves only the newest root, so without this the watch is
+the sole custodian of the evidence against itself. `diverged` — two roots at the same tree
+size — is the finding it exists to produce, and it renders **above** the watch state,
+because it changes what everything below it means.
 
 **C — retrieval.** `log-review` as a sixth `20910` signal type; `ResponsePayload` gains
 optional `entries` and `proofs`, additive. `20912` is ephemeral, so the log never becomes

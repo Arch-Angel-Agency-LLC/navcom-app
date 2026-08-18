@@ -5,10 +5,14 @@ import {
   asCompleteLog,
   emptyLog,
   entriesAbout,
+  inclusionProof,
+  merkleRoot,
   verifyChain,
   type ChainCheck,
   type CompleteLog,
+  type InclusionProof,
   type LogEntry,
+  type LogRoot,
   type NewEntry,
 } from "@navcom/core";
 
@@ -145,6 +149,34 @@ export class AccountabilityLog {
    */
   about(pubkey: string): LogEntry[] {
     return entriesAbout(this.entries, pubkey);
+  }
+
+  /**
+   * A commitment to the log as it stands, for publication in `10910`.
+   *
+   * Recomputed on demand rather than cached: at this size it is microseconds, and a cached
+   * root that drifted from the entries would be the single most misleading value in the
+   * system -- a signed statement about a log that is not the log.
+   */
+  root(nowSeconds: number): LogRoot {
+    return merkleRoot(this.entries, nowSeconds);
+  }
+
+  /**
+   * The entries about one operator, each with a proof that it is in the published tree.
+   *
+   * The proof is `log₂(n)` sibling hashes and nothing else, so it discloses nothing about
+   * any other operator. This is what makes C33 reviewable rather than merely promised: the
+   * operator checks their entries against a root they saw published, without being handed
+   * everyone's record and without taking the watch's word for it.
+   */
+  reviewFor(pubkey: string): { entry: LogEntry; proof: InclusionProof }[] {
+    const out: { entry: LogEntry; proof: InclusionProof }[] = [];
+    this.entries.forEach((entry, index) => {
+      if (entry.subject?.pubkey !== pubkey) return;
+      out.push({ entry, proof: inclusionProof(this.entries, index) });
+    });
+    return out;
   }
 
   status(): { entries: number; startsAt: string | null; breaks: Meta["breaks"] } {

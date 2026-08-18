@@ -176,6 +176,10 @@ export class WatchtowerDaemon {
       agent_health: AGENT_HEALTH_OK,
       last_drill: null,
       overdue_count: this.board.overdueCount,
+      // A commitment to the log, republished on every heartbeat so an operator holding an
+      // older root can tell whether history moved under them. Null when no log is open --
+      // "this watch commits to nothing" is a fact worth publishing, not a gap to hide.
+      log_root: this.accountability?.root(now()) ?? null,
     };
     const event = this.sign({
       kind: KIND_WATCH_STATE,

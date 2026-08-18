@@ -13,6 +13,7 @@ import type { ResponsePayload, WatchStatePayload } from "../src/shared/payloads.
 import * as authorization from "../src/daemon/authorization.js";
 import * as query from "../src/daemon/query.js";
 import { AccountabilityLog } from "../src/daemon/accountability.js";
+import { verifyInclusion } from "@navcom/core";
 
 /**
  * The one file with zero direct test coverage before this pass, despite
@@ -211,6 +212,82 @@ describe("what the watch writes down", () => {
 
     expect(outcomes(operatorPubkey)).toContain("escalated/escalation-not-attempted");
     expect(outcomes(operatorPubkey)).not.toContain("escalated/escalation-reached-nobody");
+  });
+
+  it("publishes a root an operator can verify their own entries against", async () => {
+    // The point of the whole exercise: C33 reviewable rather than promised. The operator
+    // checks their entries against a root the watch published, holding sibling hashes and
+    // nothing about anybody else.
+    const { pubkey, deliver, publishedEvents } = await started({}, [], opened);
+    const a = generateSecretKey();
+    const b = generateSecretKey();
+
+    deliver(signalEvent(a, pubkey, "on-station", { callsign: "Wren", area: "North", expected_duration: 7200, routine_interval: null, share_position: false, position: null }));
+    await waitForResponse(publishedEvents);
+    deliver(signalEvent(b, pubkey, "on-station", { callsign: "Raven", area: "South", expected_duration: 7200, routine_interval: null, share_position: false, position: null }));
+    await waitForResponse(publishedEvents, 1);
+
+    const root = opened.root(Math.floor(Date.now() / 1000));
+    const review = opened.reviewFor(getPublicKey(a));
+    expect(review.length).toBeGreaterThan(0);
+    for (const { entry, proof } of review) {
+      expect(verifyInclusion(entry, proof, root)).toBe(true);
+    }
+    // What the operator receives says nothing about the other operator.
+    expect(JSON.stringify(review)).not.toContain(getPublicKey(b));
+  });
+
+  it("publishes a root that matches the log it has actually written", async () => {
+    // A published root that drifted from the entries would be the most misleading value in
+    // the system: a signed statement about a log that is not the log.
+    //
+    // Heartbeat forced short here on purpose. The root is a CHECKPOINT, republished on the
+    // heartbeat rather than on every entry, so an entry written seconds ago is genuinely
+    // not covered by the currently-published root -- see the next test.
+    const { pubkey, deliver, publishedEvents } = await started({ heartbeatIntervalSeconds: 0.05 }, [], opened);
+    const operator = generateSecretKey();
+
+    deliver(signalEvent(operator, pubkey, "routine", {}));
+    await waitForResponse(publishedEvents);
+
+    await vi.waitFor(() => {
+      const states = publishedEvents.filter((e) => e.kind === KIND_WATCH_STATE);
+      const latest = JSON.parse(states[states.length - 1]!.content) as WatchStatePayload;
+      expect(latest.log_root).not.toBeNull();
+      expect(latest.log_root!.size).toBe(opened.all().length);
+      expect(latest.log_root!.root).toBe(opened.root(latest.log_root!.at).root);
+    });
+  });
+
+  it("does not cover an entry written since the last checkpoint, and says so by size", async () => {
+    // Inherent to checkpointing, and the honest handling is that a proof carries the tree
+    // size it was made against. An operator holding an older root can verify their entries
+    // up to that size and no further -- rather than being told a fresh entry is unverifiable
+    // when it is simply not yet committed to.
+    const { pubkey, deliver, publishedEvents } = await started({}, [], opened);
+    const operator = generateSecretKey();
+
+    const states = () => publishedEvents.filter((e) => e.kind === KIND_WATCH_STATE);
+    const publishedRoot = JSON.parse(states()[0]!.content) as WatchStatePayload;
+    const sizeAtStart = publishedRoot.log_root!.size;
+
+    deliver(signalEvent(operator, pubkey, "routine", {}));
+    await waitForResponse(publishedEvents);
+
+    await vi.waitFor(() => {
+      expect(opened.all().length).toBeGreaterThan(sizeAtStart);
+    });
+    // The new entry exists, and the published checkpoint does not yet cover it.
+    expect(publishedRoot.log_root!.size).toBe(sizeAtStart);
+  });
+
+  it("publishes a null root when it keeps no log, rather than omitting the field", async () => {
+    // "This watch commits to nothing" is a fact an operator should be able to read.
+    const { publishedEvents } = await started();
+    const state = publishedEvents.find((e) => e.kind === KIND_WATCH_STATE)!;
+    const payload = JSON.parse(state.content) as WatchStatePayload;
+    expect(payload).toHaveProperty("log_root");
+    expect(payload.log_root).toBeNull();
   });
 
   it("keeps two operators with the same callsign apart", async () => {

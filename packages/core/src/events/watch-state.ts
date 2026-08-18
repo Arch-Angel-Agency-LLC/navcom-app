@@ -9,6 +9,7 @@
  */
 
 import type { Author } from '../attestation.js';
+import type { LogRoot } from '../merkle.js';
 import { KIND_WATCH_STATE } from './kinds.js';
 
 export type WatchState = 'station' | 'automated-oncall' | 'automated' | 'dark';
@@ -85,9 +86,36 @@ export interface WatchStatePayload {
    * does.**
    */
   overdue_count: number;
+  /**
+   * A commitment to the accountability log as it stands right now.
+   *
+   * Published here rather than as a new kind: `10910` is already node-published, already
+   * signed by the Watchtower key, and already read by a cold client, so the root arrives
+   * signed with no new protocol surface. Null when the node keeps no log — which is itself
+   * the fact worth publishing.
+   *
+   * What it buys: the root **pins history at a point in time**. A watch cannot retroactively
+   * change an entry that a published root already covered without every operator holding an
+   * old root being able to notice.
+   *
+   * What it does not buy: honesty about entries never written. A root over a tree that
+   * omits an entry verifies perfectly. That is `countersig`, and it is gated.
+   *
+   * `10910` is replaceable, so a relay serves only the latest. A client that wants the
+   * pinning property must **keep the roots it has seen** — the node cannot be the sole
+   * custodian of the evidence against it.
+   *
+   * It is a **checkpoint**, republished on the heartbeat rather than on every entry, so an
+   * entry written seconds ago is genuinely not covered yet. `size` is what makes that
+   * legible: an operator verifies entries up to the size their root covers, and knows the
+   * rest are pending rather than unverifiable.
+   */
+  log_root: LogRoot | null;
 }
 
-export const WATCH_STATE_VERSION = 2;
+// Bumped for log_root. Additive, so a v2 reader ignoring the field still works, but a v3
+// reader can tell a node that publishes no root from one too old to know about them.
+export const WATCH_STATE_VERSION = 3;
 
 /** Reachable now: not expired, and not console-open standing alone [C40]. */
 export function pageableNow(oncall: OnCall[], nowSeconds: number): OnCall[] {
@@ -108,6 +136,8 @@ export interface WatchStateInput {
   agent_health: AgentHealth;
   last_drill: DrillResult | null;
   overdue_count: number;
+  /** Absent when the node keeps no accountability log, which is published as null. */
+  log_root?: LogRoot | null;
   /** Unix seconds, supplied rather than read from a clock this module does not own. */
   now: number;
 }
@@ -143,7 +173,8 @@ export function publishableWatchState(input: WatchStateInput): WatchStatePayload
     since: input.since,
     agent_health: input.agent_health,
     last_drill: input.last_drill,
-    overdue_count: input.overdue_count
+    overdue_count: input.overdue_count,
+    log_root: input.log_root ?? null
   };
 }
 
@@ -238,7 +269,10 @@ export function readWatchState(content: string | null | undefined): WatchStatePa
       since: p.since ?? 0,
       agent_health: p.agent_health ?? 'down',
       last_drill: p.last_drill ?? null,
-      overdue_count: p.overdue_count ?? 0
+      overdue_count: p.overdue_count ?? 0,
+      // A v2 node publishes no root. Null reads as "this watch commits to no log", which is
+      // the honest reading of its absence rather than a shape to paper over.
+      log_root: p.log_root ?? null
     };
   } catch {
     return darkState();
@@ -254,7 +288,9 @@ export const darkState = (): WatchStatePayload => ({
   since: 0,
   agent_health: 'down',
   last_drill: null,
-  overdue_count: 0
+  overdue_count: 0,
+  // Dark commits to nothing. There is no watch to hold accountable right now.
+  log_root: null
 });
 
 /**
