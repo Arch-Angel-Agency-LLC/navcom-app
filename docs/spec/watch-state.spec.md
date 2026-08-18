@@ -26,9 +26,21 @@ before signing on [C23, invariant 4].
 }
 ```
 
+- `on-station` MUST carry `callsign`. The board has no other way to learn a human-readable
+  name from a bare pubkey, and DoD check 3 requires the board entry to show one. Optional on
+  the wire; a daemon falls back to a short deterministic label derived from the pubkey
 - `holder_kind` MUST be accurate. An agent MUST NOT be published as `human` [C25]
 - `agent_health: degraded` MUST NOT be published as `ok`
 - When the node is unreachable, clients render **`dark`** — absence is not ambiguity, it is Dark
+- **Staleness is also Dark, and this is the part that is easy to miss.** `10910` is
+  *replaceable*, so a relay keeps serving the last published copy after the daemon has died.
+  A client checking only for absence fetches that copy, reads `automated`, and tells an
+  operator a watch exists when nothing is running — invariant 4 failing in the exact way it
+  was written to prevent.
+- A client MUST therefore treat an event older than `stale_after_seconds` as Dark, and MUST
+  treat an event of unknown age as Dark rather than assuming it is fresh.
+  `stale_after_seconds` is *configurable*, and should be a small multiple of the daemon's
+  publish interval. The daemon MUST republish at that interval even when nothing changed
 
 ### On-call is a list of statements, not a count
 

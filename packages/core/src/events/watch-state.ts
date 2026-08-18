@@ -137,11 +137,73 @@ export function buildWatchStateEvent(input: WatchStateInput, createdAt: number) 
   };
 }
 
+export type DarkReason = 'absent' | 'stale' | 'corrupt';
+
+export interface WatchStateRead {
+  state: WatchStatePayload;
+  /** True when the client must render Dark, whatever the payload said. */
+  dark: boolean;
+  reason: DarkReason | null;
+  /** Age of the event in seconds, where one was found. */
+  ageSeconds: number | null;
+}
+
 /**
- * Reads a watch state event.
+ * How long a watch state may go unrefreshed before it is treated as Dark.
  *
- * **Absence is Dark, not an error and not "unknown".** A client that cannot find this event
- * renders Dark, because the honest reading of silence is that nothing is watching.
+ * Meant to be a small multiple of the daemon's publish interval. *Configurable.*
+ */
+export const STALE_AFTER_SECONDS = 300;
+
+/**
+ * Reads a watch state event, and decides whether the client must render Dark.
+ *
+ * **Absence is Dark — and so is staleness, which is the part that is easy to miss.**
+ *
+ * `10910` is a *replaceable* kind, so a relay keeps serving the daemon's last published
+ * copy long after the daemon has died. A client checking only for absence would fetch that
+ * corpse, read `automated`, and tell an operator a watch exists when nothing is running.
+ * That is invariant 4 failing in the exact way it was written to prevent.
+ *
+ * Found by running the loop against a real relay rather than by reading the spec, which is
+ * why this function takes an age it cannot infer for itself.
+ */
+export function readWatchStateAt(
+  content: string | null | undefined,
+  opts: { createdAt?: number | null; now?: number; staleAfterSeconds?: number } = {}
+): WatchStateRead {
+  const parsed = readWatchState(content);
+
+  if (!content) return { state: darkState(), dark: true, reason: 'absent', ageSeconds: null };
+  if (parsed.state === 'dark' && content) {
+    // Parsed to dark from malformed content.
+    try {
+      JSON.parse(content);
+    } catch {
+      return { state: darkState(), dark: true, reason: 'corrupt', ageSeconds: null };
+    }
+  }
+
+  const now = opts.now ?? Math.floor(Date.now() / 1000);
+  const staleAfter = opts.staleAfterSeconds ?? STALE_AFTER_SECONDS;
+
+  if (opts.createdAt == null) {
+    // No age available means no way to tell a live watch from a preserved corpse. The
+    // honest answer is Dark rather than an optimistic reading.
+    return { state: darkState(), dark: true, reason: 'stale', ageSeconds: null };
+  }
+
+  const ageSeconds = now - opts.createdAt;
+  if (ageSeconds > staleAfter) {
+    return { state: darkState(), dark: true, reason: 'stale', ageSeconds };
+  }
+
+  return { state: parsed, dark: parsed.state === 'dark', reason: null, ageSeconds };
+}
+
+/**
+ * Parses the payload only. **Prefer `readWatchStateAt`** — this cannot tell a live watch
+ * from a stale one, and a replaceable event outlives the daemon that published it.
  */
 export function readWatchState(content: string | null | undefined): WatchStatePayload {
   if (!content) return darkState();

@@ -4,6 +4,7 @@ import { deriveWeight, ageInDays, known, unknown } from '../src/attestation';
 import { newSecretKey, publicKeyOf, secretFromHex, secretToHex } from '../src/crypto/keys';
 import { open, seal } from '../src/crypto/envelope';
 import { buildWatchStateEvent, capabilitySentence, darkState, pageableNow, publishableWatchState, readWatchState, WATCH_STATE_VERSION } from '../src/events/watch-state';
+import { readWatchStateAt } from '../src/events/watch-state';
 import { appendEntry, entriesAbout, verifyChain } from '../src/log';
 import { buildDistress, buildSignal, RESPONSE_WINDOW } from '../src/events/signal';
 import { isUnverified, type ResponsePayload } from '../src/events/response';
@@ -310,5 +311,39 @@ describe('the accountability log', () => {
     // and the log would attribute one person's entries to another.
     expect(entriesAbout(log, wren.pubkey)).toHaveLength(1);
     expect(entriesAbout(log, otherWren.pubkey)).toHaveLength(1);
+  });
+});
+
+describe('a replaceable event outlives the daemon that published it', () => {
+  // Found by the Watchtower daemon running against a real relay: kind 10910 is replaceable,
+  // so a relay keeps serving the last copy after the publisher dies. Checking only for
+  // absence reads that corpse as a live watch — invariant 4 failing exactly as written.
+  const live = JSON.stringify({ v: 2, state: 'automated', oncall: [], agent_health: 'ok' });
+
+  it('reads a fresh event as live', () => {
+    const r = readWatchStateAt(live, { createdAt: NOW_S - 10, now: NOW_S });
+    expect(r.dark).toBe(false);
+    expect(r.state.state).toBe('automated');
+  });
+
+  it('reads a stale event as DARK, however healthy it claims to be', () => {
+    const r = readWatchStateAt(live, { createdAt: NOW_S - 4000, now: NOW_S });
+    expect(r.dark).toBe(true);
+    expect(r.reason).toBe('stale');
+    expect(r.state.state).toBe('dark');
+  });
+
+  it('reads absence as dark', () => {
+    expect(readWatchStateAt(null).reason).toBe('absent');
+  });
+
+  it('reads malformed content as dark', () => {
+    expect(readWatchStateAt('{ not json').reason).toBe('corrupt');
+  });
+
+  it('treats an unknown age as dark rather than assuming it is fresh', () => {
+    const r = readWatchStateAt(live, { now: NOW_S });
+    expect(r.dark).toBe(true);
+    expect(r.reason).toBe('stale');
   });
 });

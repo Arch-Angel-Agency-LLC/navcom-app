@@ -19,6 +19,14 @@ export interface Position {
 }
 
 export interface OnStationPayload {
+  /**
+   * How the board displays this operator. Optional on the wire, and a daemon falls back to
+   * a short deterministic label from the pubkey when it is absent.
+   *
+   * The spec originally omitted it, and the board then had no way to show a name at all —
+   * caught by the daemon implementation rather than by review.
+   */
+  callsign?: string;
   /** Coarse — a district, never an address. */
   area: string;
   expected_duration: number;
@@ -44,6 +52,15 @@ export interface DistressPayload {
   area: string | null;
   text?: string;
 }
+
+/**
+ * How long a client keeps retrying a `Distress` that has not been acknowledged.
+ *
+ * The spec says retry indefinitely with backoff, and that requirement is what makes an
+ * ephemeral transport acceptable here at all: relays do not store these events, so a single
+ * failed publish is a signal nobody ever receives. Not yet implemented on either side.
+ */
+export const DISTRESS_RETRY_FOREVER = true;
 
 export type SignalPayload =
   | OnStationPayload
