@@ -106,6 +106,11 @@ Three things together make it honest:
 daily cadence; it will not save a build that is three months old. Any deployment must run
 on the schedule, not only on push.
 
+**The Field Terminal escapes this problem, and does.** It is a running application, so it
+recomputes every verdict against the operator's real clock on hydration — a cached directory
+page opened three weeks later does not still claim three-week-old confidence. It also shows
+how old the cached copy itself is, which is the age no record carries and no rebuild fixes.
+
 ## Deploying from a workspace
 
 `vercel.json` at the repo root carries the build settings, so they are diffable rather than

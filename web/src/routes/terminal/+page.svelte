@@ -141,17 +141,18 @@
   <section class="offline">
     <h2>Dark is not an error</h2>
     <p>
-      Nothing is watching. That is a state, not a failure to connect — this screen and your
-      identity work with no watch and no signal, and Distress will keep trying regardless.
+      Nothing is watching. That is a state, not a failure to connect — this screen, your
+      identity and the <a href="/terminal/directory/">cached directory</a> all work with no
+      watch and no signal, and Distress will keep trying regardless.
     </p>
     <p class="cost">
       It leaves you less capable, and there is no way around that. <strong>Query needs a
-      watch</strong> — there is nobody to ask.
+      watch</strong> — there is nobody to ask, and a cached list you browse one-handed is a
+      poor substitute for someone who can answer a follow-up.
       <!--
-        This paragraph used to promise a cached directory, playbooks and a personal log.
-        None of the three exist yet. Claiming a capability on the one screen that must be
-        honest is the same failure as claiming a watch that isn't there, and it is worse
-        here because an operator plans around it. Restore the sentence when they ship.
+        This sentence once also promised playbooks and a personal log; neither existed, and
+        it was removed rather than left standing. The directory is back because it shipped.
+        The rest stays out until it does — see the capability-claim test.
       -->
     </p>
   </section>
@@ -187,6 +188,7 @@
   <!-- Two taps from anywhere in the terminal. Not buried, and not a button large enough to
        hit while putting the phone in a pocket. -->
   <nav class="quiet">
+    <a href="/terminal/directory/">Directory</a>
     <a href="/terminal/log/">Your record</a>
     <a href="/terminal/wipe/">Wipe this device</a>
     <a href="/terminal/setup/">Setup</a>

@@ -10,7 +10,7 @@
  */
 
 import { beforeEach, describe, expect, it } from 'vitest';
-import { burn, burnConfirmed, clearField, get, panicWipe, set, tierSummary } from './storage';
+import { burn, burnCaches, burnConfirmed, clearField, get, panicWipe, set, tierSummary } from './storage';
 
 /** Enough of the real thing for these assertions; the browser API is tiny here. */
 function installLocalStorage() {
@@ -81,6 +81,27 @@ describe('burn destroys everything on the device', () => {
     burn();
     expect(tierSummary()).toEqual({ accruing: [], wipeable: [] });
     expect(raw.size).toBe(0);
+  });
+
+  it('takes the offline caches too, so the claim is true', () => {
+    // "Everything on this device" stopped at localStorage until this existed -- the service
+    // worker cache kept the cached directory and every terminal page.
+    const deleted: string[] = [];
+    (globalThis as Record<string, unknown>).caches = {
+      keys: async () => ['navcom-terminal-1', 'navcom-terminal-2'],
+      delete: async (k: string) => {
+        deleted.push(k);
+        return true;
+      }
+    };
+    return burnCaches().then(() => {
+      expect(deleted.sort()).toEqual(['navcom-terminal-1', 'navcom-terminal-2']);
+    });
+  });
+
+  it('does not throw where the Cache API is absent', () => {
+    delete (globalThis as Record<string, unknown>).caches;
+    return expect(burnCaches()).resolves.toBeUndefined();
   });
 });
 

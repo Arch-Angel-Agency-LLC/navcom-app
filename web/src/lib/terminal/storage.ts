@@ -85,6 +85,20 @@ export function burn(): void {
 }
 
 /**
+ * Removes the offline caches: the app shell and the cached directory.
+ *
+ * `burn()` claims everything on this device, and until this existed that claim stopped at
+ * localStorage — the service worker cache kept the directory and every terminal page.
+ * Async because the Cache API is, and a burn that returns before the bytes are gone is the
+ * same false confidence a wipe screen exists to avoid.
+ */
+export async function burnCaches(): Promise<void> {
+  if (typeof caches === 'undefined') return;
+  const keys = await caches.keys();
+  await Promise.all(keys.map((k) => caches.delete(k)));
+}
+
+/**
  * Burns only when the operator has typed their callsign exactly.
  *
  * The gate lives here rather than in a template so it cannot be bypassed by a second screen

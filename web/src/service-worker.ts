@@ -12,14 +12,36 @@
  * "Dark" has failed at the exact moment it mattered.
  */
 
-import { build, files, version } from '$service-worker';
+import { base, build, files, version } from '$service-worker';
 
 const CACHE = `navcom-terminal-${version}`;
 
-/** The shell only. Directory data caches separately, in sprint 04. */
-const SHELL = [...build, ...files.filter((f) => !f.endsWith('.csv'))];
+/**
+ * The shell, plus the terminal's own pages.
+ *
+ * The directory is prerendered INTO the terminal's directory page rather than fetched as
+ * data, so caching the page caches the records — one artifact, no second request that could
+ * fail exactly when it matters. Cached on install, not on first use: the moment an operator
+ * needs the directory is the moment they have no signal, and "we'll fetch it when you open
+ * the screen" is a fallback that only works when you did not need a fallback.
+ */
+const SHELL = [
+  ...build,
+  ...files.filter((f) => !f.endsWith('.csv')),
+  ...['', 'directory/', 'wipe/', 'log/', 'sign-on/', 'query/', 'assist/', 'distress/'].map(
+    (page) => `${base}/terminal/${page}`
+  )
+];
 
 const sw = self as unknown as ServiceWorkerGlobalScope;
+
+/** No network and nothing cached. Fail visibly — degrade visibly, never fail silently. */
+function offline(): Response {
+  return new Response('Offline, and this was not cached.', {
+    status: 503,
+    headers: { 'content-type': 'text/plain' }
+  });
+}
 
 sw.addEventListener('install', (event) => {
   event.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)).then(() => sw.skipWaiting()));
@@ -43,17 +65,28 @@ sw.addEventListener('fetch', (event) => {
   // Only the terminal is offline-capable. The public site is served normally.
   if (!url.pathname.startsWith('/terminal') && !url.pathname.startsWith('/_app')) return;
 
+  // The directory page is the one worth refreshing when there IS a network: a cached copy
+  // that silently never updates is how a phone ends up confidently reciting a shelter that
+  // closed in March. Cache remains the fallback, so being offline changes nothing.
+  if (url.pathname.endsWith('/terminal/directory/')) {
+    event.respondWith(
+      fetch(request)
+        .then((response) => {
+          const copy = response.clone();
+          caches.open(CACHE).then((c) => c.put(request, copy));
+          return response;
+        })
+        .catch(() => caches.match(request).then((hit) => hit ?? offline()))
+    );
+    return;
+  }
+
   event.respondWith(
     caches.match(request).then(
       (hit) =>
         hit ??
         fetch(request).catch(() => {
-          // No network and nothing cached. Fail visibly rather than hanging — degrade
-          // visibly, never fail silently.
-          return new Response('Offline, and this was not cached.', {
-            status: 503,
-            headers: { 'content-type': 'text/plain' }
-          });
+          return offline();
         })
     )
   );

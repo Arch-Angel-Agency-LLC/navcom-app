@@ -186,7 +186,39 @@ browser has neither a keystore nor a secure erase. After a wipe it shows nothing
 a terminal reporting "4 items destroyed" tells whoever is holding the phone that there was
 something to destroy.
 
-Remaining screens (directory, log review) once the protocol has stopped moving. UI built
+**Cached directory — done, and the Field Terminal's screens are complete.** `/terminal/directory/`
+is the Dark fallback: something to browse when there is nobody to ask.
+
+**No search box, and a test asserts there is none.** `Query` goes to the watch — someone
+with both hands free does the lookup, can ask a follow-up, and can be wrong out loud.
+Searching a list one-handed in the cold is the problem the watch exists to solve, so search
+here would quietly undo the design.
+
+Three decisions worth recording:
+
+- **Prerendered into the page, not fetched as data.** Caching the page caches the records,
+  so there is no second request to fail exactly when it matters — and the records land in
+  the built artifact, where the six display-rule tests already scan every `[data-record]`
+- **The groups start open**, which is fewer taps in the field and, less obviously, the
+  reason the rules are checked at all: a collapsed-by-default accordion would have shipped
+  this screen with the records absent from the built HTML and the rules unverified
+- **The record rendering is the site's own components, unchanged.** They are the only
+  tested implementation of the display rules; a second one styled for the terminal would be
+  an untested copy guarding the field where a wrong answer does the most harm. The site's
+  tokens are aliased inside `.terminal` instead
+
+**Staleness recomputes on hydration.** A prerendered page freezes confidence into HTML —
+that is what the daily rebuild and the staleness margin are for — but the terminal is a
+running application and does better: a page cached three weeks ago does not still claim
+three-week-old confidence. It also states **how old the copy itself is**, which is the
+second age nothing on a record would ever mention.
+
+**Two things this turned up.** Rule 2's regression test compared a suppressed value against
+every rendered value *on the page*, which broke the moment many records shared one: a record
+with a suppressed `hours` of `unknown` also renders `sex_offender_ok` as the value
+`unknown`, a legitimate enum member of a different field. Scoped to the record and field it
+concerns. And `burn()` claimed "everything on this device" while leaving the service worker
+cache — which now holds the directory. It clears the caches, and the screen awaits it. UI built
 against an unproven payload gets rewritten when the payload changes, which is the whole
 reason for the gate.
 

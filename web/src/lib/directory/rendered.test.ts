@@ -83,18 +83,26 @@ describe('rendered display rules', () => {
       const record = records.find((r) => r.id === id);
       if (!record) continue;
 
-      // Everything the page presents as a real value, on any record.
-      const shown = page.doc
-        .querySelectorAll('[data-display="value"]')
-        .map((v) => v.structuredText.trim());
-
       for (const cf of el.querySelectorAll('[data-display="call-first"]')) {
         const field = cf.getAttribute('data-field') as ResourceField;
         const suppressed = record[field];
         if (typeof suppressed !== 'string' || suppressed.trim() === '') continue;
 
+        // Scoped to this record AND this field, which is what the rule actually says: the
+        // suppressed value must be structurally absent for the field that suppressed it.
+        //
+        // It used to compare against every rendered value on the page, which produced a
+        // false failure the moment the terminal put many records on one page: a record with
+        // a suppressed `hours` of "unknown" also renders `sex_offender_ok` as the value
+        // "unknown", which is a legitimate enum member of a different field, not a leak.
+        // The realistic leak — a summary element showing what a detail row suppressed —
+        // is same-record and same-field, and is still caught.
+        const shownForField = el
+          .querySelectorAll(`[data-display="value"][data-field="${field}"]`)
+          .map((v) => v.structuredText.trim());
+
         expect(
-          shown.some((s) => s.includes(suppressed)),
+          shownForField.some((s) => s.includes(suppressed)),
           `${page.path}: suppressed "${field}" value "${suppressed}" is rendered as a value`
         ).toBe(false);
       }
@@ -252,7 +260,7 @@ describe('the field terminal', () => {
 
   it('has built every screen the loop needs', () => {
     const built = screens().map((p) => p.path);
-    for (const screen of ['sign-on', 'query', 'assist', 'distress', 'setup', 'wipe', 'log']) {
+    for (const screen of ['sign-on', 'query', 'assist', 'distress', 'setup', 'wipe', 'log', 'directory']) {
       expect(
         built.some((p) => p.includes(`/terminal/${screen}/`)),
         `${screen} screen is not built`
@@ -375,6 +383,34 @@ describe('the field terminal', () => {
     const log = screens().find((p) => p.path.includes('/terminal/log/'))!;
     expect(log.bodyText).toMatch(/whether anything is missing/i);
     expect(log.bodyText).toMatch(/nothing signs yet/i);
+  });
+
+  it('renders its cached records into the built page, where the display rules are checked', () => {
+    // The rules in the first describe block scan every [data-record] on every page. That
+    // only covers the terminal if the terminal actually prerenders its records -- which is
+    // why the groups start open. A collapsed-by-default accordion would have shipped this
+    // screen with the six display rules unchecked on the surface where a confident wrong
+    // answer does the most harm.
+    const dir = screens().find((p) => p.path.includes('/terminal/directory/'))!;
+    expect(dir.doc.querySelectorAll('[data-record]').length).toBeGreaterThan(0);
+    expect(dir.doc.querySelectorAll('[data-display][data-field]').length).toBeGreaterThan(0);
+  });
+
+  it('has no search box, because Query goes to the watch', () => {
+    // The anti-pattern this screen is most likely to grow. Searching a list one-handed in
+    // the cold is the problem the watch exists to solve.
+    const dir = screens().find((p) => p.path.includes('/terminal/directory/'))!;
+    expect(dir.doc.querySelectorAll('input[type="search"]').length).toBe(0);
+    expect(dir.doc.querySelectorAll('input[type="text"]').length).toBe(0);
+    expect(dir.raw).not.toMatch(/placeholder="[^"]*search/i);
+    expect(dir.bodyText).toMatch(/Query goes to the watch/i);
+  });
+
+  it('says how old the cached copy is, separately from how old the facts are', () => {
+    // A snapshot has two ages and only one of them is written on the records. An operator
+    // offline for three weeks has stale data twice over.
+    const dir = screens().find((p) => p.path.includes('/terminal/directory/'))!;
+    expect(dir.doc.querySelector('[data-snapshot-age]'), 'no snapshot age rendered').not.toBeNull();
   });
 
   it('carries a manifest so it can be installed', () => {

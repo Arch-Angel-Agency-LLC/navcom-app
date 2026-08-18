@@ -15,7 +15,7 @@
    */
   import { onMount } from 'svelte';
   import { goto } from '$app/navigation';
-  import { burnConfirmed, panicWipe, tierSummary } from '$lib/terminal/storage';
+  import { burnCaches, burnConfirmed, panicWipe, tierSummary } from '$lib/terminal/storage';
   import { loadIdentity } from '$lib/terminal/identity';
   import { operator } from '$lib/terminal/session.svelte';
 
@@ -61,10 +61,12 @@
     goto('/terminal/');
   }
 
-  function doBurn() {
+  async function doBurn() {
     // The gate is enforced in storage, not here — this button being disabled is a courtesy.
     if (!burnConfirmed(typed, callsign)) return;
     operator.forget();
+    // Awaited: an operator must not be shown a finished screen while bytes are still there.
+    await burnCaches();
     goto('/terminal/');
   }
 </script>
@@ -127,17 +129,18 @@
   <p class="cost">
     And two limits of the browser itself: there is no OS keystore here, so the secret sits in
     storage any script on this origin could read; and deleting a key unlinks it rather than
-    scrubbing the pages underneath. A phone taken by someone patient and equipped is a phone
-    taken.
+    scrubbing the pages underneath. Your browser history and this site's address survive
+    both actions. A phone taken by someone patient and equipped is a phone taken.
   </p>
 </section>
 
 <section class="act burnsec">
   <h2>Burn</h2>
   <p>
-    Destroys <strong>everything on this device, identity included</strong>. Your standing
-    goes with it and there is no recovery unless you set one up. For seizure or compulsion,
-    not for a phone that might be glanced at.
+    Destroys <strong>everything on this device, identity included</strong> — both storage
+    tiers and the offline caches, so the cached directory goes too. Your standing goes with
+    it and there is no recovery unless you set one up. For seizure or compulsion, not for a
+    phone that might be glanced at.
   </p>
   {#if callsign}
     <label for="confirm">Type <strong>{callsign}</strong> to confirm</label>

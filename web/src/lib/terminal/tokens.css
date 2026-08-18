@@ -36,6 +36,29 @@
 
 .terminal * { box-sizing: border-box; }
 
+/*
+ * Site tokens, aliased to terminal values.
+ *
+ * FieldRow and the display-rule components are SHARED with the public site, and reusing
+ * them is deliberate: they are the only implementation of the six display rules that the
+ * built-artifact tests actually check. Reimplementing the rules in terminal styling would
+ * mean two implementations, one of them untested, guarding the field where a confident
+ * wrong answer does the most harm.
+ *
+ * So the components come across unchanged and their tokens resolve here instead.
+ */
+.terminal {
+  --ink: var(--t-ink);
+  --muted: var(--t-muted);
+  --faint: var(--t-faint);
+  --line: var(--t-line);
+  --line-strong: var(--t-line-strong);
+  --surface: var(--t-raised);
+  --stop: var(--t-dark);
+  --stop-soft: transparent;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
 /* Thumb-sized. 48px is the floor, not the target. */
 .terminal button,
 .terminal a.action {
