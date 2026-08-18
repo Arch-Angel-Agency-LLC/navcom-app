@@ -252,7 +252,7 @@ describe('the field terminal', () => {
 
   it('has built every screen the loop needs', () => {
     const built = screens().map((p) => p.path);
-    for (const screen of ['sign-on', 'query', 'assist', 'distress', 'setup', 'wipe']) {
+    for (const screen of ['sign-on', 'query', 'assist', 'distress', 'setup', 'wipe', 'log']) {
       expect(
         built.some((p) => p.includes(`/terminal/${screen}/`)),
         `${screen} screen is not built`
@@ -357,6 +357,24 @@ describe('the field terminal', () => {
     const wipe = screens().find((p) => p.path.includes('/terminal/wipe/'))!;
     expect(wipe.bodyText.toLowerCase()).not.toContain('wiped successfully');
     expect(wipe.bodyText.toLowerCase()).not.toContain('items destroyed');
+  });
+
+  it('never presents a self-verified record as checked', () => {
+    // The trap this screen exists around: a response carries entries, proofs AND the root
+    // they are against, all three from the watch. Verifying them against each other always
+    // succeeds. A tick for that would tell an operator they had checked something when they
+    // had not, which is worse than showing nothing.
+    const log = screens().find((p) => p.path.includes('/terminal/log/'))!;
+    expect(log.bodyText).toMatch(/marking its own homework/i);
+    expect(log.bodyText).toMatch(/this device saw the watch\s+publish/i);
+  });
+
+  it('states the limit that survives every check on the record screen', () => {
+    // Omission. No proof closes it, and a screen full of green ticks is exactly where an
+    // operator would otherwise conclude the record is complete.
+    const log = screens().find((p) => p.path.includes('/terminal/log/'))!;
+    expect(log.bodyText).toMatch(/whether anything is missing/i);
+    expect(log.bodyText).toMatch(/nothing signs yet/i);
   });
 
   it('carries a manifest so it can be installed', () => {

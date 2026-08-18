@@ -9,9 +9,11 @@
 import { seal } from '../crypto/envelope.js';
 import type { SecretKey } from '../crypto/keys.js';
 import type { Author } from '../attestation.js';
+import type { LogEntry } from '../log.js';
+import type { InclusionProof, LogRoot } from '../merkle.js';
 import { KIND_RESPONSE, tagInReplyTo, tagRecipient } from './kinds.js';
 
-export type ResponseType = 'ack' | 'answer' | 'escalation-status';
+export type ResponseType = 'ack' | 'answer' | 'escalation-status' | 'log-review';
 
 /** Which record an answer came from, verified when, and how. */
 export interface Provenance {
@@ -33,8 +35,23 @@ export interface ResponsePayload {
   text: string | null;
   /** Present on any directory-derived answer. Absent means the client renders unverified. */
   provenance: Provenance | null;
+  /**
+   * The answer to a `log-review`, and only ever about the operator who asked.
+   *
+   * `root` is the commitment the proofs are against. **A client MUST check it against a
+   * root it saw published itself** — a root supplied alongside the proofs it validates is
+   * the watch marking its own homework, and proves nothing on its own.
+   */
+  review?: LogReview;
   /** Hex signature by `responder`, where they signed for themselves. */
   sig?: string;
+}
+
+export interface LogReview {
+  root: LogRoot;
+  entries: { entry: LogEntry; proof: InclusionProof }[];
+  /** True when the node held more than it sent. Paging exists because relays cap message size. */
+  more: boolean;
 }
 
 export function buildResponse(

@@ -13,10 +13,12 @@ import {
   entriesAbout,
   inclusionProof,
   merkleRoot,
+  checkReview,
   observeRoot,
   ROOTS_KEPT,
   verifyInclusion,
   type CompleteLog,
+  type LogReview,
   type LogRoot,
   type LogEntry,
   type LogOutcome
@@ -238,5 +240,82 @@ describe('what a client remembers about published roots', () => {
     expect(seen).toHaveLength(ROOTS_KEPT);
     // The most recent are what a fresh comparison needs.
     expect(seen.at(-1)!.size).toBe(500);
+  });
+});
+
+describe('checking a review the watch handed back', () => {
+  const node = { kind: 'agent' as const, callsign: 'watchtower', pubkey: 'c'.repeat(64) };
+
+  function review(log: CompleteLog, pubkey: string): LogReview {
+    const entries = log
+      .map((entry, index) => ({ entry, index }))
+      .filter(({ entry }) => entry.subject?.pubkey === pubkey)
+      .map(({ entry, index }) => ({ entry, proof: inclusionProof(log, index) }));
+    return { root: merkleRoot(log, 0), entries, more: false };
+  }
+
+  it('accepts a review whose root this device saw published', () => {
+    const log = build(6, [wren, raven]);
+    const r = review(log, wren.pubkey);
+    const check = checkReview(r, [merkleRoot(log, 0)], wren.pubkey);
+    expect(check.sound).toBe(true);
+    expect(check.problems).toEqual([]);
+    expect(check.entries.every((e) => e.proven)).toBe(true);
+  });
+
+  it('refuses a root it never saw, however well the proofs verify', () => {
+    // The trap this exists for. The watch produced the entries, the proofs AND the root, so
+    // checking them against each other always succeeds -- it is marking its own homework.
+    // A green tick here would tell an operator they had checked something when they had not.
+    const log = build(6, [wren, raven]);
+    const r = review(log, wren.pubkey);
+    const check = checkReview(r, [], wren.pubkey);
+
+    expect(check.entries.every((e) => e.proven)).toBe(true);
+    expect(check.sound).toBe(false);
+    expect(check.problems.map((p) => p.kind)).toContain('root-not-seen');
+  });
+
+  it('refuses a root replayed against a different tree size', () => {
+    const log = build(6, [wren]);
+    const r = review(log, wren.pubkey);
+    const wrongSize = { ...merkleRoot(log, 0), size: 99 };
+    expect(checkReview(r, [wrongSize], wren.pubkey).sound).toBe(false);
+  });
+
+  it('reports an entry about somebody else rather than quietly dropping it', () => {
+    // Being sent one IS the finding. Filtering it out would hide the fact that the watch
+    // sent this operator another person's record.
+    const log = build(4, [wren, raven]);
+    const seen = [merkleRoot(log, 0)];
+    const smuggled = review(log, raven.pubkey);
+    const check = checkReview(smuggled, seen, wren.pubkey);
+    expect(check.problems.map((p) => p.kind)).toContain('not-about-me');
+    expect(check.sound).toBe(false);
+  });
+
+  it('reports an entry whose content was swapped under a valid proof', () => {
+    const log = build(5, [wren]);
+    const seen = [merkleRoot(log, 0)];
+    const r = review(log, wren.pubkey);
+    const tampered: LogReview = {
+      ...r,
+      entries: r.entries.map((e, i) =>
+        i === 0 ? { ...e, entry: { ...e.entry, outcome: 'contact-made' as LogOutcome } } : e
+      )
+    };
+    const check = checkReview(tampered, seen, wren.pubkey);
+    expect(check.problems.map((p) => p.kind)).toContain('entry-unproven');
+    expect(check.entries[0]!.proven).toBe(false);
+    // Still shown. A failure is a finding, not a reason to render nothing.
+    expect(check.entries).toHaveLength(r.entries.length);
+  });
+
+  it('is sound on an empty review from a root we recognise', () => {
+    // "Nothing is recorded about you" is a legitimate answer and must not read as an error.
+    const log = build(3, [raven]);
+    const check = checkReview(review(log, wren.pubkey), [merkleRoot(log, 0)], wren.pubkey);
+    expect(check.entries).toEqual([]);
+    expect(check.sound).toBe(true);
   });
 });

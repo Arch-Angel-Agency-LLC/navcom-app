@@ -35,7 +35,7 @@ Event `p`-tags the Watchtower pubkey. Content is the encrypted JSON payload belo
 ```
 
 `signal-type` MUST be one of: `on-station` · `routine` · `query` · `assist` ·
-`stood-down`
+`stood-down` · `log-review`
 
 The type is an unencrypted tag so a client can filter without decrypting. This leaks
 *that* a signal of a given type occurred, not its content. `distress` is deliberately not
@@ -75,6 +75,14 @@ patterns on `20910`.
   can ask. Named `text` rather than `need` so the same concept has the same name across
   `query`, `assist` and `distress`
 
+**`log-review`** — *"show me what you have written about me"* [C33].
+```json
+{ "since": 1755300000, "limit": 50 }
+```
+Both optional. **There is no subject field, and that is the access control**: the node
+answers about the pubkey that signed the request, so one operator asking for another's
+record is not something the payload can express.
+
 **`stood-down`** — `{}`.
 
 ## `20911` — Distress
@@ -109,7 +117,7 @@ patterns on `20910`.
 
 ```json
 {
-  "type": "ack | answer | escalation-status",
+  "type": "ack | answer | escalation-status | log-review",
   "responder": { "kind": "human | agent", "callsign": "...", "pubkey": "hex | absent" },
   "text": "string|null",
   "provenance": { "record_id": "...", "verified": "2026-08-14", "method": "in_person" }
@@ -117,6 +125,13 @@ patterns on `20910`.
 ```
 
 - `responder.kind` MUST be present and accurate on every response [C25, invariant 5]
+- A `log-review` response carries `review: { root, entries[{entry, proof}], more }`. The
+  node MUST cap `entries` and set `more` rather than exceeding a relay's message size —
+  a response too large to publish is silence, and silence is never an answer
+- **A client MUST check `review.root` against a root it saw published itself.** Verifying
+  the proofs against the root supplied beside them always succeeds, because the watch
+  produced both. A client that renders that as verified has told the operator they checked
+  something when they did not
 - `provenance` MUST be present on any directory-derived answer [C32, H5]. An answer
   without provenance MUST render as unverified
 - Every signal MUST receive at least an `ack`. Silence is never a response
@@ -130,6 +145,7 @@ patterns on `20910`.
 | `on-station`, `routine`, `stood-down` | ack within 60s |
 | `query` | answer within 120s; ack within 30s if answer will take longer |
 | `assist` | ack within 60s, resolution within 300s |
+| `log-review` | answer within 120s. Not urgent — nobody is in the street waiting on it |
 | `distress` | see [`escalation.spec.md`](./escalation.spec.md) |
 
 A missed window is not an error condition. It is displayed to the operator as an

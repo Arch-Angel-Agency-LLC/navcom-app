@@ -236,12 +236,23 @@ the sole custodian of the evidence against itself. `diverged` — two roots at t
 size — is the finding it exists to produce, and it renders **above** the watch state,
 because it changes what everything below it means.
 
-**C — retrieval.** `log-review` as a sixth `20910` signal type; `ResponsePayload` gains
-optional `entries` and `proofs`, additive. `20912` is ephemeral, so the log never becomes
-relay-queryable and C27 holds.
+**C — retrieval — done.** `log-review` as a sixth `20910` signal type, answered with
+`review: { root, entries[{entry, proof}], more }`. `20912` is ephemeral, so the log never
+becomes relay-queryable and C27 holds. The request carries **no subject field**, which is
+the access control rather than a check that could be forgotten: the node answers about
+whoever signed it. Capped at 50, newest first — a response too large for a relay is silence,
+and silence is never an answer.
 
-**D — the review screen.** `/terminal/log/`, stating plainly what verification does and does
-not prove.
+**D — the review screen — done.** `/terminal/log/`.
+
+The hard part was not rendering entries. A response carries entries, proofs **and** the root
+they are against, all three from the watch — so verifying them against each other always
+succeeds. `checkReview` accepts only a root the device saw published itself, and the screen
+says *"marking its own homework"* for the other case rather than showing a tick.
+
+**The limit is stated before the record is fetched, not after.** An operator who has just
+read a screen of green ticks is the least likely person to go looking for what the ticks do
+not cover — and what they do not cover is omission, which no proof closes.
 
 ## Gated on opening past people you personally vetted
 

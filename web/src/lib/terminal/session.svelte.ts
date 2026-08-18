@@ -8,6 +8,7 @@
 import { SimplePool } from 'nostr-tools/pool';
 import {
   capabilitySentence,
+  checkReview,
   sendDistressUntilAcknowledged,
   sendSignal,
   waitForResponse,
@@ -15,6 +16,7 @@ import {
   type OnStationPayload,
   type ResponsePayload,
   type SignalType,
+  type ReviewCheck,
   type WatchStatePayload
 } from '@navcom/core';
 
@@ -22,6 +24,7 @@ import { loadConfig } from './config';
 import { loadIdentity } from './identity';
 import { get, set, clearField } from './storage';
 import { watch } from './watch.svelte';
+import { seenRoots } from './roots';
 
 export interface SignOn {
   at: number;
@@ -131,6 +134,23 @@ export const operator = {
   async assist(urgency: 'soon' | 'now', text: string) {
     const r = await run(() => send('assist', { urgency, ...area(text ? text : undefined) }, 15_000));
     if (r) lastResponse = r;
+  },
+
+  /**
+   * Asks the watch what it has written about this operator, and checks the answer.
+   *
+   * The check is the point. A response carries entries, proofs and the root they are
+   * against — all three from the watch — so verifying them against each other proves
+   * nothing. `checkReview` accepts only a root this device saw published itself.
+   */
+  async reviewLog(): Promise<ReviewCheck | null> {
+    const response = await run(() => send('log-review', {}, 20_000));
+    if (!response) return null;
+    lastResponse = response;
+    if (!response.review) return null;
+    const identity = loadIdentity();
+    if (!identity) return null;
+    return checkReview(response.review, seenRoots(), identity.pubkey);
   },
 
   async standDown() {

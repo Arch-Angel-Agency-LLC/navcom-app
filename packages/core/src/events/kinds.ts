@@ -31,7 +31,16 @@ export const SIGNAL_TYPES = [
   'routine',
   'query',
   'assist',
-  'stood-down'
+  'stood-down',
+  /**
+   * "Show me what you have written about me" [C33].
+   *
+   * A signal rather than a new kind, because it is an ordinary request to the watch with an
+   * ordinary answer — and the kind table stays at four. Note there is no subject field to
+   * ask with: the node answers about whoever signed the request, so asking for somebody
+   * else's record is not a permission the payload can express.
+   */
+  'log-review'
 ] as const;
 export type SignalType = (typeof SIGNAL_TYPES)[number];
 

@@ -5,6 +5,7 @@ import { installNodeWebSocket } from "../shared/nostr-node.js";
 import { loadOrCreateKeypair } from "../shared/identity.js";
 import { loadClientConfig, type ClientConfig } from "./config.js";
 import { sendSignal, sendDistressUntilAcknowledged, waitForResponse } from "./signal.js";
+import { verifyInclusion, type LogReviewPayload } from "@navcom/core";
 import { checkDark } from "./dark.js";
 import type { OnStationPayload, QueryPayload, ResponsePayload , AssistPayload } from "../shared/payloads.js";
 import { int } from "./parsers.js";
@@ -220,6 +221,44 @@ program
       } finally {
         process.off("SIGINT", stop);
       }
+    });
+  });
+
+program
+  .command("log-review")
+  .description("Show what the watch has written about you, and check it")
+  .option("--since <unix>", "only entries at or after this unix second")
+  .option("--limit <n>", "how many at most")
+  .action(async (opts) => {
+    await withClient(program.opts(), async ({ pool, config, secretKey, pubkey }) => {
+      const payload: LogReviewPayload = {
+        ...(opts.since ? { since: Number(opts.since) } : {}),
+        ...(opts.limit ? { limit: Number(opts.limit) } : {}),
+      };
+      const sent = await sendSignal(pool, config.relays.urls, secretKey, config.watchtower.pubkey, "log-review", payload);
+      const response = await waitForResponse(
+        pool, config.relays.urls, secretKey, pubkey, config.watchtower.pubkey, sent, RESPONSE_TIMEOUT_MS,
+      );
+
+      if (!response.review) {
+        console.log(response.text ?? "no review returned");
+        return;
+      }
+      const { review } = response;
+
+      // The CLI holds no root history, so it cannot do the check that matters. Saying so is
+      // the point: a tick here would mean the watch had verified itself.
+      console.log(`root ${review.root.root.slice(0, 16)}… over ${review.root.size} entries`);
+      console.log("NOT CHECKED against a root seen published — this client keeps no history.");
+      console.log("");
+
+      for (const { entry, proof } of review.entries) {
+        const proven = verifyInclusion(entry, proof, review.root);
+        const when = new Date(entry.at * 1000).toISOString().replace("T", " ").slice(0, 16);
+        console.log(`${proven ? " " : "!"} ${when}  ${entry.action.padEnd(15)} ${entry.outcome}`);
+      }
+      if (review.entries.length === 0) console.log("(nothing recorded about you)");
+      if (review.more) console.log("\n… more not shown. Narrow with --since.");
     });
   });
 

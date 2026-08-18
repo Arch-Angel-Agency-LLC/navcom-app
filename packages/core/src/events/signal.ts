@@ -77,10 +77,24 @@ export interface DistressPayload {
  */
 export const DISTRESS_RETRY_FOREVER = true;
 
+/**
+ * A request for the entries about oneself.
+ *
+ * Deliberately carries no subject. The node answers about the pubkey that signed the
+ * request, so there is no field through which one operator could ask for another's record.
+ */
+export interface LogReviewPayload {
+  /** Only entries at or after this unix second. Omitted means everything retained. */
+  since?: number;
+  /** How many at most. The node caps this regardless of what is asked for. */
+  limit?: number;
+}
+
 export type SignalPayload =
   | OnStationPayload
   | QueryPayload
   | AssistPayload
+  | LogReviewPayload
   | Record<string, never>;
 
 /** Response windows, in seconds. Surfaced to the operator rather than hidden. */
@@ -90,6 +104,8 @@ export const RESPONSE_WINDOW: Record<SignalType | 'distress', number | null> = {
   query: 120,
   assist: 300,
   'stood-down': 60,
+  // Not urgent. It is a records request, and nobody is in the street waiting on it.
+  'log-review': 120,
   distress: null
 };
 

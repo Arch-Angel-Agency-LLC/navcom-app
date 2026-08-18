@@ -227,11 +227,10 @@ describe("what the watch writes down", () => {
     deliver(signalEvent(b, pubkey, "on-station", { callsign: "Raven", area: "South", expected_duration: 7200, routine_interval: null, share_position: false, position: null }));
     await waitForResponse(publishedEvents, 1);
 
-    const root = opened.root(Math.floor(Date.now() / 1000));
     const review = opened.reviewFor(getPublicKey(a));
-    expect(review.length).toBeGreaterThan(0);
-    for (const { entry, proof } of review) {
-      expect(verifyInclusion(entry, proof, root)).toBe(true);
+    expect(review.entries.length).toBeGreaterThan(0);
+    for (const { entry, proof } of review.entries) {
+      expect(verifyInclusion(entry, proof, review.root)).toBe(true);
     }
     // What the operator receives says nothing about the other operator.
     expect(JSON.stringify(review)).not.toContain(getPublicKey(b));
@@ -288,6 +287,62 @@ describe("what the watch writes down", () => {
     const payload = JSON.parse(state.content) as WatchStatePayload;
     expect(payload).toHaveProperty("log_root");
     expect(payload.log_root).toBeNull();
+  });
+
+  it("answers a log-review with only the asker's own entries", async () => {
+    const { pubkey, deliver, publishedEvents } = await started({}, [], opened);
+    const a = generateSecretKey();
+    const b = generateSecretKey();
+
+    deliver(signalEvent(a, pubkey, "on-station", { callsign: "Wren", area: "North", expected_duration: 7200, routine_interval: null, share_position: false, position: null }));
+    await waitForResponse(publishedEvents);
+    deliver(signalEvent(b, pubkey, "on-station", { callsign: "Raven", area: "South", expected_duration: 7200, routine_interval: null, share_position: false, position: null }));
+    await waitForResponse(publishedEvents, 1);
+
+    const before = publishedEvents.length;
+    deliver(signalEvent(a, pubkey, "log-review", {}));
+    const responseEvent = await waitForResponse(publishedEvents, before);
+    const payload = decryptPayload<ResponsePayload>(a, pubkey, responseEvent.content);
+
+    expect(payload.type).toBe("log-review");
+    expect(payload.review).toBeDefined();
+    expect(payload.review!.entries.length).toBeGreaterThan(0);
+    for (const { entry } of payload.review!.entries) {
+      expect(entry.subject?.pubkey).toBe(getPublicKey(a));
+    }
+    // Nothing about the other operator crosses, not even in a sibling hash's neighbourhood.
+    expect(JSON.stringify(payload.review)).not.toContain(getPublicKey(b));
+  });
+
+  it("hands back proofs that verify against the root it published", async () => {
+    const { pubkey, deliver, publishedEvents } = await started({}, [], opened);
+    const a = generateSecretKey();
+
+    deliver(signalEvent(a, pubkey, "routine", {}));
+    await waitForResponse(publishedEvents);
+
+    const before = publishedEvents.length;
+    deliver(signalEvent(a, pubkey, "log-review", {}));
+    const responseEvent = await waitForResponse(publishedEvents, before);
+    const { review } = decryptPayload<ResponsePayload>(a, pubkey, responseEvent.content);
+
+    for (const { entry, proof } of review!.entries) {
+      expect(verifyInclusion(entry, proof, review!.root)).toBe(true);
+    }
+  });
+
+  it("says plainly when it keeps no log, rather than answering with nothing", async () => {
+    // A watch with no log and a watch with an empty log are different situations, and an
+    // empty review would make them look identical.
+    const { pubkey, deliver, publishedEvents } = await started();
+    const a = generateSecretKey();
+
+    deliver(signalEvent(a, pubkey, "log-review", {}));
+    const responseEvent = await waitForResponse(publishedEvents);
+    const payload = decryptPayload<ResponsePayload>(a, pubkey, responseEvent.content);
+
+    expect(payload.review).toBeUndefined();
+    expect(payload.text).toMatch(/keeps no accountability log/i);
   });
 
   it("keeps two operators with the same callsign apart", async () => {

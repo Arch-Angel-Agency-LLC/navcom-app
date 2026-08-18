@@ -12,6 +12,7 @@ import {
   type CompleteLog,
   type InclusionProof,
   type LogEntry,
+  type LogReview,
   type LogRoot,
   type NewEntry,
 } from "@navcom/core";
@@ -30,6 +31,15 @@ import {
  * disk is exactly the account nobody can check afterwards. At this volume -- a handful of
  * entries per operator per night -- the cost is irrelevant.
  */
+
+/**
+ * The hard cap on one review response.
+ *
+ * Relays cap message size and these are encrypted, so a full 90 days for a busy operator
+ * would simply fail to publish -- silently, from the operator's point of view. A page plus
+ * `more` is the honest shape.
+ */
+const REVIEW_PAGE = 50;
 
 interface Meta {
   /**
@@ -170,13 +180,24 @@ export class AccountabilityLog {
    * operator checks their entries against a root they saw published, without being handed
    * everyone's record and without taking the watch's word for it.
    */
-  reviewFor(pubkey: string): { entry: LogEntry; proof: InclusionProof }[] {
-    const out: { entry: LogEntry; proof: InclusionProof }[] = [];
+  reviewFor(pubkey: string, opts: { since?: number; limit?: number } = {}): LogReview {
+    const matching: { entry: LogEntry; proof: InclusionProof }[] = [];
     this.entries.forEach((entry, index) => {
       if (entry.subject?.pubkey !== pubkey) return;
-      out.push({ entry, proof: inclusionProof(this.entries, index) });
+      if (opts.since !== undefined && entry.at < opts.since) return;
+      matching.push({ entry, proof: inclusionProof(this.entries, index) });
     });
-    return out;
+
+    // Newest first, then capped. An operator wanting last night should not page through
+    // three months to reach it -- and relays cap message size, so something is always
+    // dropped. Dropping the oldest is the choice that needs no explanation.
+    matching.reverse();
+    const limit = Math.min(opts.limit ?? REVIEW_PAGE, REVIEW_PAGE);
+    return {
+      root: this.root(Math.floor(Date.now() / 1000)),
+      entries: matching.slice(0, limit),
+      more: matching.length > limit,
+    };
   }
 
   status(): { entries: number; startsAt: string | null; breaks: Meta["breaks"] } {

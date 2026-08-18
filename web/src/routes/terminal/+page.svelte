@@ -187,6 +187,7 @@
   <!-- Two taps from anywhere in the terminal. Not buried, and not a button large enough to
        hit while putting the phone in a pocket. -->
   <nav class="quiet">
+    <a href="/terminal/log/">Your record</a>
     <a href="/terminal/wipe/">Wipe this device</a>
     <a href="/terminal/setup/">Setup</a>
   </nav>

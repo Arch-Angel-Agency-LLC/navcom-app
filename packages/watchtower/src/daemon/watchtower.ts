@@ -3,7 +3,7 @@ import { finalizeEvent, verifyEvent } from "nostr-tools/pure";
 import type { Event, EventTemplate } from "nostr-tools/core";
 import { installNodeWebSocket } from "../shared/nostr-node.js";
 import { encryptPayload, decryptPayload } from "../shared/crypto.js";
-import { WATCH_STATE_VERSION, type LogAction, type LogOutcome } from "@navcom/core";
+import { WATCH_STATE_VERSION, type LogAction, type LogOutcome, type LogReviewPayload } from "@navcom/core";
 import { KIND_WATCH_STATE, KIND_SIGNAL, KIND_DISTRESS, KIND_RESPONSE } from "../shared/kinds.js";
 import type {
   AssistPayload,
@@ -313,6 +313,32 @@ export class WatchtowerDaemon {
           response = this.ack();
           break;
         }
+        case "log-review": {
+          // C33 made operable. There is no subject field in the request: the answer is
+          // about whoever signed it, so one operator asking for another's record is not a
+          // thing the payload can express.
+          const req = (payload ?? {}) as LogReviewPayload;
+          if (!this.accountability) {
+            response = {
+              type: "ack",
+              responder: { kind: "agent", callsign: this.agentName },
+              text: "this watch keeps no accountability log",
+              provenance: null,
+            };
+            break;
+          }
+          response = {
+            type: "log-review",
+            responder: { kind: "agent", callsign: this.agentName },
+            text: null,
+            provenance: null,
+            review: this.accountability.reviewFor(event.pubkey, {
+              ...(typeof req.since === "number" ? { since: req.since } : {}),
+              ...(typeof req.limit === "number" ? { limit: req.limit } : {}),
+            }),
+          };
+          break;
+        }
         case "stood-down": {
           this.board.standDown(event.pubkey);
           response = this.ack();
@@ -345,7 +371,7 @@ export class WatchtowerDaemon {
    */
   private noteResponse(operator: string, response: ResponsePayload): void {
     const callsign = this.board.get(operator)?.callsign;
-    if (response.type === "answer") {
+    if (response.type === "log-review" || response.type === "answer") {
       // An answer with no provenance renders unverified to the operator; the log says the
       // same thing, so the two accounts cannot drift apart.
       this.note("answered", operator, response.provenance ? "answered" : "answered-unverified", callsign);

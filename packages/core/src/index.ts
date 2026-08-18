@@ -8,6 +8,7 @@ export * from './events/response.js';
 export * from './board.js';
 export * from './log.js';
 export * from './merkle.js';
+export * from './review.js';
 export * from './validate.js';
 export * from './transport.js';
 export * from './directory/index.js';
