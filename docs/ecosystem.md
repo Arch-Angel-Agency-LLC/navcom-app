@@ -158,13 +158,79 @@ that rather than in spite of it.
 
 ---
 
+## What NavCom requires of the interchange
+
+Starcom has published a draft interchange spec — kinds `30079` (Mission Package) and
+`30082` (Finding), both parameterized-replaceable, both plaintext broadcast to public
+relays. This is NavCom's half of the answer.
+
+These are requirements NavCom's existing rules impose, not preferences. Each names the rule
+it comes from, so none of it has to be taken on trust.
+
+**1. Mission Packages must be addressed and encrypted to the Watchtower key.**
+Broadcast plaintext makes *two* NavCom rules unenforceable at once, not one. A stream of
+stored events any client can subscribe to and scroll **is a feed** [principle 2], and a
+field terminal subscribed to the same relays can read a package directly, which makes
+"Console, and only the Console" a convention rather than a boundary. NIP-44 to the
+Watchtower pubkey is already NavCom's convention for everything else
+[`spec/signals.spec.md`](spec/signals.spec.md); reusing it adds no new mechanism.
+
+**2. NavCom accepts `classification: UNCLASSIFIED` and nothing else.**
+The manifest carries a four-level classification enum. NavCom cannot act on one:
+[principle 11](principles.md) — watch is a post, not a rank, no operator who sees more by
+status — and this document already listed clearance as the thing NavCom must never inherit
+from an intelligence platform. Rejecting anything above UNCLASSIFIED is the honest
+response: a volunteer patrol network has no business holding it, and accepting the field
+while ignoring it would leave a tier system half-built.
+
+**3. The valve filters. It does not trust.**
+Starcom states its own residual gap plainly: *redaction masks emails and numbers, not
+names — a name typed into a free-text briefing can still cross.* Combined with plaintext
+broadcast onto stored kinds, that means a name can become permanently public on five
+relays. NavCom's [invariant 1](principles.md) is absolute, and
+[H1](research/constraints.md) already concedes software cannot enforce free text — which is
+exactly why NavCom must not treat an upstream redactor as the enforcement point. **Anything
+NavCom ingests gets filtered on arrival, on NavCom's side, regardless of what the sender
+believes it removed.**
+
+**4. `entityRef` is exposed in a public tag, and that is worth fixing while it is free.**
+A Finding's `d` tag is `starcom_finding_<entityRef>_<attribute>` — unencrypted and
+relay-queryable even if content were encrypted later. Today `attribute` is location-only,
+but it is deliberately an open string so other claim types are additive. The day one of
+those is about a person, the identifier is already leaking in a tag. Same argument Starcom
+makes for settling capability negotiation before anyone depends on the shape.
+
+**5. Stored kinds mean permanent.**
+NavCom's own signals use ephemeral kinds precisely so the board never becomes a queryable
+history [C27]. `30000`–`39999` is stored by design. That is right for Starcom's purposes and
+it means everything crossing this boundary is permanent — which is what makes points 1 and
+3 load-bearing rather than fastidious.
+
+### On the two open questions Starcom raised
+
+**Duplicate `ecosystem.md`.** They will drift; that is correct. But NavCom cannot own a
+normative interchange spec right now without breaking its own scope rule —
+[`spec/README.md`](spec/README.md) limits specs to the MVP surface, and Mission Package
+ingestion is explicitly not in it. So: **Starcom owns the interchange spec**, since Starcom
+built the thing being described. This page states NavCom's requirements and links out rather
+than restating the wire format. NavCom writes its own valve spec when ingestion is actually
+in scope — after the loop is proven.
+
+**`lineage.md` ownership.** It covers where NavCom's ideas came from, including its own
+Steele and Earth Alliance inheritance. Starcom's lineage is not the same lineage, and a
+shared file would flatten two different sets of decisions into one. Keep them separate.
+
+**Not answered here:** whether Starcom should encrypt, keep broadcasting with a stated
+exception, or something else, is Starcom's call to make against its own requirements. Points
+1–3 state only what NavCom can accept.
+
 ## Open questions
 
 - **What a Mission Package actually contains.** This determines whether the inbound valve
   is a small spec or the hardest thing in the system. Everything above constrains the
   *shape* without knowing the payload, deliberately — the constraints hold regardless
-- **Whether packages are addressed or broadcast.** Addressed to a Watchtower is compatible
-  with everything here; broadcast to operators is not
+- ~~**Whether packages are addressed or broadcast.**~~ **Answered above**: broadcast is not
+  compatible, for two independent reasons. Today's implementation is broadcast
 - **Whether Starcom needs to read anything live from NavCom.** Currently assumed no. If
   that changes, it is a new valve and not an extension of the outbound one
 - **Whether the two projects share identity.** An operator's keypair is device-local by

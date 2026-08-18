@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 
 import { confidenceForClass, confidenceForField, isSeeded } from './confidence';
 import { displayField, displayRecord, formatDate, formatRelative } from './display';
+import { buildExport } from './export';
 import { parseCsv, parseDirectory, parseDirectoryOrThrow } from './parse';
 import type { ResourceRecord } from './types';
 import { STALE_AFTER_DAYS, ageInDays, seasonOf } from './volatility';
@@ -242,5 +243,52 @@ describe('helpers', () => {
     expect(seasonOf(new Date('2026-04-15T00:00:00Z'))).toBe('spring');
     expect(seasonOf(new Date('2026-07-15T00:00:00Z'))).toBe('summer');
     expect(seasonOf(new Date('2026-10-15T00:00:00Z'))).toBe('autumn');
+  });
+});
+
+describe('machine-readable export', () => {
+  const records = parseDirectoryOrThrow(readFileSync(SEED_CSV, 'utf8'));
+  const out = buildExport(records, NOW);
+
+  it('carries the margin and windows so a consumer need not guess them', () => {
+    expect(out.staleness_margin_days).toBe(STALE_AFTER_DAYS.volatile - 13);
+    expect(out.stale_after_days.volatile).toBe(14);
+    expect(out.version).toBe(1);
+  });
+
+  it('gives every record a provenance object shaped for a 20912 answer', () => {
+    for (const r of out.records) {
+      expect(r.provenance.record_id).toBe(r.id);
+      expect(r.provenance).toHaveProperty('verified');
+      expect(r.provenance).toHaveProperty('method');
+    }
+  });
+
+  it('never leaks a withheld value into the export', () => {
+    const warming = out.records.find((r) => r.id === 'EXAMPLE-warming-02')!;
+    const hours = warming.fields.hours;
+    expect(hours.display).toBe('call-first');
+    // A call-first verdict has no `values` key at all — it cannot be rendered by accident.
+    expect(JSON.stringify(hours)).not.toContain('values');
+  });
+
+  it('marks a flagged record call-first with reason "flagged"', () => {
+    const warming = out.records.find((r) => r.id === 'EXAMPLE-warming-02')!;
+    expect(warming.fields.hours).toMatchObject({ reason: 'flagged' });
+    expect(warming.confidence.slow).toBe('suspect');
+  });
+
+  it('reports confidence per volatility class, not per record', () => {
+    const r = buildExport(
+      [{ id: 'z', name: 'Z', type: 'shelter', flag: 'ok', method: 'in_person', last_verified: '2026-07-28' }],
+      NOW
+    ).records[0];
+    expect(r.confidence.volatile).toBe('stale');
+    expect(r.confidence.slow).toBe('high');
+  });
+
+  it('states its contract in the payload', () => {
+    expect(out.contract.join(' ')).toMatch(/Do not recompute confidence/);
+    expect(out.contract.join(' ')).toMatch(/never means "no restriction"/);
   });
 });
