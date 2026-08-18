@@ -70,6 +70,8 @@ export const FIELD_CLASS: Record<ResourceField, VolatilityClass | null> = {
   intake_hours: 'volatile',
   capacity_signal: 'volatile',
 
+  reports_to: 'slow',
+
   // Not directory content — verification metadata and free text carry no class.
   last_verified: null,
   verified_by: null,
@@ -90,14 +92,48 @@ export function ageInDays(verified: string, now: Date): number {
   return Math.floor((today - then) / 86_400_000);
 }
 
+export type Hemisphere = 'north' | 'south' | 'tropical';
+export type Season = 'winter' | 'spring' | 'summer' | 'autumn';
+
 /**
- * Meteorological season, used for the seasonal class's second staleness trigger:
- * "30 days, or at season change".
+ * Which meteorological quarter a date falls in: 0 = Dec-Feb, 1 = Mar-May, 2 = Jun-Aug,
+ * 3 = Sep-Nov.
+ *
+ * This is the mechanism behind the seasonal class's second staleness trigger — "30 days,
+ * or at season change" — and it is deliberately **not** hemisphere-aware, because it does
+ * not need to be. Both hemispheres divide the year at the same four moments; they only
+ * disagree about what to call the blocks in between. So "has the season changed since this
+ * was verified" has the same answer everywhere on Earth, and threading a hemisphere through
+ * the confidence calculation would add a parameter that cannot change the result.
+ *
+ * Kept separate from `seasonOf` so that nobody later notices `seasonOf` looks
+ * northern-hemisphere-shaped, concludes staleness is broken south of the equator, and
+ * "fixes" a calculation that was already correct. There is a test asserting this
+ * invariance; if you are here to change it, read that test first.
  */
-export function seasonOf(date: Date): 'winter' | 'spring' | 'summer' | 'autumn' {
+export function seasonIndex(date: Date): 0 | 1 | 2 | 3 {
   const m = date.getUTCMonth(); // 0-11
-  if (m === 11 || m <= 1) return 'winter';
-  if (m <= 4) return 'spring';
-  if (m <= 7) return 'summer';
-  return 'autumn';
+  return (Math.floor(((m + 1) % 12) / 3) as 0 | 1 | 2 | 3);
+}
+
+/**
+ * The human name for a season, which *is* hemisphere-dependent — December is summer in
+ * Melbourne. Nothing renders this yet. It exists so that when something does, it is right
+ * for the place the service is in rather than for the place this was written.
+ *
+ * `tropical` returns null: the four-season model does not describe the equator, and
+ * inventing a wet/dry mapping we have not researched would be a confident guess.
+ */
+export function seasonOf(date: Date, hemisphere: Hemisphere): Season | null {
+  if (hemisphere === 'tropical') return null;
+  const north: Season[] = ['winter', 'spring', 'summer', 'autumn'];
+  const south: Season[] = ['summer', 'autumn', 'winter', 'spring'];
+  return (hemisphere === 'north' ? north : south)[seasonIndex(date)];
+}
+
+/** Derived from latitude where a record has one. 23.5deg is the tropics. */
+export function hemisphereOf(lat: number | undefined): Hemisphere | null {
+  if (lat === undefined || !Number.isFinite(lat)) return null;
+  if (Math.abs(lat) <= 23.5) return 'tropical';
+  return lat > 0 ? 'north' : 'south';
 }

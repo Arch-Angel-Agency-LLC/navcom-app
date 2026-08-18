@@ -50,13 +50,24 @@ maintaining.** Every field answers: *will they actually take this person, tonigh
 | `sobriety` | `sober_required`, `harm_reduction_ok`, `no_questions` |
 | `id_required` | `yes`, `no`, `helps_but_not_required` |
 | `referral_required` | boolean |
-| `sex_offender_ok` | `yes`, `no`, `unknown` — a real constraint on where people can go |
+| `sex_offender_ok` | `yes`, `no`, `unknown` — a real constraint where a public registry exists. **Jurisdiction-specific**: meaningless, and potentially stigmatising, where none does |
+| `reports_to` | `no_one`, `police`, `immigration`, `child_services`, `unknown` — who the service passes information to |
 | `curfew` | Lockout time, if any |
 | `max_stay` | e.g. `1 night`, `30 days`, `none` |
 | `belongings` | `storage_provided`, `carry_on_only`, `size_limit` |
 | `accessibility` | `wheelchair`, `ground_floor`, `none` |
 | `languages` | Staff languages actually spoken |
 | `cost` | `free`, `sliding`, `fee` |
+
+**`reports_to` is the field the Medic asked for and the schema did not have.** *"The nearest
+ER that won't call police"* was unanswerable until now, and outside the country this was
+written in it is often immigration rather than police that decides whether someone will walk
+through a door at all.
+
+It describes the **service**, never a person, so [invariant 1](../principles.md) is
+untouched. And `no_one` is not the same as blank: blank renders as *unknown* by rule 5, and
+not knowing whether a clinic calls the police is a completely different fact from knowing it
+does not. Leave it blank unless someone actually established the answer.
 
 Use `unknown` freely. **An honest blank beats a confident guess.**
 
@@ -151,7 +162,7 @@ Reporting that something is wrong requires one tap and no account.
 [C21].
 
 Everything in §2 is different. `sobriety`, `pets`, `id_required`, `referral_required`,
-`sex_offender_ok`, `curfew` and `belongings` are the fields this directory exists for, and
+`sex_offender_ok`, `reports_to`, `curfew` and `belongings` are the fields this directory exists for, and
 they are missing from official listings *precisely because nobody maintains them*. They
 start `unknown` and stay `unknown` until a human with local knowledge verifies them.
 
@@ -176,7 +187,7 @@ demands reciprocity gets abandoned by the people it most needs to reach.
 
 ```
 id, name, type, address, lat, lon, phone,
-accepts, pets, sobriety, id_required, referral_required, sex_offender_ok,
+accepts, pets, sobriety, id_required, referral_required, sex_offender_ok, reports_to,
 curfew, max_stay, belongings, accessibility, languages, cost,
 hours, intake_hours, seasonal, capacity_signal,
 last_verified, verified_by, method, flag, notes

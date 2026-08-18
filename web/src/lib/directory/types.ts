@@ -30,6 +30,21 @@ export type IdRequired = (typeof ID_REQUIRED)[number];
 export const SEX_OFFENDER_OK = ['yes', 'no', 'unknown'] as const;
 export type SexOffenderOk = (typeof SEX_OFFENDER_OK)[number];
 
+/**
+ * Who a service passes information to. Describes the SERVICE, never a person, so
+ * invariant 1 is untouched.
+ *
+ * Exists because the Medic archetype asks for "the nearest ER that won't call police" and
+ * nothing in this schema could answer that. Globally it is often immigration rather than
+ * police that decides whether someone will walk through a door.
+ *
+ * `no_one` and blank are not the same thing, and the difference matters more here than
+ * anywhere else in the schema: blank renders as *unknown* [rule 5]. Not knowing whether a
+ * clinic calls the police is a completely different fact from knowing it does not.
+ */
+export const REPORTS_TO = ['no_one', 'police', 'immigration', 'child_services', 'unknown'] as const;
+export type ReportsTo = (typeof REPORTS_TO)[number];
+
 export const BELONGINGS = ['storage_provided', 'carry_on_only', 'size_limit'] as const;
 export type Belongings = (typeof BELONGINGS)[number];
 
@@ -73,6 +88,7 @@ export interface ResourceRecord {
   id_required?: IdRequired;
   referral_required?: boolean;
   sex_offender_ok?: SexOffenderOk;
+  reports_to?: ReportsTo[];
   curfew?: string;
   max_stay?: string;
   belongings?: Belongings;

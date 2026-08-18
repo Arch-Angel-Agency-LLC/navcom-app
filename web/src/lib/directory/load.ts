@@ -25,6 +25,7 @@ export const FIELD_LABELS: Partial<Record<ResourceField, string>> = {
   id_required: 'ID needed',
   referral_required: 'Referral needed',
   sex_offender_ok: 'Registry restrictions',
+  reports_to: 'Reports to',
   curfew: 'Curfew',
   max_stay: 'Max stay',
   belongings: 'Belongings',
@@ -42,7 +43,7 @@ export const FIELD_LABELS: Partial<Record<ResourceField, string>> = {
 /** The fields that answer "will they actually take this person, tonight?" */
 export const INTAKE_FIELDS: ResourceField[] = [
   'accepts', 'pets', 'sobriety', 'id_required', 'referral_required',
-  'sex_offender_ok', 'curfew', 'max_stay', 'belongings', 'accessibility',
+  'sex_offender_ok', 'reports_to', 'curfew', 'max_stay', 'belongings', 'accessibility',
   'languages', 'cost'
 ];
 
@@ -67,6 +68,9 @@ export const VALUE_LABELS: Record<string, string> = {
   no_questions: 'no questions asked',
 
   helps_but_not_required: 'helps, but not required',
+
+  no_one: 'nobody',
+  child_services: 'child services',
 
   storage_provided: 'storage provided',
   carry_on_only: 'what you can carry',

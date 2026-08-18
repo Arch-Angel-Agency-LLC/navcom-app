@@ -7,7 +7,7 @@ import { displayField, displayRecord, formatDate, formatRelative } from './displ
 import { buildExport } from './export';
 import { parseCsv, parseDirectory, parseDirectoryOrThrow } from './parse';
 import type { ResourceRecord } from './types';
-import { STALE_AFTER_DAYS, ageInDays, seasonOf } from './volatility';
+import { STALE_AFTER_DAYS, ageInDays, hemisphereOf, seasonIndex, seasonOf } from './volatility';
 
 const SEED_CSV = fileURLToPath(new URL('../../../../data/resources.seed.csv', import.meta.url));
 
@@ -238,11 +238,11 @@ describe('helpers', () => {
     expect(formatDate('2026-01-01')).toBe('1 Jan 2026');
   });
 
-  it('knows meteorological seasons', () => {
-    expect(seasonOf(new Date('2026-01-15T00:00:00Z'))).toBe('winter');
-    expect(seasonOf(new Date('2026-04-15T00:00:00Z'))).toBe('spring');
-    expect(seasonOf(new Date('2026-07-15T00:00:00Z'))).toBe('summer');
-    expect(seasonOf(new Date('2026-10-15T00:00:00Z'))).toBe('autumn');
+  it('knows meteorological seasons in the hemisphere it is asked about', () => {
+    expect(seasonOf(new Date('2026-01-15T00:00:00Z'), 'north')).toBe('winter');
+    expect(seasonOf(new Date('2026-04-15T00:00:00Z'), 'north')).toBe('spring');
+    expect(seasonOf(new Date('2026-07-15T00:00:00Z'), 'north')).toBe('summer');
+    expect(seasonOf(new Date('2026-10-15T00:00:00Z'), 'north')).toBe('autumn');
   });
 });
 
@@ -290,5 +290,64 @@ describe('machine-readable export', () => {
   it('states its contract in the payload', () => {
     expect(out.contract.join(' ')).toMatch(/Do not recompute confidence/);
     expect(out.contract.join(' ')).toMatch(/never means "no restriction"/);
+  });
+});
+
+describe('seasons across the planet', () => {
+  it('season CHANGE points are identical in both hemispheres — do not "fix" this', () => {
+    // The seasonal staleness trigger asks "has the season changed", never "which season".
+    // Both hemispheres divide the year at the same four moments, so the answer is the same
+    // everywhere. This test exists to stop someone seeing northern-looking month logic and
+    // threading a hemisphere through a calculation it cannot affect.
+    const idx = (m: number) => seasonIndex(new Date(Date.UTC(2026, m, 15)));
+    const changes = [...Array(12).keys()].filter((m) => idx(m) !== idx((m + 11) % 12));
+    expect(changes).toEqual([2, 5, 8, 11]);
+  });
+
+  it('season NAMES are hemisphere-dependent', () => {
+    const december = new Date('2026-12-15T00:00:00Z');
+    expect(seasonOf(december, 'north')).toBe('winter');
+    expect(seasonOf(december, 'south')).toBe('summer');
+  });
+
+  it('declines to name a season in the tropics rather than guessing', () => {
+    expect(seasonOf(new Date('2026-12-15T00:00:00Z'), 'tropical')).toBeNull();
+  });
+
+  it('derives hemisphere from latitude, and admits when it cannot', () => {
+    expect(hemisphereOf(51.5)).toBe('north');    // London
+    expect(hemisphereOf(-37.8)).toBe('south');   // Melbourne
+    expect(hemisphereOf(1.35)).toBe('tropical'); // Singapore
+    expect(hemisphereOf(undefined)).toBeNull();
+  });
+
+  it('still goes stale on a season change south of the equator', () => {
+    const r = record({ method: 'in_person', last_verified: '2026-05-30', lat: -37.8 });
+    expect(confidenceForClass(r, 'seasonal', new Date('2026-06-10T12:00:00Z'))).toBe('stale');
+  });
+});
+
+describe('reports_to — the field the Medic asked for', () => {
+  it('parses as a multi-value', () => {
+    const [r] = parseDirectoryOrThrow(readFileSync(SEED_CSV, 'utf8'));
+    expect(r.reports_to).toEqual(['no_one']);
+  });
+
+  it('rejects a value outside the enum', () => {
+    const { issues } = parseDirectory('id,name,type,reports_to\na,A,shelter,fbi\n');
+    expect(issues[0].column).toBe('reports_to');
+  });
+
+  it('distinguishes "reports to no one" from "nobody has established it"', () => {
+    const known = record({ method: 'in_person', last_verified: '2026-08-14', reports_to: ['no_one'] });
+    const unknown = record({ method: 'in_person', last_verified: '2026-08-14' });
+    expect(displayField(known, 'reports_to', NOW).kind).toBe('value');
+    expect(displayField(unknown, 'reports_to', NOW).kind).toBe('unknown');
+  });
+
+  it('is a slow field, so it survives the volatile window', () => {
+    const r = record({ method: 'in_person', last_verified: '2026-07-28', reports_to: ['police'] });
+    expect(displayField(r, 'hours', NOW).kind).not.toBe('value');
+    expect(displayField(r, 'reports_to', NOW).kind).toBe('value');
   });
 });

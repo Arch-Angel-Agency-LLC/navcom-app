@@ -11,7 +11,7 @@
  */
 
 import type { Confidence, ResourceField, ResourceRecord, VolatilityClass } from './types';
-import { STALE_AFTER_DAYS, STALENESS_MARGIN_DAYS, ageInDays, classOf, seasonOf } from './volatility';
+import { STALE_AFTER_DAYS, STALENESS_MARGIN_DAYS, ageInDays, classOf, seasonIndex } from './volatility';
 
 /**
  * Confidence for one volatility class of a record.
@@ -40,9 +40,10 @@ export function confidenceForClass(
   if (age > STALE_AFTER_DAYS[cls]) return 'stale';
 
   // Second staleness trigger for the seasonal class: "30 days, or at season change".
+  // seasonIndex is hemisphere-independent by construction — see its doc comment.
   if (cls === 'seasonal') {
     const verifiedAt = new Date(`${record.last_verified}T00:00:00Z`);
-    if (seasonOf(verifiedAt) !== seasonOf(now)) return 'stale';
+    if (seasonIndex(verifiedAt) !== seasonIndex(now)) return 'stale';
   }
 
   switch (record.method) {

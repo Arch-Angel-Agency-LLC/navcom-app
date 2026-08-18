@@ -7,7 +7,7 @@
 
 import {
   ACCEPTS, ACCESSIBILITY, BELONGINGS, CAPACITY_SIGNAL, COST, FLAG, ID_REQUIRED, METHOD,
-  PETS, RESOURCE_TYPES, SEASONAL, SEX_OFFENDER_OK, SOBRIETY
+  PETS, REPORTS_TO, RESOURCE_TYPES, SEASONAL, SEX_OFFENDER_OK, SOBRIETY
 } from './types';
 import type { ResourceRecord } from './types';
 
@@ -166,6 +166,7 @@ export function parseDirectory(csv: string): ParseResult {
       id_required: enumOf(ID_REQUIRED, get('id_required'), 'id_required', rowNo, issues),
       referral_required: boolOf(get('referral_required'), 'referral_required', rowNo, issues),
       sex_offender_ok: enumOf(SEX_OFFENDER_OK, get('sex_offender_ok'), 'sex_offender_ok', rowNo, issues),
+      reports_to: multiOf(REPORTS_TO, get('reports_to'), 'reports_to', rowNo, issues),
       curfew: str(get('curfew')),
       max_stay: str(get('max_stay')),
       belongings: enumOf(BELONGINGS, get('belongings'), 'belongings', rowNo, issues),
