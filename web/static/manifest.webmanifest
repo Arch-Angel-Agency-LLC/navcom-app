@@ -1,0 +1,12 @@
+{
+  "name": "NavCom Field Terminal",
+  "short_name": "NavCom",
+  "start_url": "/terminal/",
+  "scope": "/terminal/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0B0E12",
+  "theme_color": "#0B0E12",
+  "description": "Status, signal, directory, playbook, log. Works with no signal.",
+  "icons": []
+}

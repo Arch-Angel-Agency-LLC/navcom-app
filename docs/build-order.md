@@ -92,9 +92,14 @@ Two rules are now enforced in code rather than only written down: a watch state 
 `automated-oncall` to `automated` when nobody is pageable or no drill has passed, and hard
 expiry can never drop a `distress` entry.
 
-**Field Terminal**, and only the Status screen first: watch state, including Dark. That is
-DoD check 6, the first screen in [`watch/field-terminal.md`](watch/field-terminal.md), and
-the only screen that must work when everything else is down.
+**Field Terminal — Status screen: done.** Lives at `/terminal/`, same domain and one build,
+but in its own route group so it inherits none of the site's chrome, stylesheet or
+assumptions. It renders Dark before anything is configured, which is the correct answer
+rather than a placeholder, and states the consequence rather than the label.
+
+**Two budgets, and the split is enforced.** The public site delivers **zero** JavaScript
+against a budget of zero — it fails on the first byte, because a document must stay readable
+with scripting off. The terminal is an application and gets 140 kB; it currently uses 36.4.
 
 Remaining screens once the protocol has stopped moving. UI built against an unproven
 payload gets rewritten when the payload changes, which is the whole reason for the gate.

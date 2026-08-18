@@ -171,10 +171,20 @@ describe('rendered display rules', () => {
 });
 
 describe('the public surface', () => {
-  it('delivers no JavaScript to any page', () => {
+  it('delivers no JavaScript to any PUBLIC page', () => {
+    // Strict, and scoped rather than relaxed: the site is a document and must stay readable
+    // with scripting off. The terminal is an application, checked separately below.
+    //
+    // Asserts the real property rather than a proxy for it — SvelteKit loads a client entry
+    // through <link rel="modulepreload"> plus one inline module, so counting only
+    // `script[src]` would pass a page that shipped both.
     for (const { path, doc } of pages) {
-      const scripts = doc.querySelectorAll('script').filter((s) => s.getAttribute('src'));
-      expect(scripts.length, `${path} loads a script`).toBe(0);
+      if (path.includes('/terminal/')) continue;
+      expect(doc.querySelectorAll('script').length, `${path} has a script tag`).toBe(0);
+      expect(
+        doc.querySelectorAll('link[rel="modulepreload"]').length,
+        `${path} preloads a module`
+      ).toBe(0);
     }
   });
 
@@ -228,5 +238,44 @@ describe('reader-facing documents are actually published', () => {
         ).toBeLessThanOrEqual(1);
       }
     }
+  });
+});
+
+describe('the field terminal', () => {
+  const terminal = () => pages.find((p) => p.path.includes('/terminal/'));
+
+  it('is built', () => {
+    expect(terminal(), 'no terminal page in build/').toBeDefined();
+  });
+
+  it('is an application, so it does load a client bundle', () => {
+    const t = terminal()!;
+    const modules = t.doc.querySelectorAll('link[rel="modulepreload"]').length;
+    const scripts = t.doc.querySelectorAll('script').length;
+    expect(modules + scripts, 'terminal ships no client code').toBeGreaterThan(0);
+  });
+
+  it('renders Dark before anything is configured, not an error or a spinner', () => {
+    const t = terminal()!;
+    const state = t.doc.querySelector('[data-state]');
+    expect(state?.getAttribute('data-state')).toBe('dark');
+    expect(t.bodyText).toContain('Dark is not an error');
+    expect(t.bodyText.toLowerCase()).not.toContain('connecting');
+    expect(t.bodyText.toLowerCase()).not.toContain('loading');
+  });
+
+  it('states the consequence, not just the label', () => {
+    const t = terminal()!;
+    const cap = t.doc.querySelector('[data-capability]');
+    expect(cap, 'no capability sentence rendered').not.toBeNull();
+    expect(cap!.structuredText).toMatch(/page nobody/i);
+  });
+
+  it('says what is lost without a watch rather than implying Dark is equivalent', () => {
+    expect(terminal()!.bodyText).toMatch(/Query needs a watch/i);
+  });
+
+  it('carries a manifest so it can be installed', () => {
+    expect(terminal()!.raw).toContain('manifest.webmanifest');
   });
 });

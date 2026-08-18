@@ -18,11 +18,30 @@ import { fileURLToPath } from 'node:url';
 
 const BUILD = fileURLToPath(new URL('../build/', import.meta.url));
 
-const BUDGETS = {
-  /** JavaScript delivered for a single page load, gzipped. */
-  js: 100 * 1024,
-  /** Everything delivered for a single page load, gzipped. */
-  page: 250 * 1024
+/**
+ * Two surfaces, two budgets, and the split is the point.
+ *
+ * The public site is a document: it must deliver ZERO JavaScript, so a reader with
+ * scripting off, an old phone, or a proxy in front of them still gets the directory. That
+ * budget is not "small", it is nothing, and it fails on the first byte.
+ *
+ * The Field Terminal is an application. It needs script to sign, seal and hold state
+ * offline. Its budget is sized for the device floor — a prepaid Android 8 with ~400MB free
+ * — rather than for what a laptop tolerates.
+ */
+const SURFACES = {
+  public: {
+    label: 'public site',
+    match: (name) => !name.startsWith('terminal/'),
+    js: 0,
+    page: 250 * 1024
+  },
+  terminal: {
+    label: 'field terminal',
+    match: (name) => name.startsWith('terminal/'),
+    js: 140 * 1024,
+    page: 200 * 1024
+  }
 };
 
 function walk(dir) {
@@ -84,32 +103,38 @@ const pages = htmlFiles.map((html) => {
 
 pages.sort((a, b) => b.total - a.total);
 
-console.log(`Delivered payload per page, gzipped — ${pages.length} pages\n`);
-console.log(`  ${'HTML'.padStart(9)} ${'CSS'.padStart(9)} ${'JS'.padStart(9)} ${'TOTAL'.padStart(9)}  page`);
-for (const p of pages.slice(0, 8)) {
-  console.log(
-    `  ${kb(p.html).padStart(9)} ${kb(p.css).padStart(9)} ${kb(p.js).padStart(9)} ${kb(p.total).padStart(9)}  ${p.name}`
-  );
-}
-if (pages.length > 8) console.log(`  ${`+${pages.length - 8} smaller`.padStart(41)}`);
-
-const worstJs = Math.max(...pages.map((p) => p.js));
-const worstPage = pages[0];
-
-console.log('');
-const checks = [
-  ['JavaScript', worstJs, BUDGETS.js, 'worst page'],
-  ['Page total', worstPage.total, BUDGETS.page, worstPage.name]
-];
-
 let failed = false;
-for (const [label, actual, budget, note] of checks) {
-  const ok = actual <= budget;
-  if (!ok) failed = true;
-  const pct = Math.round((actual / budget) * 100);
-  console.log(
-    `  ${ok ? 'PASS' : 'FAIL'}  ${label.padEnd(11)} ${kb(actual).padStart(9)} / ${kb(budget).padStart(9)}  (${pct}%)  ${note}`
-  );
+
+for (const surface of Object.values(SURFACES)) {
+  const own = pages.filter((p) => surface.match(p.name));
+  if (own.length === 0) continue;
+
+  console.log(`${surface.label} — ${own.length} page(s), gzipped\n`);
+  console.log(`  ${'HTML'.padStart(9)} ${'CSS'.padStart(9)} ${'JS'.padStart(9)} ${'TOTAL'.padStart(9)}  page`);
+  for (const p of own.slice(0, 6)) {
+    console.log(
+      `  ${kb(p.html).padStart(9)} ${kb(p.css).padStart(9)} ${kb(p.js).padStart(9)} ${kb(p.total).padStart(9)}  ${p.name}`
+    );
+  }
+  if (own.length > 6) console.log(`  ${`+${own.length - 6} smaller`.padStart(41)}`);
+
+  const worstJs = Math.max(...own.map((p) => p.js));
+  const worst = own[0];
+
+  console.log('');
+  for (const [label, actual, budget, note] of [
+    ['JavaScript', worstJs, surface.js, 'worst page'],
+    ['Page total', worst.total, surface.page, worst.name]
+  ]) {
+    const ok = actual <= budget;
+    if (!ok) failed = true;
+    const pct = budget === 0 ? (actual === 0 ? 0 : Infinity) : Math.round((actual / budget) * 100);
+    console.log(
+      `  ${ok ? 'PASS' : 'FAIL'}  ${label.padEnd(11)} ${kb(actual).padStart(9)} / ${kb(budget).padStart(9)}` +
+        `  (${pct === Infinity ? 'over' : pct + '%'})  ${note}`
+    );
+  }
+  console.log('');
 }
 
 // Emitted but never referenced by any page. Harmless to a reader, but worth seeing: if it
@@ -123,8 +148,9 @@ if (dead.length) {
   );
 }
 
-if (worstJs === 0) {
-  console.log('\n  Zero JavaScript delivered. Every page works with scripting disabled.');
+const publicJs = Math.max(0, ...pages.filter((p) => SURFACES.public.match(p.name)).map((p) => p.js));
+if (publicJs === 0) {
+  console.log('\n  Zero JavaScript on the public site. Every page there works with scripting disabled.');
 }
 
 process.exit(failed ? 1 : 0);

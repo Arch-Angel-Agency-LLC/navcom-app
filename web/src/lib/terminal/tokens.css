@@ -1,0 +1,64 @@
+/*
+ * Field Terminal.
+ *
+ * A different instrument from the site, not a restyling of it. The situation is one hand,
+ * cold, dark, possibly gloved, possibly in rain — so this is dark-first with no light
+ * variant, targets are thumb-sized, and nothing is smaller than it has to be.
+ *
+ * It commits to a single visual world deliberately: a terminal that changed appearance with
+ * the phone's theme would be a terminal you could not learn by muscle memory.
+ */
+.terminal {
+  --t-ground: #0B0E12;
+  --t-raised: #141920;
+  --t-sunk: #05070A;
+  --t-ink: #F2F5F8;
+  --t-muted: #9BA5B2;
+  --t-faint: #6E7885;
+  --t-line: #232B35;
+  --t-line-strong: #38424F;
+
+  /* Watch states carry meaning, so each gets its own colour and never shares one. */
+  --t-station: #5FBF8F;
+  --t-oncall: #E9A544;
+  --t-auto: #7FA8D9;
+  --t-dark: #E27A6A;
+
+  color-scheme: dark;
+  background: var(--t-ground);
+  color: var(--t-ink);
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  min-height: 100vh;
+  min-height: 100dvh;
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.terminal * { box-sizing: border-box; }
+
+/* Thumb-sized. 48px is the floor, not the target. */
+.terminal button,
+.terminal a.action {
+  min-height: 3.5rem;
+  font-size: 1.05rem;
+  font-weight: 600;
+  border-radius: 2px;
+  border: 2px solid var(--t-line-strong);
+  background: var(--t-raised);
+  color: var(--t-ink);
+  padding: 0 1.1rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: .6rem;
+  text-decoration: none;
+  cursor: pointer;
+}
+.terminal button:active, .terminal a.action:active { background: var(--t-sunk); }
+.terminal :focus-visible { outline: 3px solid var(--t-ink); outline-offset: 3px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .terminal *, .terminal *::before, .terminal *::after {
+    animation: none !important; transition: none !important;
+  }
+}
