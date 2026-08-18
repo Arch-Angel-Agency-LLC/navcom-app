@@ -1,0 +1,179 @@
+import { describe, it, expect, vi } from "vitest";
+import type { SimplePool } from "nostr-tools/pool";
+import { generateSecretKey, getPublicKey } from "nostr-tools/pure";
+import { sendSignal, sendDistress, waitForResponse } from "../src/client/signal.js";
+import { encryptPayload } from "../src/shared/crypto.js";
+import { KIND_RESPONSE } from "../src/shared/kinds.js";
+import type { ResponsePayload } from "../src/shared/payloads.js";
+
+const RELAYS = ["wss://relay.example"];
+
+function fakePool(overrides: Partial<SimplePool>): SimplePool {
+  return overrides as unknown as SimplePool;
+}
+
+describe("sendSignal / sendDistress publish-failure reporting (found in review)", () => {
+  // Both used to Promise.allSettled the publish and ignore the results
+  // entirely -- if every relay rejected, the function still returned as
+  // if the event had gone out, and the caller would sit through a full
+  // waitForResponse timeout with a misleading "no response" diagnosis
+  // instead of the real "never actually sent" one.
+
+  it("sendSignal throws a clear error when every relay rejects the publish", async () => {
+    const secretKey = generateSecretKey();
+    const watchtowerPubkey = getPublicKey(generateSecretKey());
+    const pool = fakePool({
+      publish: () => [Promise.reject(new Error("connection refused"))],
+    });
+
+    await expect(sendSignal(pool, RELAYS, secretKey, watchtowerPubkey, "routine", {})).rejects.toThrow(
+      /Failed to publish to any relay/,
+    );
+  });
+
+  it("sendSignal succeeds when at least one relay accepts, even if others reject", async () => {
+    const secretKey = generateSecretKey();
+    const watchtowerPubkey = getPublicKey(generateSecretKey());
+    const pool = fakePool({
+      publish: () => [Promise.resolve("ok"), Promise.reject(new Error("timeout"))],
+    });
+
+    await expect(
+      sendSignal(pool, ["wss://a", "wss://b"], secretKey, watchtowerPubkey, "routine", {}),
+    ).resolves.toBeDefined();
+  });
+
+  it("sendDistress throws when every relay rejects", async () => {
+    const secretKey = generateSecretKey();
+    const watchtowerPubkey = getPublicKey(generateSecretKey());
+    const pool = fakePool({
+      publish: () => [Promise.reject(new Error("dns failure"))],
+    });
+
+    await expect(sendDistress(pool, RELAYS, secretKey, watchtowerPubkey, "help")).rejects.toThrow(
+      /Failed to publish to any relay/,
+    );
+  });
+
+  it("the thrown error includes the underlying rejection reasons", async () => {
+    const secretKey = generateSecretKey();
+    const watchtowerPubkey = getPublicKey(generateSecretKey());
+    const pool = fakePool({
+      publish: () => [Promise.reject(new Error("connection refused"))],
+    });
+
+    await expect(sendSignal(pool, RELAYS, secretKey, watchtowerPubkey, "routine", {})).rejects.toThrow(
+      /connection refused/,
+    );
+  });
+});
+
+describe("waitForResponse (found in review)", () => {
+  it("resolves with the decrypted response payload on a matching event", async () => {
+    const clientSecretKey = generateSecretKey();
+    const clientPubkey = getPublicKey(clientSecretKey);
+    const watchtowerSecretKey = generateSecretKey();
+    const watchtowerPubkey = getPublicKey(watchtowerSecretKey);
+
+    const responsePayload: ResponsePayload = {
+      type: "ack", responder: "watchtower", responder_kind: "agent", text: null, provenance: null,
+    };
+    const content = encryptPayload(watchtowerSecretKey, clientPubkey, responsePayload);
+
+    let capturedOnEvent: ((event: unknown) => void) | undefined;
+    const pool = fakePool({
+      subscribeMany: (_relays, _filter, params) => {
+        capturedOnEvent = params.onevent;
+        return { close: () => {} };
+      },
+    });
+
+    const sentEvent = { id: "abc123", created_at: 1000 } as unknown as Parameters<typeof waitForResponse>[5];
+    const promise = waitForResponse(pool, RELAYS, clientSecretKey, clientPubkey, watchtowerPubkey, sentEvent, 5000);
+
+    // Simulate the relay delivering a real, validly-signed response event.
+    const { finalizeEvent } = await import("nostr-tools/pure");
+    const fakeEvent = finalizeEvent(
+      { kind: KIND_RESPONSE, tags: [["p", clientPubkey], ["e", "abc123"]], content, created_at: 1001 },
+      watchtowerSecretKey,
+    );
+    capturedOnEvent?.(fakeEvent);
+
+    await expect(promise).resolves.toEqual(responsePayload);
+  });
+
+  it("rejects with a clear timeout error when nothing arrives", async () => {
+    const clientSecretKey = generateSecretKey();
+    const clientPubkey = getPublicKey(clientSecretKey);
+    const watchtowerPubkey = getPublicKey(generateSecretKey());
+
+    const pool = fakePool({
+      subscribeMany: () => ({ close: () => {} }),
+    });
+    const sentEvent = { id: "abc", created_at: 1000 } as unknown as Parameters<typeof waitForResponse>[5];
+
+    await expect(
+      waitForResponse(pool, RELAYS, clientSecretKey, clientPubkey, watchtowerPubkey, sentEvent, 20),
+    ).rejects.toThrow(/No response from Watchtower within/);
+  });
+
+  it("does not throw an unhandled error when subscribeMany fails synchronously (timer/closer ordering fix)", async () => {
+    // Found in review: `closer` used to be referenced inside the timeout
+    // callback before `const closer = pool.subscribeMany(...)` had even
+    // run. If subscribeMany threw synchronously, the promise correctly
+    // rejected via the throw, but the already-armed setTimeout was never
+    // cleared -- it would fire later and reference `closer` before
+    // initialization, an unhandled exception in a bare timer callback
+    // completely disconnected from the original, already-reported error.
+    const clientSecretKey = generateSecretKey();
+    const clientPubkey = getPublicKey(clientSecretKey);
+    const watchtowerPubkey = getPublicKey(generateSecretKey());
+
+    const pool = fakePool({
+      subscribeMany: () => {
+        throw new Error("invalid relay URL");
+      },
+    });
+    const sentEvent = { id: "abc", created_at: 1000 } as unknown as Parameters<typeof waitForResponse>[5];
+
+    vi.useFakeTimers();
+    const unhandled = vi.fn();
+    process.once("unhandledRejection", unhandled);
+
+    await expect(
+      waitForResponse(pool, RELAYS, clientSecretKey, clientPubkey, watchtowerPubkey, sentEvent, 5000),
+    ).rejects.toThrow(/invalid relay URL/);
+
+    // Advance past where the leaked timer would have fired, if it still existed.
+    await vi.advanceTimersByTimeAsync(6000);
+    vi.useRealTimers();
+
+    expect(unhandled).not.toHaveBeenCalled();
+  });
+
+  it("ignores an event that fails signature verification", async () => {
+    const clientSecretKey = generateSecretKey();
+    const clientPubkey = getPublicKey(clientSecretKey);
+    const watchtowerSecretKey = generateSecretKey();
+    const watchtowerPubkey = getPublicKey(watchtowerSecretKey);
+
+    let capturedOnEvent: ((event: unknown) => void) | undefined;
+    const pool = fakePool({
+      subscribeMany: (_relays, _filter, params) => {
+        capturedOnEvent = params.onevent;
+        return { close: () => {} };
+      },
+    });
+    const sentEvent = { id: "abc", created_at: 1000 } as unknown as Parameters<typeof waitForResponse>[5];
+
+    const promise = waitForResponse(pool, RELAYS, clientSecretKey, clientPubkey, watchtowerPubkey, sentEvent, 20);
+
+    // A structurally-event-shaped object with a bogus signature.
+    capturedOnEvent?.({
+      kind: KIND_RESPONSE, tags: [], content: "garbage", created_at: 1001,
+      pubkey: watchtowerPubkey, id: "x".repeat(64), sig: "0".repeat(128),
+    });
+
+    await expect(promise).rejects.toThrow(/No response from Watchtower within/);
+  });
+});

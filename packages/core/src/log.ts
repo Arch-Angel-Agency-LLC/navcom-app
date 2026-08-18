@@ -20,7 +20,7 @@
 
 import { sha256 } from '@noble/hashes/sha256';
 import { bytesToHex, utf8ToBytes } from '@noble/hashes/utils';
-import type { Author } from './attestation';
+import type { Author } from './attestation.js';
 
 export type LogAction =
   | 'took-watch'

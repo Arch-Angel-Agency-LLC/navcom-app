@@ -1,0 +1,348 @@
+import { describe, it, expect, vi } from "vitest";
+import { Board } from "../src/daemon/board.js";
+
+const OP_A = "a".repeat(64);
+const OP_B = "b".repeat(64);
+
+describe("Board", () => {
+  it("on-station adds an active entry with expected fields", () => {
+    const board = new Board();
+    const now = 1_000_000;
+    board.onStation({
+      operator: OP_A,
+      callsign: "OP-1",
+      area: "district-7",
+      expectedDurationSeconds: 7200,
+      routineIntervalSeconds: 3600,
+      position: null,
+      now,
+    });
+
+    const entry = board.get(OP_A);
+    expect(entry).toBeDefined();
+    expect(entry?.callsign).toBe("OP-1");
+    expect(entry?.area).toBe("district-7");
+    expect(entry?.signedOn).toBe(now);
+    expect(entry?.expectedUntil).toBe(now + 7200);
+    expect(entry?.routineDue).toBe(now + 3600);
+    expect(entry?.lastContact).toBe(now);
+    expect(entry?.status).toBe("active");
+    expect(board.size).toBe(1);
+  });
+
+  it("routine_interval: null means no routine_due at all", () => {
+    const board = new Board();
+    board.onStation({
+      operator: OP_A, callsign: "OP-1", area: "d", expectedDurationSeconds: 7200,
+      routineIntervalSeconds: null, position: null, now: 0,
+    });
+    expect(board.get(OP_A)?.routineDue).toBeNull();
+  });
+
+  it("stood-down removes the entry entirely, not marks it", () => {
+    const board = new Board();
+    board.onStation({
+      operator: OP_A, callsign: "OP-1", area: "d", expectedDurationSeconds: 7200,
+      routineIntervalSeconds: null, position: null, now: 0,
+    });
+    const removed = board.standDown(OP_A);
+    expect(removed).toBe(true);
+    expect(board.get(OP_A)).toBeUndefined();
+    expect(board.size).toBe(0);
+  });
+
+  it("stood-down for an unknown operator returns false, does not throw", () => {
+    const board = new Board();
+    expect(board.standDown(OP_A)).toBe(false);
+  });
+
+  it("routine check-in refreshes last_contact and advances routine_due using the entry's own cadence", () => {
+    const board = new Board();
+    board.onStation({
+      operator: OP_A, callsign: "OP-1", area: "d", expectedDurationSeconds: 7200,
+      routineIntervalSeconds: 1800, position: null, now: 0,
+    });
+    board.routine(OP_A, 1800);
+    const entry = board.get(OP_A);
+    expect(entry?.lastContact).toBe(1800);
+    expect(entry?.routineDue).toBe(1800 + 1800);
+  });
+
+  it("routine check-in clears an overdue status", () => {
+    const board = new Board();
+    board.onStation({
+      operator: OP_A, callsign: "OP-1", area: "d", expectedDurationSeconds: 100,
+      routineIntervalSeconds: null, position: null, now: 0,
+    });
+    board.sweep(100 + 1800 + 1, 1800, 14400); // past overdue grace
+    expect(board.get(OP_A)?.status).toBe("overdue");
+
+    board.routine(OP_A, 100 + 1800 + 1);
+    expect(board.get(OP_A)?.status).toBe("active");
+  });
+
+  it("touch() refreshes contact and clears overdue without touching routine_due", () => {
+    const board = new Board();
+    board.onStation({
+      operator: OP_A, callsign: "OP-1", area: "d", expectedDurationSeconds: 100,
+      routineIntervalSeconds: 500, position: null, now: 0,
+    });
+    board.sweep(100 + 1800 + 1, 1800, 14400);
+    expect(board.get(OP_A)?.status).toBe("overdue");
+
+    board.touch(OP_A, 100 + 1800 + 1);
+    const entry = board.get(OP_A);
+    expect(entry?.status).toBe("active");
+    expect(entry?.routineDue).toBe(500); // unchanged by touch()
+  });
+
+  it("touch() on an unknown operator returns null, does not create an entry", () => {
+    const board = new Board();
+    expect(board.touch(OP_A, 0)).toBeNull();
+    expect(board.size).toBe(0);
+  });
+
+  describe("sweep", () => {
+    it("marks an entry overdue once past expected_until + overdue_grace, not before", () => {
+      const board = new Board();
+      board.onStation({
+        operator: OP_A, callsign: "OP-1", area: "d", expectedDurationSeconds: 100,
+        routineIntervalSeconds: null, position: null, now: 0,
+      });
+
+      board.sweep(100 + 1800 - 1, 1800, 14400); // one second before grace expires
+      expect(board.get(OP_A)?.status).toBe("active");
+
+      board.sweep(100 + 1800 + 1, 1800, 14400); // one second past grace
+      expect(board.get(OP_A)?.status).toBe("overdue");
+    });
+
+    it("marks overdue from a missed routine check-in even if expected_until is far off", () => {
+      const board = new Board();
+      board.onStation({
+        operator: OP_A, callsign: "OP-1", area: "d", expectedDurationSeconds: 100_000,
+        routineIntervalSeconds: 3600, position: null, now: 0,
+      });
+      board.sweep(3600 + 1800 + 1, 1800, 14400);
+      expect(board.get(OP_A)?.status).toBe("overdue");
+    });
+
+    it("drops an entry past hard_expiry", () => {
+      const board = new Board();
+      board.onStation({
+        operator: OP_A, callsign: "OP-1", area: "d", expectedDurationSeconds: 100,
+        routineIntervalSeconds: null, position: null, now: 0,
+      });
+      board.sweep(100 + 14400 + 1, 1800, 14400);
+      expect(board.get(OP_A)).toBeUndefined();
+    });
+
+    it("never drops a distress entry, even long past hard_expiry", () => {
+      const board = new Board();
+      board.onStation({
+        operator: OP_A, callsign: "OP-1", area: "d", expectedDurationSeconds: 100,
+        routineIntervalSeconds: null, position: null, now: 0,
+      });
+      board.distress(OP_A, 50);
+      board.sweep(100 + 14400 + 999_999, 1800, 14400);
+      expect(board.get(OP_A)?.status).toBe("distress");
+    });
+
+    it("sweep only affects entries actually past their own thresholds, leaving others untouched", () => {
+      const board = new Board();
+      board.onStation({
+        operator: OP_A, callsign: "OP-1", area: "d", expectedDurationSeconds: 100,
+        routineIntervalSeconds: null, position: null, now: 0,
+      });
+      board.onStation({
+        operator: OP_B, callsign: "OP-2", area: "d", expectedDurationSeconds: 100_000,
+        routineIntervalSeconds: null, position: null, now: 0,
+      });
+      board.sweep(100 + 1800 + 1, 1800, 14400);
+      expect(board.get(OP_A)?.status).toBe("overdue");
+      expect(board.get(OP_B)?.status).toBe("active");
+    });
+  });
+
+  it("position is only stored when share_position semantics are honored by the caller", () => {
+    // Board itself just stores whatever position it's given -- the
+    // share_position=false-means-null decision is the daemon's
+    // responsibility (watchtower.ts), not the board's. This test pins
+    // that the board layer is a dumb store, not a policy layer.
+    const board = new Board();
+    board.onStation({
+      operator: OP_A, callsign: "OP-1", area: "d", expectedDurationSeconds: 100,
+      routineIntervalSeconds: null, position: { lat: 1, lon: 2, precision_m: 500 }, now: 0,
+    });
+    expect(board.get(OP_A)?.position).toEqual({ lat: 1, lon: 2, precision_m: 500 });
+  });
+
+  describe("distress", () => {
+    it("creates a minimal entry for an operator who never sent on-station", () => {
+      // Found in review: this used to be a silent no-op for an unknown
+      // operator -- handleDistressEvent still sent them an ack, so
+      // nothing looked wrong to the sender, but the distress was
+      // completely invisible to anyone watching the board.
+      const board = new Board();
+      const entry = board.distress(OP_A, 1000);
+      expect(entry.status).toBe("distress");
+      expect(entry.operator).toBe(OP_A);
+      expect(board.get(OP_A)?.status).toBe("distress");
+      expect(board.size).toBe(1);
+    });
+
+    it("marks an existing entry distress without losing it", () => {
+      const board = new Board();
+      board.onStation({
+        operator: OP_A, callsign: "OP-1", area: "district-7", expectedDurationSeconds: 7200,
+        routineIntervalSeconds: null, position: null, now: 0,
+      });
+      board.distress(OP_A, 500);
+      const entry = board.get(OP_A);
+      expect(entry?.status).toBe("distress");
+      expect(entry?.callsign).toBe("OP-1"); // real on-station data preserved
+      expect(entry?.area).toBe("district-7");
+    });
+  });
+
+  describe("distress is not silently cleared", () => {
+    it("a later on-station signal does not clear an existing distress status", () => {
+      // Found in review: distress is "always a deliberate act" to
+      // enter (spec's own words) -- clearing it deserves the same
+      // deliberateness, not an incidental side effect of a routine
+      // re-sign-on (accidental client retry, confused operator, etc.).
+      const board = new Board();
+      board.onStation({
+        operator: OP_A, callsign: "OP-1", area: "district-7", expectedDurationSeconds: 7200,
+        routineIntervalSeconds: null, position: null, now: 0,
+      });
+      board.distress(OP_A, 100);
+      expect(board.get(OP_A)?.status).toBe("distress");
+
+      board.onStation({
+        operator: OP_A, callsign: "OP-1", area: "district-9", expectedDurationSeconds: 3600,
+        routineIntervalSeconds: null, position: null, now: 200,
+      });
+
+      expect(board.get(OP_A)?.status).toBe("distress");
+      expect(board.get(OP_A)?.area).toBe("district-9"); // other fields still refresh normally
+    });
+
+    it("a fresh on-station for a non-distressed operator is still active as before", () => {
+      const board = new Board();
+      board.onStation({
+        operator: OP_A, callsign: "OP-1", area: "d", expectedDurationSeconds: 100,
+        routineIntervalSeconds: null, position: null, now: 0,
+      });
+      expect(board.get(OP_A)?.status).toBe("active");
+    });
+
+    it("routine() does not clear an existing distress status", () => {
+      const board = new Board();
+      board.onStation({
+        operator: OP_A, callsign: "OP-1", area: "d", expectedDurationSeconds: 100,
+        routineIntervalSeconds: 50, position: null, now: 0,
+      });
+      board.distress(OP_A, 10);
+      board.routine(OP_A, 20);
+      expect(board.get(OP_A)?.status).toBe("distress");
+    });
+
+    it("touch() does not clear an existing distress status", () => {
+      const board = new Board();
+      board.onStation({
+        operator: OP_A, callsign: "OP-1", area: "d", expectedDurationSeconds: 100,
+        routineIntervalSeconds: null, position: null, now: 0,
+      });
+      board.distress(OP_A, 10);
+      board.touch(OP_A, 20);
+      expect(board.get(OP_A)?.status).toBe("distress");
+    });
+  });
+
+  describe("sweep onOverdue hook (escalation seam)", () => {
+    // A no-op seam for a future escalation ladder, not escalation itself
+    // -- these tests pin that the callback fires at exactly the right
+    // moment and exactly once, without adding any ladder behavior.
+    it("is not called when nothing goes overdue", () => {
+      const board = new Board();
+      board.onStation({
+        operator: OP_A, callsign: "OP-1", area: "d", expectedDurationSeconds: 100_000,
+        routineIntervalSeconds: null, position: null, now: 0,
+      });
+      const onOverdue = vi.fn();
+      board.sweep(100, 1800, 14400, onOverdue);
+      expect(onOverdue).not.toHaveBeenCalled();
+    });
+
+    it("is called exactly once, with the entry, at the moment of the overdue transition", () => {
+      const board = new Board();
+      board.onStation({
+        operator: OP_A, callsign: "OP-1", area: "d", expectedDurationSeconds: 100,
+        routineIntervalSeconds: null, position: null, now: 0,
+      });
+      const onOverdue = vi.fn();
+      board.sweep(100 + 1800 + 1, 1800, 14400, onOverdue);
+      expect(onOverdue).toHaveBeenCalledTimes(1);
+      expect(onOverdue).toHaveBeenCalledWith(expect.objectContaining({ operator: OP_A, status: "overdue" }));
+    });
+
+    it("does not fire again on a later sweep of an already-overdue entry", () => {
+      const board = new Board();
+      board.onStation({
+        operator: OP_A, callsign: "OP-1", area: "d", expectedDurationSeconds: 100,
+        routineIntervalSeconds: null, position: null, now: 0,
+      });
+      const onOverdue = vi.fn();
+      board.sweep(100 + 1800 + 1, 1800, 14400, onOverdue);
+      board.sweep(100 + 1800 + 2, 1800, 14400, onOverdue);
+      expect(onOverdue).toHaveBeenCalledTimes(1);
+    });
+
+    it("is entirely optional -- sweep behaves identically when omitted", () => {
+      const board = new Board();
+      board.onStation({
+        operator: OP_A, callsign: "OP-1", area: "d", expectedDurationSeconds: 100,
+        routineIntervalSeconds: null, position: null, now: 0,
+      });
+      expect(() => board.sweep(100 + 1800 + 1, 1800, 14400)).not.toThrow();
+      expect(board.get(OP_A)?.status).toBe("overdue");
+    });
+  });
+
+  describe("overdueCount (found in review -- feeds kind 10910's overdue_count)", () => {
+    it("is zero on an empty board", () => {
+      expect(new Board().overdueCount).toBe(0);
+    });
+
+    it("counts only overdue entries, not active/distress ones", () => {
+      const board = new Board();
+      board.onStation({
+        operator: OP_A, callsign: "OP-1", area: "d", expectedDurationSeconds: 100,
+        routineIntervalSeconds: null, position: null, now: 0,
+      });
+      board.onStation({
+        operator: OP_B, callsign: "OP-2", area: "d", expectedDurationSeconds: 100_000,
+        routineIntervalSeconds: null, position: null, now: 0,
+      });
+      board.sweep(100 + 1800 + 1, 1800, 14400); // only OP_A goes overdue
+      expect(board.overdueCount).toBe(1);
+
+      board.distress(OP_B, 100 + 1800 + 1); // distress, not overdue
+      expect(board.overdueCount).toBe(1); // unchanged
+    });
+
+    it("drops back to zero once the overdue entry checks back in", () => {
+      const board = new Board();
+      board.onStation({
+        operator: OP_A, callsign: "OP-1", area: "d", expectedDurationSeconds: 100,
+        routineIntervalSeconds: null, position: null, now: 0,
+      });
+      board.sweep(100 + 1800 + 1, 1800, 14400);
+      expect(board.overdueCount).toBe(1);
+
+      board.touch(OP_A, 100 + 1800 + 2);
+      expect(board.overdueCount).toBe(0);
+    });
+  });
+});

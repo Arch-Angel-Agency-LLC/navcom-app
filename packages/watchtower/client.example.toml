@@ -1,0 +1,21 @@
+# NavCom Watchtower CLI client config. Copy to client.toml (gitignored)
+# and fill in the Watchtower's pubkey -- printed by the daemon on its
+# first run.
+
+[identity]
+# Operator's own secp256k1 secret key. Generated here on first run if it
+# doesn't exist. Never transmitted, never escrowed, never registered --
+# the daemon learns this key's pubkey the first time it receives a
+# signal, nothing more.
+privkey_path = "./operator.key"
+
+[watchtower]
+pubkey = "REPLACE_WITH_WATCHTOWER_PUBKEY"
+
+[relays]
+urls = ["wss://relay.damus.io", "wss://nos.lol"]
+
+[operator]
+# Optional. If unset, the daemon assigns a short callsign derived from
+# your pubkey (OP-<prefix>).
+callsign = "OP-1"

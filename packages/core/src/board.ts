@@ -7,7 +7,7 @@
  * Normative source: docs/spec/watch-state.spec.md
  */
 
-import type { Position } from './events/signal';
+import type { Position } from './events/signal.js';
 
 /** `stood-down` is absent on purpose: standing down removes the entry, it is not a state. */
 export type EntryStatus = 'active' | 'overdue' | 'distress';

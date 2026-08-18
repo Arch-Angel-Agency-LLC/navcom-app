@@ -8,8 +8,8 @@
 import {
   ACCEPTS, ACCESSIBILITY, BELONGINGS, CAPACITY_SIGNAL, COST, FLAG, ID_REQUIRED, METHOD,
   PETS, REPORTS_TO, RESOURCE_TYPES, SEASONAL, SEX_OFFENDER_OK, SOBRIETY
-} from './types';
-import type { ResourceRecord } from './types';
+} from './types.js';
+import type { ResourceRecord } from './types.js';
 
 export interface ParseIssue {
   row: number;

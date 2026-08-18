@@ -8,9 +8,9 @@
  * Normative source: docs/spec/signals.spec.md
  */
 
-import { seal } from '../crypto/envelope';
-import type { SecretKey } from '../crypto/keys';
-import { KIND_DISTRESS, KIND_SIGNAL, tagRecipient, tagSignalType, type SignalType } from './kinds';
+import { seal } from '../crypto/envelope.js';
+import type { SecretKey } from '../crypto/keys.js';
+import { KIND_DISTRESS, KIND_SIGNAL, tagRecipient, tagSignalType, type SignalType } from './kinds.js';
 
 export interface Position {
   lat: number;
@@ -42,7 +42,11 @@ export interface QueryPayload {
 }
 
 export interface AssistPayload {
-  text: string;
+  /**
+   * Optional on purpose. An assist with no text still means "I need someone" — requiring a
+   * reason would delay a send at the moment sending matters, and the watch can ask.
+   */
+  text?: string;
   area?: string;
 }
 

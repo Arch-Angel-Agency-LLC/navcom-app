@@ -8,8 +8,8 @@
  * Normative source: docs/spec/watch-state.spec.md
  */
 
-import type { Author } from '../attestation';
-import { KIND_WATCH_STATE } from './kinds';
+import type { Author } from '../attestation.js';
+import { KIND_WATCH_STATE } from './kinds.js';
 
 export type WatchState = 'station' | 'automated-oncall' | 'automated' | 'dark';
 export type HolderKind = 'human' | 'agent';
@@ -68,6 +68,23 @@ export interface WatchStatePayload {
   agent_health: AgentHealth;
   /** Null when no drill has ever run — itself a fact worth publishing. */
   last_drill: DrillResult | null;
+  /**
+   * How many operators are currently overdue. **A count, never a list.**
+   *
+   * The spec requires the node to notify whoever holds watch when someone crosses into
+   * overdue, and `10910` already is the mechanism by which anyone watching sees the board
+   * needs attention. Added by the daemon implementation for exactly that reason.
+   *
+   * The cost, stated rather than implied: `10910` is unencrypted, so this announces *that*
+   * an operator is overdue to anyone subscribed. It never says who — no callsign, no
+   * pubkey, no area — but a watcher correlating timing learns something. That is the
+   * [Doxxer's](../../../docs/research/ecosystem-roster.md) method.
+   *
+   * Kept because the alternative today is not notifying at all: the Console, which reads
+   * the board directly and needs no public field, does not exist yet. **Drop this once it
+   * does.**
+   */
+  overdue_count: number;
 }
 
 export const WATCH_STATE_VERSION = 2;
@@ -90,6 +107,7 @@ export interface WatchStateInput {
   since: number;
   agent_health: AgentHealth;
   last_drill: DrillResult | null;
+  overdue_count: number;
   /** Unix seconds, supplied rather than read from a clock this module does not own. */
   now: number;
 }
@@ -124,7 +142,8 @@ export function publishableWatchState(input: WatchStateInput): WatchStatePayload
     oncall: reachable,
     since: input.since,
     agent_health: input.agent_health,
-    last_drill: input.last_drill
+    last_drill: input.last_drill,
+    overdue_count: input.overdue_count
   };
 }
 
@@ -218,7 +237,8 @@ export function readWatchState(content: string | null | undefined): WatchStatePa
       oncall: Array.isArray(p.oncall) ? p.oncall : [],
       since: p.since ?? 0,
       agent_health: p.agent_health ?? 'down',
-      last_drill: p.last_drill ?? null
+      last_drill: p.last_drill ?? null,
+      overdue_count: p.overdue_count ?? 0
     };
   } catch {
     return darkState();
@@ -233,7 +253,8 @@ export const darkState = (): WatchStatePayload => ({
   oncall: [],
   since: 0,
   agent_health: 'down',
-  last_drill: null
+  last_drill: null,
+  overdue_count: 0
 });
 
 /**

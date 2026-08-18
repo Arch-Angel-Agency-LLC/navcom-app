@@ -6,10 +6,10 @@
  * Normative source: docs/spec/signals.spec.md
  */
 
-import { seal } from '../crypto/envelope';
-import type { SecretKey } from '../crypto/keys';
-import type { Author } from '../attestation';
-import { KIND_RESPONSE, tagInReplyTo, tagRecipient } from './kinds';
+import { seal } from '../crypto/envelope.js';
+import type { SecretKey } from '../crypto/keys.js';
+import type { Author } from '../attestation.js';
+import { KIND_RESPONSE, tagInReplyTo, tagRecipient } from './kinds.js';
 
 export type ResponseType = 'ack' | 'answer' | 'escalation-status';
 

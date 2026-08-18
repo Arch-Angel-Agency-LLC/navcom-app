@@ -10,8 +10,8 @@
  * Normative source: docs/product/directory-schema.md §4
  */
 
-import type { Confidence, ResourceField, ResourceRecord, VolatilityClass } from './types';
-import { STALE_AFTER_DAYS, STALENESS_MARGIN_DAYS, ageInDays, classOf, seasonIndex } from './volatility';
+import type { Confidence, ResourceField, ResourceRecord, VolatilityClass } from './types.js';
+import { STALE_AFTER_DAYS, STALENESS_MARGIN_DAYS, ageInDays, classOf, seasonIndex } from './volatility.js';
 
 /**
  * Confidence for one volatility class of a record.

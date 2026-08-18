@@ -14,11 +14,11 @@
  * docs/spec/signals.spec.md requires on any directory-derived `20912` answer.
  */
 
-import { confidenceForClass, isSeeded } from './confidence';
-import { displayField, formatDate } from './display';
-import type { Region } from './region';
-import type { Confidence, ResourceField, ResourceRecord, VolatilityClass } from './types';
-import { FIELD_CLASS, STALE_AFTER_DAYS, STALENESS_MARGIN_DAYS } from './volatility';
+import { confidenceForClass, isSeeded } from './confidence.js';
+import { displayField, formatDate } from './display.js';
+import type { Region } from './region.js';
+import type { Confidence, ResourceField, ResourceRecord, VolatilityClass } from './types.js';
+import { FIELD_CLASS, STALE_AFTER_DAYS, STALENESS_MARGIN_DAYS } from './volatility.js';
 
 /** Bump when the shape changes in a way a consumer must notice. */
 export const EXPORT_VERSION = 1;

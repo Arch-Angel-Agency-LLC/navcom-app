@@ -1,0 +1,17 @@
+node_modules/
+dist/
+*.log
+.env
+.env.local
+
+# Local dev keys -- never committed, per the spec: "Generated on the box,
+# stored there, never leaves." Applies to both daemon and CLI dev keys.
+*.key
+watchtower.key
+operator.key
+.navcom/
+
+# Local configs derived from the .example.toml templates -- environment-
+# specific (relay choices, real key paths), not meant to be committed.
+watchtower.toml
+client.toml

@@ -7,7 +7,7 @@
  * Normative source: docs/product/directory-schema.md §4
  */
 
-import type { ResourceField, VolatilityClass } from './types';
+import type { ResourceField, VolatilityClass } from './types.js';
 
 export const STALE_AFTER_DAYS: Record<VolatilityClass, number> = {
   static: 365,
@@ -89,7 +89,7 @@ export function classOf(field: ResourceField): VolatilityClass | null {
 
 // Age is the attestation model's, not the directory's — it was written twice, which is the
 // duplication this package exists to remove. Re-exported so callers keep their import.
-export { ageInDays } from '../attestation';
+export { ageInDays } from '../attestation.js';
 
 export type Hemisphere = 'north' | 'south' | 'tropical';
 export type Season = 'winter' | 'spring' | 'summer' | 'autumn';

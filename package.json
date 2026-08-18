@@ -1,0 +1,11 @@
+{
+  "name": "navcom",
+  "private": true,
+  "workspaces": [
+    "packages/*",
+    "web"
+  ],
+  "scripts": {
+    "verify": "npm run verify --workspace @navcom/core && npm run verify --workspace @navcom/watchtower && npm run verify --workspace navcom-web"
+  }
+}

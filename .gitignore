@@ -1,0 +1,12 @@
+# Dependencies and build output, at any depth. Written at the repo root rather than
+# per-package: this was missed twice by adding a package and forgetting its own ignore file.
+node_modules/
+dist/
+build/
+.svelte-kit/
+*.tsbuildinfo
+
+.DS_Store
+.env
+.env.*
+!.env.example

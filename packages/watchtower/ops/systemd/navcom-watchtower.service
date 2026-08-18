@@ -1,0 +1,33 @@
+[Unit]
+Description=NavCom Watchtower — real-time field-operator safety coordination daemon
+Documentation=https://github.com/Jthora/navcom-watchtower
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=jono
+Group=jono
+WorkingDirectory=/home/jono/workspace/ul_agent/navcom-watchtower
+
+# node is nvm-managed on this box (no system-wide /usr/bin/node), and nvm's
+# install path is version-specific (e.g. .../v24.13.0/bin/node) -- hardcoding
+# that path breaks the next time `nvm install` changes the active version.
+# Sourcing .bashrc (where nvm's own init lives) resolves `node` the same way
+# an interactive shell would, so this survives a node upgrade without
+# editing this file.
+ExecStart=/bin/bash -c 'source ~/.bashrc && exec node dist/daemon/index.js /home/jono/.config/navcom-watchtower/watchtower.toml'
+
+# Under the user's own home, not /var/lib -- ExecStartPre inherits the same
+# unprivileged User= as ExecStart, so a /var/lib path would need root
+# provisioned ahead of time anyway. Matches this project's own convention
+# (ul-agent.service etc. all keep state under /home/jono/.config/...).
+# The board itself is memory-only by design (src/daemon/board.ts) -- this
+# directory only ever holds the daemon's own identity key and config.
+ExecStartPre=/bin/mkdir -p /home/jono/.config/navcom-watchtower
+
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

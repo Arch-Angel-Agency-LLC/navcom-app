@@ -1,0 +1,44 @@
+# NavCom Watchtower daemon config. Copy to watchtower.toml (gitignored)
+# and adjust for your environment.
+#
+# "Every timing value must be changeable without a code change" -- every
+# field here is read at startup; nothing in [watch] is hardcoded in src/.
+
+[identity]
+# Where the Watchtower's own secp256k1 secret key lives. Generated here
+# on first run if it doesn't exist yet. Never transmitted, never escrowed.
+privkey_path = "./watchtower.key"
+
+[relays]
+# Any public Nostr relay(s) the daemon connects OUTWARD to as a client.
+# The daemon is not a relay itself -- nothing here needs to be hosted.
+urls = ["wss://relay.damus.io", "wss://nos.lol"]
+
+[watch]
+routine_interval_default = 3600
+overdue_grace            = 1800
+hard_expiry              = 14400
+
+# Not in the original brief's sample block -- see config.ts's docstring
+# for why these exist (kind 10910 is a replaceable event, so a relay
+# would keep serving a dead daemon's last copy forever without a
+# heartbeat + staleness check on the client side).
+heartbeat_interval_seconds = 60
+sweep_interval_seconds     = 15
+
+# How long a "query" signal's answerQuery() call is allowed to take
+# before the operator gets a timeout error-ack instead of an indefinite
+# wait. Session one's hardcoded answer returns instantly, so this
+# doesn't matter yet -- it starts mattering the moment answerQuery()
+# becomes a real network call to a Mecha Jono bridge.
+query_timeout_seconds = 8
+
+[authorization]
+# Stage 2. Leave this section out entirely (or allowed_pubkeys = [])
+# during an early closed pilot -- that's Session One's original "any
+# pubkey" policy, unchanged. Once you're ready to restrict who may sign
+# on, list their Watchtower CLI pubkeys here (lowercase 64-char hex --
+# the same value `watchtower-cli status` and the on-station/etc commands
+# already use). Everyone NOT listed is silently dropped, not told no.
+# allowed_pubkeys = ["<lowercase 64-char hex pubkey>", "<another one>"]
+allowed_pubkeys = []

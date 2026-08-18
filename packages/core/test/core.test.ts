@@ -89,6 +89,7 @@ describe('watch state — what may honestly be published', () => {
     state: 'automated-oncall' as const, holder: 'Mecha Jono', holder_kind: 'agent' as const,
     oncall: [onCall('sms'), onCall('sms')], since: NOW_S, agent_health: 'ok' as const,
     last_drill: { at: NOW_S - 86400, result: 'pass' as const, author: NODE, acknowledged: [] },
+    overdue_count: 0,
     now: NOW_S
   };
 
@@ -252,7 +253,7 @@ describe('on-call is a list of statements, not a number', () => {
     const s = publishableWatchState({
       state: 'automated-oncall', holder: null, holder_kind: 'agent',
       oncall: [decl('sms', 600), decl('sms', -1)], since: NOW_S, agent_health: 'ok',
-      last_drill: { at: NOW_S, result: 'pass', author: NODE2, acknowledged: [] }, now: NOW_S
+      last_drill: { at: NOW_S, result: 'pass', author: NODE2, acknowledged: [] }, overdue_count: 0, now: NOW_S
     });
     expect(s.oncall).toHaveLength(1);
   });

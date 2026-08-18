@@ -16,9 +16,9 @@
  * Normative source: docs/product/directory-schema.md §4
  */
 
-import { confidenceForField, isSeeded } from './confidence';
-import type { Confidence, ResourceField, ResourceRecord, VolatilityClass } from './types';
-import { ageInDays, classOf } from './volatility';
+import { confidenceForField, isSeeded } from './confidence.js';
+import type { Confidence, ResourceField, ResourceRecord, VolatilityClass } from './types.js';
+import { ageInDays, classOf } from './volatility.js';
 
 export interface Age {
   days: number;

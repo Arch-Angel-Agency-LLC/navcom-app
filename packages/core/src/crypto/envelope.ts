@@ -13,7 +13,7 @@
  */
 
 import { nip44 } from 'nostr-tools';
-import type { SecretKey } from './keys';
+import type { SecretKey } from './keys.js';
 
 /** Seal a payload so only the holder of `recipientPubkey`'s secret can read it. */
 export function seal(secret: SecretKey, recipientPubkey: string, payload: unknown): string {

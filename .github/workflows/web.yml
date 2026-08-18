@@ -1,4 +1,4 @@
-name: navcom.app
+name: navcom
 
 on:
   push:
@@ -19,9 +19,6 @@ on:
 jobs:
   verify:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: web
     steps:
       - uses: actions/checkout@v4
 
@@ -29,20 +26,26 @@ jobs:
         with:
           node-version: 20
           cache: npm
-          cache-dependency-path: web/package-lock.json
+          cache-dependency-path: package-lock.json
 
-      # The core holds the attestation model, the wire format and the board. Its tests run
-      # first: if the shared logic is wrong, nothing downstream is worth checking.
-      - name: core
-        working-directory: packages/core
-        run: npm ci && npm run check && npm test
-
+      # One install for the whole workspace. The core holds the attestation model, the
+      # wire format and the board; the daemon and the site are both consumers, and they
+      # are checked against it together. Six wire-format divergences existed while these
+      # lived in separate repositories — every one of them is a type error here.
       - run: npm ci
+
+      - name: core
+        run: npm run verify --workspace @navcom/core
+
+      - name: watchtower
+        run: npm run verify --workspace @navcom/watchtower
 
       # Type check, data check, build, tests (unit + against the built HTML), bundle budget.
       # The budget fails the job rather than warning: the device floor is a real target,
       # and the data check fails it rather than letting an invalid region reach a deploy.
-      - run: npm run verify
+      - name: navcom.app
+        working-directory: web
+        run: npm run verify
 
       - uses: actions/upload-artifact@v4
         with:

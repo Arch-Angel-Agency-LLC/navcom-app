@@ -82,6 +82,21 @@ because it is cheap now and painful once several people are editing one file.
 
 **What is left before this is a real directory:** data. Everything else works.
 
+## One repository
+
+`packages/core` · `packages/watchtower` · `web`. One install, one wire format, one CI run.
+
+The daemon lived in its own repository and built against the self-contained session-one
+brief rather than the spec — a summary of a spec is a fork of it. Six divergences resulted:
+the state enum, on-call, `last_drill`, provenance, distress position, and a missing callsign
+the board needed. **Every one of them became a type error the moment they shared a
+package.**
+
+The daemon also found things this side had wrong: a replaceable `10910` outliving its
+publisher and reading as a live watch, and the callsign gap. Its runtime validation was
+promoted into core, because a client parsing a response needs the same guarantees the
+daemon needed.
+
 ## Unblocked — session 1 passed
 
 **Extract the shared core** — **done.** `packages/core` holds the attestation model, keys,

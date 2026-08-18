@@ -6,7 +6,7 @@
  * called — a CLI, a test, a consumer — imports this instead.
  */
 
-import type { ResourceField } from './types';
+import type { ResourceField } from './types.js';
 
 /**
  * Human labels. Written from the reader's side of the screen — someone deciding whether a
