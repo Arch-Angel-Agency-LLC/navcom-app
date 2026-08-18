@@ -14,9 +14,9 @@ import { fileURLToPath } from 'node:url';
 import { parse, type HTMLElement } from 'node-html-parser';
 import { beforeAll, describe, expect, it } from 'vitest';
 
-import { displayField } from './display';
+import { displayField } from '@navcom/core';
 import { loadDirectory } from './load';
-import type { ResourceField } from './types';
+import type { ResourceField } from '@navcom/core';
 
 const BUILD = fileURLToPath(new URL('../../../build/', import.meta.url));
 

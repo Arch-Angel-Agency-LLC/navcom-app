@@ -1,7 +1,7 @@
 <script lang="ts">
   import RecordSummary from '$lib/components/RecordSummary.svelte';
   import { labelValue } from '$lib/directory/load';
-  import { localTimeNote } from '$lib/directory/region';
+  import { localTimeNote } from '@navcom/core';
   import type { PageData } from './$types';
 
   let { data }: { data: PageData } = $props();

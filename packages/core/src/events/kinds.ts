@@ -1,0 +1,45 @@
+/**
+ * Event kinds.
+ *
+ * Chosen so that live traffic is unstored and current watch state is retrievable by a
+ * client that has just connected.
+ *
+ * Normative source: docs/spec/signals.spec.md
+ */
+
+/** Replaceable. Watch state — a cold client MUST be able to read this before signing on. */
+export const KIND_WATCH_STATE = 10910;
+
+/** Ephemeral. Signals: on-station, routine, query, assist, stood-down. */
+export const KIND_SIGNAL = 20910;
+
+/** Ephemeral. Distress — its own kind so it is prioritised independently of routine traffic. */
+export const KIND_DISTRESS = 20911;
+
+/** Ephemeral. Responses: acknowledgements and answers. */
+export const KIND_RESPONSE = 20912;
+
+/**
+ * Ephemeral kinds (20000–29999) are not expected to be stored by relays. That is
+ * load-bearing rather than incidental: the board must never become a queryable history
+ * [C27].
+ */
+export const isEphemeral = (kind: number): boolean => kind >= 20000 && kind <= 29999;
+
+export const SIGNAL_TYPES = [
+  'on-station',
+  'routine',
+  'query',
+  'assist',
+  'stood-down'
+] as const;
+export type SignalType = (typeof SIGNAL_TYPES)[number];
+
+/** The signal type travels as an UNENCRYPTED `t` tag so a client can filter without decrypting. */
+export const tagSignalType = (t: SignalType): [string, string] => ['t', t];
+export const tagRecipient = (pubkey: string): [string, string] => ['p', pubkey];
+export const tagInReplyTo = (eventId: string): [string, string] => ['e', eventId];
+
+export function readTag(tags: string[][], name: string): string | undefined {
+  return tags.find((t) => t[0] === name)?.[1];
+}

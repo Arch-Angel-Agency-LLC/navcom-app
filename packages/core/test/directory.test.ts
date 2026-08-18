@@ -2,15 +2,15 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 
-import { confidenceForClass, confidenceForField, isSeeded } from './confidence';
-import { displayField, displayRecord, formatDate, formatRelative } from './display';
-import { buildExport } from './export';
-import { parseRegion, localTimeNote } from './region';
-import { parseCsv, parseDirectory, parseDirectoryOrThrow } from './parse';
-import type { ResourceRecord } from './types';
-import { STALE_AFTER_DAYS, ageInDays, hemisphereOf, seasonIndex, seasonOf } from './volatility';
+import { confidenceForClass, confidenceForField, isSeeded } from '../src/directory/confidence';
+import { displayField, displayRecord, formatDate, formatRelative } from '../src/directory/display';
+import { buildExport } from '../src/directory/export';
+import { parseRegion, localTimeNote } from '../src/directory/region';
+import { parseCsv, parseDirectory, parseDirectoryOrThrow } from '../src/directory/parse';
+import type { ResourceRecord } from '../src/directory/types';
+import { STALE_AFTER_DAYS, ageInDays, hemisphereOf, seasonIndex, seasonOf } from '../src/directory/volatility';
 
-const SEED_CSV = fileURLToPath(new URL('../../../../data/regions/example/resources.csv', import.meta.url));
+const SEED_CSV = fileURLToPath(new URL('../../../data/regions/example/resources.csv', import.meta.url));
 
 /** Fixed so these tests do not start failing with the passage of time. */
 const NOW = new Date('2026-08-17T12:00:00Z');
@@ -399,7 +399,7 @@ describe('regions', () => {
 describe('the region template', () => {
   it('ships an invalid manifest on purpose, so nobody deploys it unedited', () => {
     const raw = JSON.parse(
-      readFileSync(fileURLToPath(new URL('../../../../data/regions/_template/region.json', import.meta.url)), 'utf8')
+      readFileSync(fileURLToPath(new URL('../../../data/regions/_template/region.json', import.meta.url)), 'utf8')
     );
     expect(() => parseRegion('_template', raw)).toThrow();
   });

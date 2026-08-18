@@ -18,10 +18,10 @@ import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { INTAKE_FIELDS } from '../src/lib/directory/fields';
-import { parseDirectory } from '../src/lib/directory/parse';
-import { parseRegion } from '../src/lib/directory/region';
-import type { ResourceRecord } from '../src/lib/directory/types';
+import { INTAKE_FIELDS } from '@navcom/core';
+import { parseDirectory } from '@navcom/core';
+import { parseRegion } from '@navcom/core';
+import type { ResourceRecord } from '@navcom/core';
 
 const ROOT = fileURLToPath(new URL('../../data/regions/', import.meta.url));
 

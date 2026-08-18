@@ -87,13 +87,9 @@ export function classOf(field: ResourceField): VolatilityClass | null {
   return FIELD_CLASS[field];
 }
 
-/** Whole days elapsed between two ISO dates. Negative if `verified` is in the future. */
-export function ageInDays(verified: string, now: Date): number {
-  const then = Date.parse(`${verified}T00:00:00Z`);
-  if (Number.isNaN(then)) return Number.POSITIVE_INFINITY;
-  const today = Date.parse(`${now.toISOString().slice(0, 10)}T00:00:00Z`);
-  return Math.floor((today - then) / 86_400_000);
-}
+// Age is the attestation model's, not the directory's — it was written twice, which is the
+// duplication this package exists to remove. Re-exported so callers keep their import.
+export { ageInDays } from '../attestation';
 
 export type Hemisphere = 'north' | 'south' | 'tropical';
 export type Season = 'winter' | 'spring' | 'summer' | 'autumn';

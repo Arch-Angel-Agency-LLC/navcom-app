@@ -18,7 +18,7 @@ import { confidenceForClass, isSeeded } from './confidence';
 import { displayField, formatDate } from './display';
 import type { Region } from './region';
 import type { Confidence, ResourceField, ResourceRecord, VolatilityClass } from './types';
-import { FIELD_CLASS, STALE_AFTER_DAYS, STALENESS_MARGIN_DAYS, ageInDays } from './volatility';
+import { FIELD_CLASS, STALE_AFTER_DAYS, STALENESS_MARGIN_DAYS } from './volatility';
 
 /** Bump when the shape changes in a way a consumer must notice. */
 export const EXPORT_VERSION = 1;
@@ -151,4 +151,4 @@ export function buildExport(
 }
 
 /** Human-facing age string, for consumers that render one. */
-export { formatDate, ageInDays };
+export { formatDate };

@@ -2,9 +2,9 @@ name: navcom.app
 
 on:
   push:
-    paths: ['web/**', 'data/**', 'docs/**', '.github/workflows/web.yml']
+    paths: ['web/**', 'packages/**', 'data/**', 'docs/**', '.github/workflows/web.yml']
   pull_request:
-    paths: ['web/**', 'data/**', 'docs/**']
+    paths: ['web/**', 'packages/**', 'data/**', 'docs/**']
   schedule:
     # Daily rebuild. This is load-bearing, not housekeeping.
     #
@@ -30,6 +30,12 @@ jobs:
           node-version: 20
           cache: npm
           cache-dependency-path: web/package-lock.json
+
+      # The core holds the attestation model, the wire format and the board. Its tests run
+      # first: if the shared logic is wrong, nothing downstream is worth checking.
+      - name: core
+        working-directory: packages/core
+        run: npm ci && npm run check && npm test
 
       - run: npm ci
 

@@ -84,8 +84,13 @@ because it is cheap now and painful once several people are editing one file.
 
 ## Unblocked — session 1 passed
 
-**Extract the shared core** — signal, crypto and board logic as one library. Before the
-first client, not after the second.
+**Extract the shared core** — **done.** `packages/core` holds the attestation model, keys,
+NIP-44 sealing, the four event kinds, the board and the directory library. 88 tests. `web/`
+is its first consumer via `file:../packages/core`; the node is the second.
+
+Two rules are now enforced in code rather than only written down: a watch state demotes
+`automated-oncall` to `automated` when nobody is pageable or no drill has passed, and hard
+expiry can never drop a `distress` entry.
 
 **Field Terminal**, and only the Status screen first: watch state, including Dark. That is
 DoD check 6, the first screen in [`watch/field-terminal.md`](watch/field-terminal.md), and

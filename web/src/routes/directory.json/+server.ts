@@ -1,4 +1,4 @@
-import { buildExport } from '$lib/directory/export';
+import { buildExport } from '@navcom/core';
 import { loadAll } from '$lib/directory/load';
 
 export const prerender = true;

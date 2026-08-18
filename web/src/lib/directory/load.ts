@@ -5,9 +5,9 @@
  * is static HTML with no data fetch and no runtime dependency on anything.
  */
 
-import { parseDirectoryOrThrow } from './parse';
-import { parseRegion, type Region } from './region';
-import type { ResourceField, ResourceRecord } from './types';
+import { parseDirectoryOrThrow } from '@navcom/core';
+import { parseRegion, type Region } from '@navcom/core';
+import type { ResourceRecord } from '@navcom/core';
 
 const csvFiles = import.meta.glob('../../../../data/regions/*/resources.csv', {
   query: '?raw',
@@ -92,4 +92,4 @@ export function regionOf(record: ResourceRecord): Region | undefined {
 
 export {
   FIELD_LABELS, INTAKE_FIELDS, AVAILABILITY_FIELDS, VALUE_LABELS, labelValue, labelValues
-} from './fields';
+} from '@navcom/core';
