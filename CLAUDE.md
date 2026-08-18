@@ -4,169 +4,124 @@ NavCom is **the Watchtower**: someone is always on watch while operators are out
 applications joined by a duty relationship — a Console for whoever holds watch, a Field
 Terminal for whoever's on the street.
 
-This is not a social app, a tactical map, or a humanitarian directory, and each of those
-is a failure mode it has already been rescued from. Read
-[`docs/research/lore.md`](docs/research/lore.md) before proposing anything.
+It is **infrastructure for acting without authority while remaining accountable**. Everyone
+here works without an institution behind them, so the only thing that can carry belief is
+what they can show. That is not a security posture; it is the condition of the work.
+
+Read [`docs/attestation.md`](docs/attestation.md) first. It is the one object this system is
+built from, and most rules below are it, pointed somewhere.
+
+Then read [`docs/research/lore.md`](docs/research/lore.md) before proposing anything.
 
 ---
 
 ## Current scope
 
-**Build only this:**
+Session 1 is **done** — all seven definition-of-done checks pass. The loop is proven: an
+operator signs on, the board sees them, `Query` gets an answer.
 
-> One operator signs on from a phone. The agent sees them on the board. The operator
-> sends `Query`. An answer comes back.
+**Build next, in order:**
 
-That loop proves the entire product. Everything else — endorsements, presets, funding,
-propagation, recovery, a second Watchtower — is **out of scope until it works**.
+1. **Extract the shared core** — signal, crypto and board logic as one library. Before the
+   first client, not after the second
+2. **Field Terminal Status screen** — watch state including Dark, plus the
+   [capability receipt](docs/watch/the-watch.md). The one screen that must work when
+   everything else is down
+3. Remaining Field Terminal screens, once the protocol has stopped moving
 
-Specs exist only for the MVP surface. If you find yourself needing a spec that isn't in
-[`docs/spec/`](docs/spec/), you are building something out of scope.
+Sequence and gates in [`docs/build-order.md`](docs/build-order.md). Surfaces and budgets in
+[`docs/delivery.md`](docs/delivery.md).
 
-## Build
-
-**Node first.** Development happens on the Jetson Orin AGX (custom Linux), which runs the
-whole server side: RelayNode, Mecha Jono, directory host, watch state machine. That's the
-half holding safety, and it's the local available work — prove the loop against the node
-with a crude client (a script, `curl`) before writing a line of UI.
-
-Order: **node + agent → field terminal → console.** One track runs in parallel and is
-ungated — the `navcom.app` static site (directory, docs, status) needs no protocol, keys,
-relay or daemon. Sequence and gates in [`docs/build-order.md`](docs/build-order.md);
-surfaces and budgets in [`docs/delivery.md`](docs/delivery.md).
+`navcom.app` runs in parallel and is ungated — it is live, static, zero-JavaScript, and
+seeded for the St. Louis metro.
 
 | | Decision | Status |
 |---|---|---|
-| Field Terminal | PWA at `navcom.app` — try instantly, no install, fully capable. Cross-platform from one codebase, instant updates, fits the device floor | Decided |
-| Native mobile | Android/iOS at Mk1, for the two things a PWA **cannot** do: `Distress` from a locked screen [signals.spec] and SMS duress fallback when Dark. Not a capability tier — the web app stays complete | Decided, deferred |
-| UI framework | Svelte — existing team competence, small bundles | Decided |
-| Console | Web app, same delivery. Desktop-shaped, not a large terminal | Decided |
-| Node services | Language open; pick what integrates with Mecha Jono most directly | **Open** |
-| Relay topology | Public relays for MVP; self-hosted RelayNode at Mk1 — decided in [`bootstrap.spec.md`](docs/spec/bootstrap.spec.md) | Decided |
-| Accountability log storage | Append-only, node-local, 90 days. Record format in [`watch-state.spec.md`](docs/spec/watch-state.spec.md) | Implementation detail |
+| Field Terminal | PWA at `navcom.app` — try instantly, no install, fully capable | Decided |
+| Native mobile | Android/iOS at Mk1, for the two things a PWA **cannot** do: `Distress` from a locked screen, and SMS duress fallback when Dark. Not a capability tier | Decided, deferred |
+| UI framework | Svelte | Decided |
+| Console | Web app served **from the box**, never the public web — the Watchtower key never leaves it | Decided |
+| Relay topology | Public relays for MVP; self-hosted RelayNode at Mk1 | Decided |
+| Node services | TypeScript unless there's a reason — shared payload types with the clients | Decided |
 
 **Escalation executor is a separate process from the agent.** Non-negotiable — see
 [`docs/watch/agents.md`](docs/watch/agents.md). A compromised agent must not be able to
 impair escalation.
 
-**Signal, crypto and board logic go in a shared core before any client is written.** Three
-surfaces — web, Android, iOS — over one library, so a payload change is one edit rather
-than three. Decide this before the first client, not after the second.
-
-**The install prompt is where every banned pattern would re-enter.** No banners, no "get
-the app," no feature withheld to pressure an install. The only honest pitch is the true
-one, stated once where it's relevant: *installing adds lock-screen `Distress` and SMS
-fallback.* An operator who stays on the web is a complete operator [C1, principle 6].
+**The install prompt is where every banned pattern would re-enter.** No banners, no "get the
+app," no feature withheld to pressure an install. The only honest pitch is the true one, said
+once: *installing adds lock-screen `Distress` and SMS fallback.* An operator who stays on the
+web is a complete operator.
 
 ### Two roles the design requires a human for
 
-- **On-call** — reachable when the board can't raise anyone. Lighter than watch: a phone
-  that might ring, not a shift. Currently concentrated in one person, which is a known
-  risk
-- **Log reviewer** — reads drill results and agent logs on a cadence. Minutes per week,
-  but it cannot be the agent, or verification is theatre
+- **On-call** — reachable when the board can't raise anyone. A phone that might ring, not a
+  shift. Currently one person, which is a known risk
+- **Log reviewer** — reads drill results and agent logs on a cadence. Minutes per week, and
+  it cannot be the agent or verification is theatre
 
 ### Not agent work
 
-Directory seed data and field playbooks need humans with local knowledge and real
-de-escalation expertise. **Do not generate playbook content.** The Medic archetype's kill
-trigger is confident wrong guidance, and plausible-sounding safety content is worse than
-none.
-
-## Session 1 — definition of done
-
-Build the smallest thing that proves the loop. **No UI.** A node process and a CLI client.
-
-Read [`docs/spec/bootstrap.spec.md`](docs/spec/bootstrap.spec.md) first — identity and
-config are decided there, don't re-derive them.
-
-Done when all of these pass, by hand, against a public relay:
-
-1. Node starts, generates or loads the Watchtower key, publishes `10910` with
-   `state: automated`
-2. Client sends `on-station` (area, 2h duration) → appears on the board within **2s**
-3. Board entry shows callsign, area, `expected_until`, `last_contact`
-4. Client sends `query` → receives `20912` within **5s** with `responder_kind` set
-5. Client sends `stood-down` → entry clears from the board
-6. Kill the node → client renders **dark** (absence of `10910` is Dark, not ambiguity)
-7. Restart the node → board is empty. **It must not have persisted** [C27]
-
-Point 7 is a real test, not a formality. If board state survives a restart, the design has
-already drifted.
-
-Answers may be hardcoded at this stage. Wiring Mecha Jono in is session 2, and it is one
-function call — everything in [`docs/watch/agents.md`](docs/watch/agents.md) is about what
-happens *around* that call, not inside it.
-
-**Escalation is not in session 1**, and when it comes it does not get the same treatment:
-write the seven failure-mode tests in
-[`docs/spec/escalation.spec.md`](docs/spec/escalation.spec.md) before shipping it. Move
-fast on the loop; be careful on the ladder.
+Directory seed data, field playbooks, and extending the `type` taxonomy need humans with
+local knowledge. **Do not generate playbook content.** The Medic's kill trigger is confident
+wrong guidance, and plausible-sounding safety content is worse than none.
 
 ## Invariants
 
 Never violated, no exceptions, no configuration:
 
-1. **Nothing is recorded about the people being served.** No field, no convention. This
-   is a rule about what the system *offers*; free-text notes can't be enforced, so guide
-   rather than pretend.
+1. **Nothing is recorded about the people being served.** No field, no convention. A rule
+   about what the system *offers*; free-text notes can't be enforced, so guide rather than
+   pretend
 2. **`Distress` terminates in a human, or tells the operator it couldn't.** The ladder may
-   fail. It may never fail silently.
-3. **Duress is always deliberate.** Never inferred from silence, missed windows, or
-   inactivity.
-4. **The watch state is visible before sign-on.** An operator must never believe a human
-   is watching when none is.
-5. **Agents are always identified as agents**, and never the sole responder to `Distress`.
-6. **Panic wipe destroys the Wipeable tier and nothing else.** Burn destroys everything on
-   the device. The node-side accountability log is outside both.
-7. **No legal names anywhere.** Contact details only where an operator opted in for
-   themselves.
-8. **Volatile data shows its age.** Stale reads "call first"; blank reads "unknown."
+   fail. It may never fail silently
+3. **Duress is always deliberate.** Never inferred from silence, missed windows or inactivity
+4. **The watch state is visible before sign-on.** An operator must never believe a human is
+   watching when none is
+5. **Agents are always identified as agents**, and never the sole responder to `Distress`
+6. **Nothing tasks anyone.** There is no dispatch verb. The watch tells you what is
+   happening; it never assigns
+7. **Panic wipe destroys the Wipeable tier and nothing else.** Burn destroys everything on
+   the device. The node-side accountability log is outside both
+8. **No legal names anywhere.** Contact details only where an operator opted in for themselves
+9. **Volatile data shows its age.** Stale reads "call first"; blank reads "unknown"
 
 ## Anti-patterns — you will want to do these
 
-Every one is a conventional solution that is wrong here. If a change feels like an
-obvious improvement in this direction, it's the market reasserting itself.
+Every one is a conventional solution that is wrong here.
 
 | You'll want to | Don't, because |
 |---|---|
-| Add a feed or activity stream | Operational tools open into a situation, not a timeline. Principle 2 |
+| Add a feed or activity stream | Operational tools open into a situation, not a timeline |
 | Add notifications | Only `Distress` paging, only to on-call operators who registered a channel. The field terminal is silent |
 | Persist the board for history | The board expires. Only the accountability log survives, and it records actions, not positions |
-| Let the agent judge or decide | Its authority is bounded so misbehaviour is survivable. Unverifiability is answered by limits, not by better tests |
-| Put a search box on the field terminal | `Query` goes to the watch. Someone with a console and both hands free does the lookup. That *is* the product |
-| Make onboarding engaging | No streaks, badges, prompts, or nudges. Ever |
+| Let the agent judge or decide | Its authority is bounded so misbehaviour is survivable. Unverifiability is answered by limits, not better tests |
+| Put a search box on the field terminal | `Query` goes to the watch. Someone with both hands free does the lookup. That *is* the product |
+| Make onboarding engaging | No streaks, badges, prompts or nudges. Ever |
 | Escalate on a missed check-in | Overdue nudges. Alarm fatigue destroys the one mechanism where failure means someone is hurt |
-| Add comments or replies | Answers become directory or playbook entries. Knowledge, not discussion |
-| Show endorsement counts | Provenance by name. A number invites gaming |
-| Show funding totals | Money is a stronger status signal than any badge |
+| Show a count of anything | Provenance by name. A number invites gaming |
 | Build a nice map view | Device floor is a prepaid Android 8 with 400MB free |
+| **Write a new rule when you find a gap** | **The rules are already one idea restated many times, and that is why they read as a compliance regime.** Check whether [`attestation.md`](docs/attestation.md) already covers it. Prefer deleting a rule to adding one |
 
 ## Where things live
 
 | | |
 |---|---|
-| `docs/spec/` | **Normative.** Event kinds, state machines, windows. Build from these |
+| `docs/attestation.md` | **The primitive.** Read first — most rules are this, aimed somewhere |
+| `docs/positioning.md` | What this is and who it's for |
+| `docs/spec/` | **Normative.** Event kinds, state machines, windows |
 | `docs/watch/` | The watch model, narrative |
 | `docs/product/` | Identity, data tiers, visibility, directory, funding |
 | `docs/research/` | Why the design is shaped this way. `lore.md` first |
 | `docs/principles.md` | Design rules and conflict resolution order |
-| `docs/research/constraints.md` | Index of all binding constraints |
+| `docs/research/constraints.md` | Index of binding constraints |
 
 Where narrative and spec disagree, **the spec wins** — and the narrative is a bug to fix.
 
 ## Verifying work
 
-- Invariants above are written as assertions on purpose. They should have tests.
-- Escalation is safety-critical: test the failure paths, not just the happy path.
-- The device floor is a real target, not an aspiration. Check bundle size.
-- If you added a rule, add it to `constraints.md`. If you broke one, say so explicitly.
-
-## Two known-hard tensions
-
-Both produced real bugs already. When a rule is stated absolutely, ask **what does this
-make impossible?**
-
-- Panic wipe vs. endorsements as association data → resolved by burn/wipe split
-- "No push" vs. an escalation ladder that must wake someone → resolved by separating
-  engagement notifications from safety paging
+- Invariants are written as assertions on purpose. They should have tests
+- Escalation is safety-critical: test the failure paths, not the happy path
+- The device floor is a real target. `npm run verify` in `web/` enforces the bundle budget
+- **Prefer a test against the built artifact over a test against the logic.** Three times
+  this project has shipped a rule the logic honoured and the output didn't

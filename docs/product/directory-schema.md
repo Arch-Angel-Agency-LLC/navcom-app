@@ -97,14 +97,19 @@ that data is stale within hours and would be the most dangerous field in the sys
 
 ---
 
-## 4. Verification and decay
+## 4. Every record is a set of attestations
 
-| Field | Notes |
+A row is not a fact. It is [a claim about a place](../attestation.md), carrying who said so,
+how they knew, and — derived from those — what it is worth.
+
+| Field | The attestation part it is |
 |---|---|
-| `last_verified` | Date |
-| `verified_by` | Callsign or `anonymous` — never a legal name |
-| `method` | `in_person`, `phone`, `staff_confirmed`, `secondhand`, `website` |
-| `flag` | `ok`, `reported_closed`, `reported_wrong`, `permanently_closed` |
+| `last_verified` | **Age** |
+| `verified_by` | **Author** — a callsign or `anonymous`, never a legal name |
+| `method` | **How they know** — `in_person`, `phone`, `staff_confirmed`, `secondhand`, `website` |
+| `flag` | A **counter-claim** by someone else: `ok`, `reported_closed`, `reported_wrong`, `permanently_closed` |
+
+Everything below is the attestation model applied to places, not a separate design.
 
 ### Volatility classes
 

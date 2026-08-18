@@ -1,90 +1,81 @@
 # Positioning
 
-The document you hand someone instead of explaining. One page, no lore, no spec.
+The document you hand someone instead of explaining.
 
 ---
 
 ## The sentence
 
-> **NavCom is non-institutional dispatch for volunteer patrol networks.**
+> **NavCom is infrastructure for acting without authority while remaining accountable.**
 >
 > Someone is always on watch while operators are out. Not an app people check — a post
 > someone holds.
 
-**"Non-institutional" is doing real work in that sentence.** Dispatch and CAD systems are
-the closest functional match — a console operator holding a board of units in the field —
-and every one of them is employment-based and assumes authority over the people it
-dispatches. NavCom has neither. Nobody is paid, nobody is ordered, and whoever holds the
-board holds a *post, not a rank*. Remove that word and the description is wrong.
+An institution is believed because of what it is. Everyone here works without one — no
+badge, no warrant, no agency behind them — so **the only thing that can carry belief is what
+they can show.** Every part of this system is built out of
+[checkable claims](attestation.md) rather than authority, and that is not a security
+posture. It is the condition of the work.
 
 ## Who it's for
 
-**Real-life superheroes.** Volunteer patrol and outreach networks — people who go out
-under a callsign, on their own time, with no agency behind them.
+**Real-life superheroes.** Volunteer patrol and outreach networks — people who go out under
+a callsign, on their own time, with nobody behind them.
 
-That's the primary population and the design is shaped for it: callsigns and emblems as
-real identity, sign-on as ceremony, [Herocore](research/prior-art.md) as the community
-hub NavCom exports to rather than competes with.
+The genre's actual moral core is not power, it is accountability without authority. A hero
+has no warrant; the good ones are obsessively answerable, just not to an institution. That
+is the same condition as a street medic, an outreach volunteer, or a citizen analyst — which
+is why the design serves all of them without being aimed at any of them.
 
-It serves adjacent people well without being built for them. Street medics, mutual aid
-crews and outreach workers face the same night and need the same answers, and the
-[resource directory](product/directory-schema.md) is readable on the open web by anyone,
-with no install and no account. That's deliberate — see
-[`product/propagation.md`](product/propagation.md).
+The [resource directory](product/directory-schema.md) is readable by anyone on the open web,
+no account and no install. That's deliberate: it is useful to people facing the same night
+who will never be operators.
 
 ## Star and Nav
 
-The architecture is encoded in the two names, and it was not designed that way on purpose.
+The architecture is encoded in the names, and it wasn't designed that way on purpose.
 
-**Star** is the fixed reference — distant, above, true regardless of where you're standing.
-[Starcom](ecosystem.md) looks down and out: orbital altitude, long horizon, the shape of
-things.
+**Star** is the fixed reference — distant, above, true wherever you stand.
+[Starcom](ecosystem.md) looks down and out: orbital altitude, long horizon.
 
-**Nav** is not a map. Navigation is getting from *here* to *there* through actual terrain.
-It only exists while you're moving, it's always local, and it's about the hazards between
-you and where you're going.
+**Nav** is not a map. Navigation is getting from *here* to *there* through real terrain. It
+only exists while you're moving.
 
-**You navigate by the stars.** One is the frame you orient against; the other is how you
-cross the next block.
+**You navigate by the stars.**
 
 > **Starcom is the guy in the chair for the world. NavCom is the guy in the chair for
 > tonight.**
 
-There's a second reading worth keeping: on a ship's bridge, Navigation and Communications
-are separate stations. NavCom fuses them into one post that both knows where everyone is
-and can talk to them. That fusion *is* the watch.
+On a ship's bridge, Navigation and Communications are separate stations. NavCom fuses them
+into one post that both knows where everyone is and can talk to them. That fusion *is* the
+watch.
 
 ## What operators need from it
 
-Six things. Superhero fiction is remarkably consistent about all of them, which is why
-[the model came from fiction](research/lore.md) rather than from comparable software.
-
-1. **Someone in your ear who knows where you are.** The most reliable trope in the genre —
-   the hero is never truly alone, even operating alone
-2. **A call that is heard.** Not a message, a summons that *lands*. The emotional content
-   isn't the sending, it's the certainty of arrival — which is why every signal gets an
-   acknowledgement and silence is never a response
-3. **Knowing who else is out.** Solidarity, not surveillance. Completely different feeling
-   from being tracked
-4. **Going on duty meaning something.** You put on the suit. Sign-on is the threshold act
-   that converts a person into an operator
-5. **Coming home and being counted.** `Stood down`, confirmed by someone. The genre almost
-   never shows this and it may matter most of all
-6. **The thing that makes you more than one person.** A lone vigilante is a guy in a mask.
-   A network with a watch, a protocol, accountability and a record is an organisation
+1. **Someone in your ear who knows where you are.** The most reliable trope in the genre
+2. **A call that is heard.** Not a message — a summons that *lands*. Which is why every
+   signal is acknowledged and silence is never a response
+3. **Knowing who else is out.** Solidarity, not surveillance
+4. **Going on duty meaning something.** The threshold act that turns a person into an operator
+5. **Coming home and being counted.** The genre almost never shows it, and it may matter most
+6. **The thing that makes you more than one person.** A lone vigilante is someone in a mask.
+   A network with a watch, a protocol and a record is an organisation
 
 ## What it is not
 
-Each of these is a failure mode the design has already been rescued from, not a
-hypothetical:
-
 | Not | Because |
 |---|---|
-| A social app | No feed, no browsing people, no comments, anywhere. [Principle 2](principles.md) does more anti-drift work than every other rule combined |
+| A social app | No feed, no browsing people, no comments, anywhere |
 | A tactical map | The device floor is a prepaid Android 8 with 400MB free, and a live position map drew the most refusals of any feature tested |
-| A humanitarian directory | The directory is what operators *do*, not what the product is. The watch is the product |
-| Dispatch or CAD | Institutional, employment-based, assumes authority over its units. NavCom has none of that |
-| A chat app | Teams already have Discord and Signal, and those work. NavCom builds what chat structurally can't: defined responders and response windows |
+| A humanitarian directory | The directory is what operators *do*. The watch is the product |
+| **A dispatch system** | **Nothing here can task anyone.** The watch tells you what is happening; it never assigns. There is no dispatch verb, and there will not be one |
+| A chat app | Discord and Signal already work. This builds what chat structurally can't: defined responders and response windows |
+
+**That fourth row is load-bearing and was got wrong once.** An earlier draft of this page
+called NavCom "non-institutional dispatch," which is a good description of the *shape* and a
+dangerous description of the *authority*. Dispatch assigns. A network of volunteers with no
+hierarchy cannot assign, and a system that appears to would be sending people toward danger
+on its own initiative.
 
 ## What it never does
 
@@ -96,15 +87,12 @@ hypothetical:
 
 Full set and conflict-resolution order in [`principles.md`](principles.md).
 
-## The short versions
+## The short version
 
-**One line:** Non-institutional dispatch for volunteer patrol networks.
+NavCom is a watch. When operators go out, a named person at a console — or an agent when
+nobody is on station — holds a board showing who's out, roughly where, and when they last
+made contact. Operators signal rather than browse. Every signal gets an answer.
 
-**One paragraph:** NavCom is a watch. When operators go out, a named person at a console —
-or an agent when nobody is on station — holds a board showing who's out, where roughly,
-and when they last made contact. Operators signal rather than browse: going on station,
-routine contact, a question, a request for help, distress, standing down. Every signal
-gets an answer. The question that makes it worth having on an ordinary night is `Query` —
-you're outside a closed shelter at 10pm with someone who needs a bed, and instead of
-tapping through a database one-handed in the cold, you ask the person with both hands free
-and a full screen.
+The one that makes it worth having on an ordinary night is `Query`: you're outside a closed
+shelter at 10pm with someone who needs a bed, and instead of tapping through a database
+one-handed in the cold, you ask the person with both hands free.

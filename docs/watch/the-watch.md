@@ -73,6 +73,35 @@ moment.
 **An operator with no emergency contact and an empty roster still gets the truth.** The
 ladder is allowed to fail. It is not allowed to fail quietly.
 
+## What the watch actually promises, in writing
+
+**The watch state is [an attestation about capability](../attestation.md)** — a claim about
+what would happen if you signalled right now, made by the node, checkable by you.
+
+That is why it is published rather than assumed, and why `dark` is stated rather than
+inferred from silence. A word like *Automated* is not enough on its own: what an operator
+needs before going out is the consequence.
+
+**At sign-on the node issues a signed capability receipt** — what escalation existed, at
+that timestamp, in numbers:
+
+> *2 on-call, both SMS-reachable. Last drill passed 3 days ago.*
+
+or
+
+> *0 on-call. `Distress` will page nobody and tell you so within 300 seconds.*
+
+The operator's device keeps it. Both sides hold the same record of what was and was not
+promised.
+
+This is not paperwork. It is the difference between *trust me* and *here is exactly what I
+can do, signed* — the same move as showing a directory field its age instead of asserting
+it is current. **An operator can check the thing behind them is real**, which is the one
+property a promise can never have.
+
+A watch whose ladder is empty is still a watch worth signing on under — cached directory,
+playbooks, local logging, a duress fallback. What is never acceptable is not knowing.
+
 ## Duty
 
 **Taking watch.** Explicit and ceremonial. You go on station, the board is yours, and

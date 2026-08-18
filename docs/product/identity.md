@@ -64,29 +64,26 @@ permission. A single-axis reputation system ranks that person as untrusted, whic
 exactly backwards — they often know more than anyone endorsing them. Contribution
 requires nobody's approval, and it shows.
 
-## Endorsements are held, not indexed
+## Endorsements are attestations about people
 
-**The recipient holds their own endorsements and presents them.** They are signed
-attestations stored on the endorsee's device, like references in a wallet — not rows in
-a table somewhere.
+An endorsement is [an attestation](../attestation.md) whose subject happens to be a person:
+a claim, its author, and a scope tag — signed, and **held by the recipient rather than
+indexed anywhere.**
 
-Consequences:
+Everything else follows from the model rather than needing its own argument:
 
-- **No central social graph exists.** Nobody, including us, can query "who knows whom"
-  across the network. There is no map of pseudonymous operators' associations to breach,
-  sell, subpoena or leak.
-- **Verification is local and offline.** You show your endorsements; my device verifies
-  the signatures against the endorsing callsigns. Works with no signal.
-- **Provenance is shown by name; never a count.** The UI surfaces *which* operators
-  endorsed, prominently — never a score, total, or aggregate. You trust someone because
-  you recognise who vouched for them. A number invites gaming and turns a generous
-  endorser's volume into noise; a name makes that volume self-evidently weak signal.
-- **Revocation is possible** — endorsers can publish a revocation, checked when online.
-- **You choose what to present.** Show everything, or only what's relevant to this op.
+- **No central social graph exists.** Nobody, including us, can query *who knows whom*.
+  There is no map of pseudonymous operators' associations to breach, sell, subpoena or leak
+- **Verification is local and offline.** You present your endorsements; my device checks the
+  signatures against the endorsing callsigns. Works with no signal
+- **Provenance by name, never a count.** You trust someone because you recognise who vouched
+  for them. A tally can be manufactured; a recognised author cannot
+- **Revocation is possible** — endorsers publish a revocation, checked when online
+- **You choose what to present.** Everything, or only what is relevant to this op
 
-The trade: no global leaderboard, no discovery-by-reputation. That's an acceptable loss.
-The graph was the single most dangerous artifact the project could have created, and it
-was never the point.
+The trade is no global leaderboard and no discovery-by-reputation. That is an acceptable
+loss: the graph was the single most dangerous artifact this project could have created, and
+it was never the point.
 
 ## Endorsing someone who isn't here yet
 
@@ -115,23 +112,19 @@ the system — which resolves the consent problem at its root rather than managi
 
 ## What this is not
 
-**It is not a security system, and must not be described as one.** It's a social signal
-that raises the cost of showing up as a stranger with no history — nothing more.
+**It is not a security system, and must not be described as one.** It raises the cost of
+showing up as a stranger with no history. Nothing more.
 
-Honest limits:
-
-- **Sybil-resistant only weakly.** Anyone can generate keys. Endorsements from unknown
-  callsigns mean little; the value is in recognising the *endorsers*.
-- **Endorsements can be traded or given carelessly.** Some operators will endorse
-  generously for social reasons. Treat volume as noise and provenance as signal.
-- **Absence of standing means nothing.** New and private operators are legitimate. The
-  UI must never present an unendorsed operator as suspect — only as unknown. An operator
-  running Ghost is unendorsed by choice.
+- **Sybil-resistant only weakly.** Anyone can generate keys. The value is in recognising the
+  *endorsers*, which is the model's answer everywhere: provenance over count
+- **Endorsements can be traded or given carelessly.** Treat volume as noise
+- **Absence of standing means nothing.** New and private operators are legitimate, and an
+  operator running Ghost is unendorsed by choice. The UI must never present an unendorsed
+  operator as suspect — only as unknown
 
 **Where infiltration is the actual threat — protest support, hostile environments — the
-answer is out-of-band verification, not this app.** Say so plainly rather than letting a
-credential carry weight it can't hold. Standing raises the cost of showing up as a
-stranger; it does not establish that someone is safe.
+answer is out-of-band verification, not this app.** Standing raises the cost of showing up
+as a stranger; it does not establish that someone is safe.
 
 ## Recovery
 

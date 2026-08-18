@@ -38,6 +38,11 @@ presented ambiguously as a person.
 
 **`Distress` terminates in a human, or tells the operator it couldn't.**
 
+**And nothing in this system tasks anyone.** The watch tells you what is happening; it never
+assigns. There is no dispatch verb — not for a human holding the board, and least of all for
+an agent. A network of volunteers with no hierarchy cannot give orders, and a system that
+appeared to would be sending people toward danger on its own initiative.
+
 ## 5. Never the people served
 
 No names, no descriptions, no photographs, no locations of individuals, no medical
@@ -75,11 +80,17 @@ fatigue would destroy the one mechanism where failure means someone is hurt.
 
 ## 9. An honest blank beats a confident guess
 
-The worst failure available here is a confident wrong answer that leaves someone outside
-at 10pm. Volatile data shows its age; stale data reads "call first"; blank renders as
-"unknown," never as absence of restriction; flagging is always easier than fixing.
+The worst failure available here is a confident wrong answer that leaves someone outside at
+10pm.
 
-This binds agents hardest — a wrong answer carries unearned authority coming from one.
+This is [the attestation model](./attestation.md) applied to everything the system shows:
+weight is derived from how something is known and how long ago, never asserted; absence is
+information rather than a gap; and nothing is ever *verified*, only unfalsified so far.
+
+Volatile data shows its age; stale reads "call first"; blank renders as "unknown," never as
+absence of restriction; flagging is always easier than fixing.
+
+It binds agents hardest — a wrong answer carries unearned authority coming from one.
 
 ## 10. Pseudonymity is architectural
 

@@ -1,6 +1,6 @@
 # NavCom
 
-**The Watchtower** — non-institutional dispatch for volunteer patrol networks.
+**The Watchtower** — infrastructure for acting without authority while remaining accountable.
 
 Someone is always on watch while operators are out. Not an app people check: a post
 someone holds, and a terminal in the pocket of whoever's on the street.
@@ -66,7 +66,8 @@ someone is hurt.
 an operational question or it doesn't exist.
 
 **Watch is a post, not a rank.** No clearance levels, no hierarchy, no operator who sees
-more by status.
+more by status. **And nothing tasks anyone** — the watch tells you what is happening, it
+never assigns. There is no dispatch verb.
 
 **Pseudonymity is architectural.** No legal names. Keys on device. No persisted position
 history, no social graph, no legal identities — and `principles.md` states plainly what
@@ -77,6 +78,7 @@ waive protections for themselves, never for a third party.
 
 ```
 CLAUDE.md                          Operating brief — scope, invariants, anti-patterns
+docs/attestation.md                The one object everything is built from — read first
 docs/positioning.md                What this is and who it's for — hand this to someone
 docs/spec/                         Normative specs (MVP surface only) — bootstrap first
 docs/build-order.md                What comes after what, and what gates it
@@ -134,10 +136,6 @@ Three, for three different things — [`LICENSING.md`](./LICENSING.md) explains 
 The directory data is public domain deliberately: a city, a 211 service or a mutual aid
 group should be able to use corrected listings with no friction. The name is not covered —
 "NavCom" is a claim about behaviour, so fork the code and call it something else.
-
-**There is no organisation here.** Not a business, not a non-profit, not a registered
-entity. Copyright rests with contributors, and the data is CC0 partly because a share-alike
-licence nobody can enforce is friction without protection.
 
 **Please read this before relying on the data.** It is maintained by volunteers and shows
 how old every perishable fact is, on purpose. When a check is too old to trust it says
