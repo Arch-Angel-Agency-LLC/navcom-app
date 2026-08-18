@@ -49,7 +49,7 @@ than a distraction from the build order.
 | A3 | Directory UI — all six display rules. Rule 4 is a stated gap | **done** |
 | A4 | Docs surface — renders the repo markdown at build time | **done** |
 | A5 | Status page — says *"escalation not built, no drills run"* until it isn't | **done** |
-| A6 | Deploy | needs a host |
+| A6 | Deploy — Vercel, static, at `navcom.app` | **done** |
 
 `npm run verify` in `web/` runs tests, build and budget together.
 
@@ -70,8 +70,12 @@ the page says so. The status page's component list is hand-maintained and will d
 this file. The markdown pipeline is unsanitised, which is safe only because the input is
 this repository.
 
-**What is left before this is a real site:** directory data, and a host. Everything else
-works.
+**Live at [navcom.app](https://navcom.app).** Vercel, static output, no serverless
+functions — the deploy runs `npm run verify`, so a build that breaks a display rule or the
+bundle budget cannot ship. Web Analytics and Speed Insights stay off: both inject a script,
+which would break the zero-JavaScript property and H8.
+
+**What is left before this is a real directory:** data. Everything else works.
 
 ## Gated on session 1 passing
 
@@ -114,8 +118,7 @@ more confident format — [`spec/README.md`](spec/README.md) says so about itsel
 
 | | Blocks |
 |---|---|
-| Which metro seeds the directory first | A3 onward, not A1–A2 |
-| Whether `navcom.app` currently serves anything | A6 |
+| **Which metro seeds the directory first** | The only thing between this and a usable directory |
 | Node service language for the box | Session 1 — TypeScript unless there's a reason |
 
 ## The seeding rule

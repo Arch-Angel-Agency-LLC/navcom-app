@@ -11,7 +11,7 @@
     { name: 'Mecha Jono', state: 'live', note: 'Local inference. Not yet holding a board' },
     { name: 'Field terminal', state: 'not built', note: 'Gated on the loop passing' },
     { name: 'Console', state: 'not built', note: 'Served from the box, never the public web' },
-    { name: 'Public directory', state: 'building', note: 'This site. Not seeded with real data yet' }
+    { name: 'Public directory', state: 'live', note: 'navcom.app — deployed, but seeded with no real data yet' }
   ];
 </script>
 
