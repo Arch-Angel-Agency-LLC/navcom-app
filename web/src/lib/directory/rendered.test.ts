@@ -300,6 +300,31 @@ describe('the field terminal', () => {
     expect(terminal()!.bodyText).toMatch(/Query needs a watch/i);
   });
 
+  it('never claims a capability that is not built', () => {
+    // The Status screen once promised "the cached directory, the playbooks and your own log
+    // all work with no watch and no signal" while none of the three existed. Claiming a
+    // capability on the one screen that must be honest is the same failure as claiming a
+    // watch that isn't there, and worse, because an operator plans around it.
+    //
+    // Each claim is tied to the screen that would have to exist for it to be true. Restore
+    // a sentence and this passes; restore it early and it fails.
+    const built = screens().map((p) => p.path);
+    const claims: [RegExp, string][] = [
+      [/cached directory/i, 'directory'],
+      [/playbook/i, 'playbook'],
+      [/your own log/i, 'log']
+    ];
+    for (const page of screens()) {
+      for (const [claim, screen] of claims) {
+        if (!claim.test(page.bodyText)) continue;
+        expect(
+          built.some((p) => p.includes(`/terminal/${screen}`)),
+          `${page.path} claims "${claim.source}" but no ${screen} screen is built`
+        ).toBe(true);
+      }
+    }
+  });
+
   it('carries a manifest so it can be installed', () => {
     expect(terminal()!.raw).toContain('manifest.webmanifest');
   });

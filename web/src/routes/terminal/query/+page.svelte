@@ -46,8 +46,8 @@
 {#if watch.state.state === 'dark'}
   <section>
     <p class="error">
-      No watch. <strong>Query needs one</strong> — there is nobody to ask. The cached
-      directory still works.
+      No watch. <strong>Query needs one</strong> — there is nobody to ask, and this
+      terminal has nothing cached to fall back on yet.
     </p>
   </section>
 {/if}

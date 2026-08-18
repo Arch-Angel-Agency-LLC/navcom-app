@@ -112,14 +112,18 @@
   <section class="offline">
     <h2>Dark is not an error</h2>
     <p>
-      Nothing is watching. That is a state, not a failure to connect — and the terminal is
-      built to be useful in it: the cached directory, the playbooks and your own log all work
-      with no watch and no signal.
+      Nothing is watching. That is a state, not a failure to connect — this screen and your
+      identity work with no watch and no signal, and Distress will keep trying regardless.
     </p>
     <p class="cost">
-      It does leave you less capable. <strong>Query needs a watch</strong>, and without one
-      you are searching a cached list one-handed in the cold — which is the problem the watch
-      exists to solve.
+      It leaves you less capable, and there is no way around that. <strong>Query needs a
+      watch</strong> — there is nobody to ask.
+      <!--
+        This paragraph used to promise a cached directory, playbooks and a personal log.
+        None of the three exist yet. Claiming a capability on the one screen that must be
+        honest is the same failure as claiming a watch that isn't there, and it is worse
+        here because an operator plans around it. Restore the sentence when they ship.
+      -->
     </p>
   </section>
 {/if}
