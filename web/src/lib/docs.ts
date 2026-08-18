@@ -11,7 +11,14 @@
 
 import { marked } from 'marked';
 
-const REPO = 'https://github.com/Arch-Angel-Agency-LLC/navcom-app/blob/main';
+/**
+ * Where documents that have no page here point instead — CLAUDE.md, the seed CSV, anything
+ * above docs/. Override with PUBLIC_REPO_URL if the repository moves again; GitHub will
+ * redirect a renamed repo, but a link that needs a redirect to work is a link that will
+ * break the day someone claims the old name.
+ */
+const REPO =
+  (process.env.PUBLIC_REPO_URL ?? 'https://github.com/Jthora/navcom-app') + '/blob/main';
 
 const files = import.meta.glob('../../../docs/**/*.md', {
   query: '?raw',
