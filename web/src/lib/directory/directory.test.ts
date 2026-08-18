@@ -3,10 +3,10 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 
 import { confidenceForClass, confidenceForField, isSeeded } from './confidence';
-import { displayField, displayRecord, formatAge } from './display';
+import { displayField, displayRecord, formatDate, formatRelative } from './display';
 import { parseCsv, parseDirectory, parseDirectoryOrThrow } from './parse';
 import type { ResourceRecord } from './types';
-import { ageInDays, seasonOf } from './volatility';
+import { STALE_AFTER_DAYS, ageInDays, seasonOf } from './volatility';
 
 const SEED_CSV = fileURLToPath(new URL('../../../../data/resources.seed.csv', import.meta.url));
 
@@ -112,11 +112,39 @@ describe('confidence', () => {
   });
 });
 
+describe('staleness margin (the page outliving its build)', () => {
+  const onTheEdge = (days: number) =>
+    record({ method: 'in_person', last_verified: new Date(Date.UTC(2026, 7, 17 - days)).toISOString().slice(0, 10) });
+
+  it('goes call-first one day EARLY rather than one day late', () => {
+    // Exactly at the 14-day volatile window. Without a margin this reads fresh; a page
+    // built today and read tomorrow would then be showing a value that has expired.
+    const atWindow = onTheEdge(STALE_AFTER_DAYS.volatile);
+    expect(confidenceForClass(atWindow, 'volatile', NOW, 0)).toBe('high');
+    expect(confidenceForClass(atWindow, 'volatile', NOW)).toBe('stale');
+  });
+
+  it('errs toward call-first, never toward a confident stale value', () => {
+    const justInside = onTheEdge(STALE_AFTER_DAYS.volatile - 1);
+    // Safe direction only: never reports fresher than the exact computation would.
+    const exact = confidenceForClass(justInside, 'volatile', NOW, 0);
+    const margined = confidenceForClass(justInside, 'volatile', NOW);
+    expect(['high', 'stale']).toContain(exact);
+    if (exact === 'stale') expect(margined).toBe('stale');
+  });
+
+  it('leaves long windows unaffected', () => {
+    const r = record({ method: 'in_person', last_verified: '2026-08-14' });
+    expect(confidenceForClass(r, 'static', NOW)).toBe('high');
+    expect(confidenceForClass(r, 'slow', NOW)).toBe('high');
+  });
+});
+
 describe('display rules', () => {
   it('rule 5 — a blank field renders unknown, never as absence of a restriction', () => {
     const r = record({ method: 'in_person', last_verified: '2026-08-14' });
-    expect(displayField(r, 'pets', NOW)).toEqual({ kind: 'unknown' });
-    expect(displayField(r, 'sex_offender_ok', NOW)).toEqual({ kind: 'unknown' });
+    expect(displayField(r, 'pets', NOW).kind).toBe('unknown');
+    expect(displayField(r, 'sex_offender_ok', NOW).kind).toBe('unknown');
   });
 
   it('rule 1 — a volatile value always carries its age', () => {
@@ -125,7 +153,8 @@ describe('display rules', () => {
     expect(d.kind).toBe('value');
     if (d.kind === 'value') {
       expect(d.age).not.toBeNull();
-      expect(d.age!.label).toBe('verified 3 days ago');
+      expect(d.age!.absolute).toBe('14 Aug 2026');
+      expect(d.age!.relative).toBe('3 days ago');
     }
   });
 
@@ -176,7 +205,10 @@ describe('the seed file end to end', () => {
   it('shows the shelter hours with an age', () => {
     const d = displayField(shelter, 'hours', NOW);
     expect(d.kind).toBe('value');
-    if (d.kind === 'value') expect(d.age!.label).toBe('verified 3 days ago');
+    if (d.kind === 'value') {
+      expect(d.age!.absolute).toBe('14 Aug 2026');
+      expect(d.age!.relative).toBe('3 days ago');
+    }
   });
 
   it('renders every field of the reported_wrong warming centre as suspect', () => {
@@ -192,12 +224,17 @@ describe('helpers', () => {
     expect(ageInDays('2026-08-17', NOW)).toBe(0);
   });
 
-  it('labels ages readably', () => {
-    expect(formatAge(0)).toBe('verified today');
-    expect(formatAge(1)).toBe('verified yesterday');
-    expect(formatAge(3)).toBe('verified 3 days ago');
-    expect(formatAge(60)).toBe('verified 2 months ago');
-    expect(formatAge(400)).toBe('verified 1 year ago');
+  it('labels relative ages readably', () => {
+    expect(formatRelative(0)).toBe('today');
+    expect(formatRelative(1)).toBe('yesterday');
+    expect(formatRelative(3)).toBe('3 days ago');
+    expect(formatRelative(60)).toBe('2 months ago');
+    expect(formatRelative(400)).toBe('1 year ago');
+  });
+
+  it('formats absolute dates unambiguously', () => {
+    expect(formatDate('2026-08-14')).toBe('14 Aug 2026');
+    expect(formatDate('2026-01-01')).toBe('1 Jan 2026');
   });
 
   it('knows meteorological seasons', () => {

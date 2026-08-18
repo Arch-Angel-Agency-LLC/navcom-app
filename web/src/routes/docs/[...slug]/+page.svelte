@@ -5,10 +5,11 @@
 
 <svelte:head>
   <title>{data.doc.title} · NavCom docs</title>
+  <meta name="description" content="{data.doc.title} — NavCom design documentation." />
 </svelte:head>
 
 <div class="wrap">
-  <p class="back"><a href="/docs">&larr; All documents</a></p>
+  <p class="back"><a href="/docs/">&larr; All documents</a></p>
   <!-- Rendered from repo markdown at build time. -->
   <article class="prose">{@html data.doc.html}</article>
   <p class="source"><span class="mono">docs/{data.doc.slug}.md</span></p>

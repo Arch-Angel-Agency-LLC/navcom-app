@@ -17,6 +17,23 @@ export const STALE_AFTER_DAYS: Record<VolatilityClass, number> = {
 };
 
 /**
+ * How stale the published page itself may be, in days.
+ *
+ * The site is static, so confidence is computed once at build time and then frozen into
+ * HTML. Without a margin, a field that crosses its window after the build keeps showing
+ * its value until the next one — the page would be confidently wrong about its own
+ * freshness, which is the exact failure the schema exists to prevent.
+ *
+ * So staleness is computed against `now + this`, which makes a field read "call first" a
+ * little early rather than a little late. Erring toward call-first is the safe direction:
+ * an honest blank beats a confident guess.
+ *
+ * This must be >= the actual rebuild interval. See docs/delivery.md — the scheduled
+ * rebuild is load-bearing, not a nicety.
+ */
+export const STALENESS_MARGIN_DAYS = 1;
+
+/**
  * The schema names the classes by field group rather than exhaustively. Fields it lists
  * explicitly are marked EXPLICIT; the rest are assigned by the same logic and marked
  * INFERRED so the extension is visible rather than silent.

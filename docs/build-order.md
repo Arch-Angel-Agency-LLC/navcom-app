@@ -58,6 +58,18 @@ page works with scripting disabled. Budget is enforced by `web/scripts/budget.mj
 measures what a browser downloads for a page rather than what sits in `build/`; those
 differ sharply here, because the client build still emits chunks no page ever loads.
 
+**Verified, not assumed.** `npm run verify` runs type-check, build, 45 tests and the
+budget. The display rules have regression tests asserted against the **built HTML**, not
+only against the logic — a component edited to "simplify" the stale case would otherwise
+pass every unit test while shipping the failure the schema exists to prevent. Contrast is
+measured against WCAG AA in both themes rather than claimed. The pages have been rendered
+and looked at, at desktop and at a true 390px viewport.
+
+**Known and deliberate:** display rule 4 (one-tap flagging) is not met on a static site and
+the page says so. The status page's component list is hand-maintained and will drift from
+this file. The markdown pipeline is unsanitised, which is safe only because the input is
+this repository.
+
 **What is left before this is a real site:** directory data, and a host. Everything else
 works.
 

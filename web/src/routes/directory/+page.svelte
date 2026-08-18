@@ -22,6 +22,10 @@
 
 <svelte:head>
   <title>Directory · NavCom</title>
+  <meta
+    name="description"
+    content="Shelters, meals, showers, warming centres and more — with the intake rules that decide whether someone actually gets in, and how recently anyone checked."
+  />
 </svelte:head>
 
 <div class="wrap">
@@ -47,6 +51,12 @@
     </p>
   </div>
 
+  <p class="built-at">
+    Checked-on dates below are exact. This page was rebuilt
+    <time datetime={publishedOn}>{publishedOn}</time>, and anything close to going stale is
+    shown as <strong>call first</strong> a day early rather than a day late.
+  </p>
+
   {#each byType as [type, records] (type)}
     <section>
       <h2>{labelValue(type)}</h2>
@@ -59,8 +69,7 @@
   {/each}
 
   <p class="built">
-    Ages on this page are counted from <time datetime={publishedOn}>{publishedOn}</time>,
-    when it was published.
+    Rebuilt daily. Last build <time datetime={publishedOn}>{publishedOn}</time>.
   </p>
 </div>
 
@@ -73,6 +82,15 @@
   }
 
   .notice { margin-bottom: 1rem; }
+
+  .built-at {
+    font-size: 0.88rem;
+    color: var(--muted);
+    border-left: 2px solid var(--line-strong);
+    padding-left: 0.8rem;
+    margin: 1.25rem 0 0;
+    max-width: var(--measure);
+  }
 
   section { margin-top: 2.5rem; display: flex; flex-direction: column; gap: 1rem; }
 

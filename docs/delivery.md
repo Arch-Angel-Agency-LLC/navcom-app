@@ -84,6 +84,28 @@ Android, iOS. A payload change is then one edit rather than three.
 Decide and build this before the first client, not after the second. Retrofitting it means
 rewriting every client that already exists.
 
+## Static hosting has a clock problem, and it is handled explicitly
+
+A static site computes staleness **once, at build time, and freezes it into HTML.** Left
+alone, a page built today will still say a fact was checked recently long after it wasn't —
+and it will keep showing a value whose window has closed. That is the confident wrong
+answer [principle 9] arriving by a side door, and it is worse than usual because the page
+is wrong *about its own freshness*.
+
+Three things together make it honest:
+
+- **Absolute dates are the primary rendering.** *"checked 14 Aug 2026"* is true whenever it
+  is read. *"3 days ago"* is only true while the build is fresh, so it appears as a
+  secondary hint and never alone
+- **A staleness margin.** Confidence is computed against `now + STALENESS_MARGIN_DAYS`, so
+  a field reads **call first** a day early rather than a day late. Erring toward call-first
+  is the safe direction, and it makes a stale build fail safe instead of fail confident
+- **A daily rebuild**, in `.github/workflows/web.yml`
+
+**The scheduled rebuild is load-bearing, not housekeeping.** The margin is sized for a
+daily cadence; it will not save a build that is three months old. Any deployment must run
+on the schedule, not only on push.
+
 ## Budgets
 
 The device floor is a prepaid Android 8 with ~400MB free [C6], and it is a target rather

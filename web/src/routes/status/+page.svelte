@@ -17,6 +17,10 @@
 
 <svelte:head>
   <title>Status · NavCom</title>
+  <meta
+    name="description"
+    content="What works, what has been proven, and what has not. Escalation drill results are published here."
+  />
 </svelte:head>
 
 <div class="wrap">

@@ -65,7 +65,7 @@ function rewriteLinks(html: string, slug: string, known: Set<string>): string {
 
     if (aboveDocs === 0 && resolved.endsWith('.md')) {
       const target = resolved.replace(/\.md$/, '');
-      if (known.has(target)) return `href="/docs/${target}${hash ? `#${hash}` : ''}"`;
+      if (known.has(target)) return `href="/docs/${target}/${hash ? `#${hash}` : ''}"`;
     }
 
     const repoPath = aboveDocs > 0 ? resolved : `docs/${resolved}`;

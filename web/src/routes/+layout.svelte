@@ -9,9 +9,9 @@
   <div class="bar">
     <a class="brand" href="/">NavCom</a>
     <nav>
-      <a href="/directory">Directory</a>
-      <a href="/status">Status</a>
-      <a href="/docs">Docs</a>
+      <a href="/directory/">Directory</a>
+      <a href="/status/">Status</a>
+      <a href="/docs/">Docs</a>
     </nav>
   </div>
 </header>

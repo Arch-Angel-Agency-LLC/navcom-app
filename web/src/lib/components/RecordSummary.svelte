@@ -1,6 +1,6 @@
 <script lang="ts">
   import { displayField, displayRecord, type ResourceRecord } from '$lib/directory';
-  import { labelValue } from '$lib/directory/load';
+  import { labelValue, labelValues } from '$lib/directory/load';
 
   let { record, now }: { record: ResourceRecord; now: Date } = $props();
 
@@ -13,41 +13,42 @@
 
 <!-- Rule 6. Seeded entries are visibly different, not merely tagged: dotted edge,
      lighter title, and an explicit line saying nobody has checked this. -->
-<article class="card" class:seeded={meta.seeded} class:suspect={meta.flagFirst !== null}>
+<article class="card" class:seeded={meta.seeded} class:suspect={meta.flagFirst !== null}
+  data-record={record.id} data-seeded={meta.seeded} data-flagged={meta.flagFirst !== null}>
   {#if meta.flagFirst}
     <!-- Rule 3. The flag comes first, above all other content. -->
-    <p class="flag">{meta.flagFirst.label}</p>
+    <p class="flag" data-flag>{meta.flagFirst.label}</p>
   {/if}
 
   {#if meta.seeded}
-    <p class="seeded-note">Unverified public listing — nobody has checked this</p>
+    <p class="seeded-note" data-seeded-note>Unverified public listing — nobody has checked this</p>
   {/if}
 
-  <h3><a href="/directory/{record.id}">{record.name}</a></h3>
+  <h3><a href="/directory/{record.id}/">{record.name}</a></h3>
   <p class="type">{labelValue(record.type)}</p>
 
   <dl>
     <div><dt>Open</dt><dd>
-      {#if hours.kind === 'value'}{labelValue(hours.value)}
-      {:else if hours.kind === 'call-first'}<span class="cf">Call first</span>
+      {#if hours.kind === 'value'}<span data-display="value" data-field="hours">{labelValues(hours.values)}</span>
+      {:else if hours.kind === 'call-first'}<span class="cf" data-display="call-first" data-field="hours">Call first</span>
       {:else}<span class="unk">unknown</span>{/if}
     </dd></div>
     <div><dt>Takes</dt><dd>
-      {#if accepts.kind === 'value'}{labelValue(accepts.value)}
+      {#if accepts.kind === 'value'}{labelValues(accepts.values)}
       {:else}<span class="unk">unknown</span>{/if}
     </dd></div>
     <div><dt>Pets</dt><dd>
-      {#if pets.kind === 'value'}{labelValue(pets.value)}
+      {#if pets.kind === 'value'}{labelValues(pets.values)}
       {:else}<span class="unk">unknown</span>{/if}
     </dd></div>
     <div><dt>Using</dt><dd>
-      {#if sobriety.kind === 'value'}{labelValue(sobriety.value)}
+      {#if sobriety.kind === 'value'}{labelValues(sobriety.values)}
       {:else}<span class="unk">unknown</span>{/if}
     </dd></div>
   </dl>
 
   <p class="foot">
-    {#if meta.age}{meta.age.label}{:else}never verified{/if}
+    {#if meta.age}checked {meta.age.absolute}{:else}never checked{/if}
     {#if record.verified_by}<span class="by">by {record.verified_by}</span>{/if}
   </p>
 </article>

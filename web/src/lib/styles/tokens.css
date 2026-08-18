@@ -12,7 +12,7 @@
   --sunk: #e7eaee;
   --ink: #12161c;
   --muted: #4e5661;
-  --faint: #767f8c;
+  --faint: #666f7c;  /* AA on --ground (4.57): renders the word "unknown" */
   --line: #ccd2d9;
   --line-strong: #a8b0ba;
 
@@ -37,7 +37,7 @@
     --sunk: #0a0e12;
     --ink: #e7eaef;
     --muted: #9aa3b0;
-    --faint: #6f7885;
+    --faint: #7d8794;  /* AA on --ground (5.12) */
     --line: #272e38;
     --line-strong: #3c4450;
 
@@ -56,7 +56,7 @@
   --sunk: #0a0e12;
   --ink: #e7eaef;
   --muted: #9aa3b0;
-  --faint: #6f7885;
+  --faint: #7d8794;  /* AA on --ground (5.12) */
   --line: #272e38;
   --line-strong: #3c4450;
 

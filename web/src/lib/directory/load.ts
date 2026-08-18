@@ -93,9 +93,12 @@ export const VALUE_LABELS: Record<string, string> = {
   detox: 'Detox', daytime: 'Drop-in'
 };
 
+/** Formats a single value. Never pass it an already-joined string. */
 export function labelValue(raw: string): string {
-  return raw
-    .split(', ')
-    .map((part) => VALUE_LABELS[part] ?? part.replace(/_/g, ' '))
-    .join(', ');
+  return VALUE_LABELS[raw] ?? raw.replace(/_/g, ' ');
+}
+
+/** Formats each value, then joins. */
+export function labelValues(values: string[]): string {
+  return values.map(labelValue).join(', ');
 }

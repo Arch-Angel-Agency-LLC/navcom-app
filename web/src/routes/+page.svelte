@@ -17,7 +17,7 @@
   </p>
 
   <div class="actions">
-    <a class="cta" href="/directory">Open the directory</a>
+    <a class="cta" href="/directory/">Open the directory</a>
   </div>
 
   <section>

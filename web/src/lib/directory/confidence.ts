@@ -11,10 +11,14 @@
  */
 
 import type { Confidence, ResourceField, ResourceRecord, VolatilityClass } from './types';
-import { STALE_AFTER_DAYS, ageInDays, classOf, seasonOf } from './volatility';
+import { STALE_AFTER_DAYS, STALENESS_MARGIN_DAYS, ageInDays, classOf, seasonOf } from './volatility';
 
 /**
  * Confidence for one volatility class of a record.
+ *
+ * `marginDays` accounts for the page outliving its build — see STALENESS_MARGIN_DAYS. It
+ * defaults to the safe value rather than to zero, so a caller who forgets it gets the
+ * conservative answer instead of the confident one. Pass 0 only to assert exact windows.
  *
  * Two cases the schema does not spell out, resolved toward the honest blank:
  * a record with no `last_verified`, and one with no `method`, both read `stale`. We cannot
@@ -24,14 +28,15 @@ import { STALE_AFTER_DAYS, ageInDays, classOf, seasonOf } from './volatility';
 export function confidenceForClass(
   record: ResourceRecord,
   cls: VolatilityClass,
-  now: Date
+  now: Date,
+  marginDays: number = STALENESS_MARGIN_DAYS
 ): Confidence {
   // Overrides everything, including a fresh in-person verification.
   if (record.flag !== 'ok') return 'suspect';
 
   if (!record.last_verified) return 'stale';
 
-  const age = ageInDays(record.last_verified, now);
+  const age = ageInDays(record.last_verified, now) + marginDays;
   if (age > STALE_AFTER_DAYS[cls]) return 'stale';
 
   // Second staleness trigger for the seasonal class: "30 days, or at season change".
@@ -58,11 +63,12 @@ export function confidenceForClass(
 export function confidenceForField(
   record: ResourceRecord,
   field: ResourceField,
-  now: Date
+  now: Date,
+  marginDays: number = STALENESS_MARGIN_DAYS
 ): Confidence {
   const cls = classOf(field);
   if (cls === null) return record.flag !== 'ok' ? 'suspect' : 'high';
-  return confidenceForClass(record, cls, now);
+  return confidenceForClass(record, cls, now, marginDays);
 }
 
 /**

@@ -13,14 +13,18 @@
 
 <svelte:head>
   <title>{record.name} · NavCom</title>
+  <meta
+    name="description"
+    content="{record.name} — hours, intake rules, and how recently anyone checked."
+  />
 </svelte:head>
 
 <div class="wrap">
-  <p class="back"><a href="/directory">&larr; All resources</a></p>
+  <p class="back"><a href="/directory/">&larr; All resources</a></p>
 
   {#if meta.flagFirst}
     <!-- Rule 3. Above all other content, including the name. -->
-    <div class="notice notice--stop">
+    <div class="notice notice--stop" data-flag>
       <p class="notice__label">Flagged</p>
       <p>{meta.flagFirst.label}</p>
     </div>
@@ -37,7 +41,7 @@
     </div>
   {/if}
 
-  <header class:seeded={meta.seeded}>
+  <header class:seeded={meta.seeded} data-record={record.id} data-seeded={meta.seeded} data-flagged={meta.flagFirst !== null}>
     <h1>{record.name}</h1>
     <p class="type">{labelValue(record.type)}</p>
   </header>
@@ -45,12 +49,18 @@
   <section>
     <h2>Contact</h2>
     <dl>
-      <FieldRow label={FIELD_LABELS.address ?? 'Address'} display={displayField(record, 'address', now)} />
-      <FieldRow label={FIELD_LABELS.phone ?? 'Phone'} display={displayField(record, 'phone', now)} />
+      <FieldRow field="address" label={FIELD_LABELS.address ?? 'Address'} display={displayField(record, 'address', now)} />
+      <FieldRow field="phone" label={FIELD_LABELS.phone ?? 'Phone'} display={displayField(record, 'phone', now)} />
     </dl>
     {#if record.lat !== undefined && record.lon !== undefined}
       <p class="map">
-        <a href="geo:{record.lat},{record.lon}">Open in maps</a>
+        <!-- geo: hands off to the native app on Android and does nothing elsewhere, so the
+             universal link is primary and the coordinates stay visible to copy. -->
+        <a
+          href="https://www.openstreetmap.org/?mlat={record.lat}&mlon={record.lon}#map=17/{record.lat}/{record.lon}"
+          rel="noreferrer"
+        >Open in maps</a>
+        <span class="coords mono">{record.lat}, {record.lon}</span>
       </p>
     {/if}
   </section>
@@ -59,7 +69,7 @@
     <h2>Availability</h2>
     <dl>
       {#each AVAILABILITY_FIELDS as field (field)}
-        <FieldRow label={FIELD_LABELS[field] ?? field} display={displayField(record, field, now)} />
+        <FieldRow {field} label={FIELD_LABELS[field] ?? field} display={displayField(record, field, now)} />
       {/each}
     </dl>
   </section>
@@ -72,7 +82,7 @@
     </p>
     <dl>
       {#each INTAKE_FIELDS as field (field)}
-        <FieldRow label={FIELD_LABELS[field] ?? field} display={displayField(record, field, now)} />
+        <FieldRow {field} label={FIELD_LABELS[field] ?? field} display={displayField(record, field, now)} />
       {/each}
     </dl>
   </section>
@@ -87,7 +97,7 @@
   <section>
     <h2>Verification</h2>
     <dl class="verify">
-      <div><dt>Last checked</dt><dd>{meta.age ? meta.age.label : 'never'}</dd></div>
+      <div><dt>Last checked</dt><dd>{meta.age ? `${meta.age.absolute} (${meta.age.relative})` : 'never'}</dd></div>
       <div><dt>By</dt><dd>{record.verified_by ?? 'unknown'}</dd></div>
       <div><dt>How</dt><dd>{record.method ? labelValue(record.method) : 'unknown'}</dd></div>
     </dl>
@@ -129,7 +139,8 @@
 
   .hint { font-size: 0.9rem; color: var(--muted); margin: 0.6rem 0; max-width: var(--measure); }
   .notes { max-width: var(--measure); }
-  .map { margin-top: 0.6rem; font-size: 0.95rem; }
+  .map { margin-top: 0.6rem; font-size: 0.95rem; display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: baseline; }
+  .coords { font-size: 0.78rem; color: var(--muted); }
 
   .verify { display: flex; flex-direction: column; gap: 0.4rem; }
   .verify div { display: grid; grid-template-columns: 10.5rem 1fr; gap: 1rem; }

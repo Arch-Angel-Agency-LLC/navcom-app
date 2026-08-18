@@ -13,6 +13,10 @@
 
 <svelte:head>
   <title>Docs · NavCom</title>
+  <meta
+    name="description"
+    content="How NavCom is built and why, including the parts that are unresolved. The documentation is the auditable surface."
+  />
 </svelte:head>
 
 <div class="wrap">
@@ -31,7 +35,7 @@
       <ul>
         {#each pages as page (page.slug)}
           <li>
-            <a href="/docs/{page.slug}">{page.title}</a>
+            <a href="/docs/{page.slug}/">{page.title}</a>
             <span class="slug">{page.slug}.md</span>
           </li>
         {/each}
