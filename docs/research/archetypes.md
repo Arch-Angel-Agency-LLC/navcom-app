@@ -19,6 +19,8 @@ convention. The astrology is scaffolding; the requirements are the point.
 
 ---
 
+## The twelve
+
 ### 1. Cusp of Rebirth — Pisces (Water Mutable) + Aries (Fire Cardinal)
 **The Convert.** Formerly unhoused, now working the same blocks where she slept. Knows
 which shelters actually take people who are using.

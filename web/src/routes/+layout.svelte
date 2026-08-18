@@ -11,7 +11,7 @@
     <nav>
       <a href="/directory/">Directory</a>
       <a href="/status/">Status</a>
-      <a href="/docs/">Docs</a>
+      <a href="/docs/contributing/">Contribute</a><a href="/docs/">Docs</a>
     </nav>
   </div>
 </header>

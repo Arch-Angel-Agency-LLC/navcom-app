@@ -194,3 +194,39 @@ describe('the public surface', () => {
     }
   });
 });
+
+describe('reader-facing documents are actually published', () => {
+  it('publishes CONTRIBUTING and LICENSING, not just docs/', () => {
+    const slugs = pages.map((p) => p.path);
+    expect(slugs.some((p) => p.includes('/docs/contributing/')), 'CONTRIBUTING is unpublished').toBe(true);
+    expect(slugs.some((p) => p.includes('/docs/licensing/')), 'LICENSING is unpublished').toBe(true);
+  });
+
+  it('does not leave a dead link where a published document exists', () => {
+    for (const { path, doc } of pages) {
+      for (const a of doc.querySelectorAll('a[href^="/docs/"]')) {
+        const href = (a.getAttribute('href') ?? '').split('#')[0].replace(/\/$/, '');
+        if (href === '/docs') continue;
+        const target = href.replace(/^\/docs\//, '');
+        expect(
+          pages.some((p) => p.path.includes(`/docs/${target}/`)),
+          `${path} links to ${href}, which is not published`
+        ).toBe(true);
+      }
+    }
+  });
+
+  it('never skips a heading level', () => {
+    for (const { path, doc } of pages) {
+      const levels = doc
+        .querySelectorAll('h1, h2, h3, h4, h5, h6')
+        .map((h) => Number(h.tagName[1]));
+      for (let i = 1; i < levels.length; i++) {
+        expect(
+          levels[i] - levels[i - 1],
+          `${path}: h${levels[i - 1]} is followed by h${levels[i]}`
+        ).toBeLessThanOrEqual(1);
+      }
+    }
+  });
+});

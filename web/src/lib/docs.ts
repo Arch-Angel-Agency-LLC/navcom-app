@@ -26,6 +26,19 @@ const files = import.meta.glob('../../../docs/**/*.md', {
   eager: true
 }) as Record<string, string>;
 
+/**
+ * Root-level documents that belong to the reader rather than to the repository. Both are
+ * addressed to someone who found the directory and wants to correct it or reuse it, so
+ * leaving them where only a git clone reaches would defeat the point of writing them.
+ *
+ * They stay at the repository root because that is where a code host looks for them.
+ */
+const rootFiles = import.meta.glob(['../../../CONTRIBUTING.md', '../../../LICENSING.md'], {
+  query: '?raw',
+  import: 'default',
+  eager: true
+}) as Record<string, string>;
+
 export interface DocPage {
   /** URL slug, e.g. "product/identity". */
   slug: string;
@@ -35,6 +48,11 @@ export interface DocPage {
 
 function slugOf(path: string): string {
   return path.replace(/^.*\/docs\//, '').replace(/\.md$/, '');
+}
+
+/** Root documents get a lowercase slug and sit alongside the rest. */
+function rootSlugOf(path: string): string {
+  return path.replace(/^.*\//, '').replace(/\.md$/, '').toLowerCase();
 }
 
 function titleOf(markdown: string, slug: string): string {
@@ -49,8 +67,14 @@ function titleOf(markdown: string, slug: string): string {
  * the seed CSV, anything above docs/ — points at the source on the repository host, so a
  * reader following a reference lands on the real file rather than a 404.
  */
-function rewriteLinks(html: string, slug: string, known: Set<string>): string {
-  const dir = slug.includes('/') ? slug.slice(0, slug.lastIndexOf('/')) : '';
+function rewriteLinks(
+  html: string,
+  slug: string,
+  known: Set<string>,
+  /** Directory of the source file relative to the repo root: 'docs', 'docs/product', ''. */
+  base: string
+): string {
+  const dir = base;
 
   return html.replace(/href="([^"]*)"/g, (whole, href: string) => {
     if (/^(https?:|mailto:|#|\/)/.test(href)) return whole;
@@ -70,13 +94,16 @@ function rewriteLinks(html: string, slug: string, known: Set<string>): string {
     }
     const resolved = out.join('/');
 
+    // Resolved is now relative to the repo root for every caller.
     if (aboveDocs === 0 && resolved.endsWith('.md')) {
-      const target = resolved.replace(/\.md$/, '');
+      const withoutDocs = resolved.replace(/^docs\//, '');
+      const target = resolved.startsWith('docs/')
+        ? withoutDocs.replace(/\.md$/, '')
+        : resolved.replace(/\.md$/, '').toLowerCase();
       if (known.has(target)) return `href="/docs/${target}/${hash ? `#${hash}` : ''}"`;
     }
 
-    const repoPath = aboveDocs > 0 ? resolved : `docs/${resolved}`;
-    return `href="${REPO}/${repoPath}"`;
+    return `href="${REPO}/${resolved}"`;
   });
 }
 
@@ -85,14 +112,25 @@ let cache: DocPage[] | null = null;
 export function allDocs(): DocPage[] {
   if (cache) return cache;
 
-  const entries = Object.entries(files).map(([path, raw]) => ({ slug: slugOf(path), raw }));
+  const entries = [
+    ...Object.entries(files).map(([path, raw]) => {
+      const slug = slugOf(path);
+      const dir = slug.includes('/') ? `docs/${slug.slice(0, slug.lastIndexOf('/'))}` : 'docs';
+      return { slug, raw, base: dir };
+    }),
+    ...Object.entries(rootFiles).map(([path, raw]) => ({
+      slug: rootSlugOf(path),
+      raw,
+      base: ''
+    }))
+  ];
   const known = new Set(entries.map((e) => e.slug));
 
   cache = entries
-    .map(({ slug, raw }) => ({
+    .map(({ slug, raw, base }) => ({
       slug,
       title: titleOf(raw, slug),
-      html: rewriteLinks(marked.parse(raw, { async: false }) as string, slug, known)
+      html: rewriteLinks(marked.parse(raw, { async: false }) as string, slug, known, base)
     }))
     .sort((a, b) => a.slug.localeCompare(b.slug));
 

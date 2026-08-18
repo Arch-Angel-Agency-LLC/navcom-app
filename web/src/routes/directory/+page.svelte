@@ -46,9 +46,14 @@
 
   <div class="notice">
     <p>
-      <strong>Reporting that something is wrong is not possible here yet.</strong> This page
-      is read-only. Corrections come from operators using the field terminal, where they
-      queue up even with no signal.
+      <strong>Spotted something wrong?</strong> This page is read-only, but the data is not
+      locked away — it is a plain file anyone can correct. See
+      <a href="/docs/contributing/">how to correct an entry</a>.
+    </p>
+    <p class="quiet">
+      One-tap flagging belongs in the field terminal, where corrections queue up even with
+      no signal. That does not exist yet, so for now correcting an entry takes more effort
+      than it should.
     </p>
   </div>
 
@@ -103,6 +108,8 @@
   }
   .region strong { color: var(--ink); }
   .unchecked { display: block; color: var(--accent); }
+
+  .notice .quiet { color: var(--muted); font-size: .9rem; }
 
   .built-at {
     font-size: 0.88rem;
