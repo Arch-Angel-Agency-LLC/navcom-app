@@ -173,6 +173,19 @@ Sign-on records what the watch said it could do **at the moment of signing on**.
 operator's own note, not the node's, and the screen says so — the node-signed version is the
 capability receipt, and it lands when the daemon issues one.
 
+**Invariant 7 is reachable.** `panicWipe()` and `burn()` had been written and tested since
+the storage tiers landed, and no screen could call either — the one operator action that has
+to work in five seconds under duress had no button. `/terminal/wipe/` gives them opposite
+shapes on purpose: panic wipe is a hold, because it costs an evening and speed wins; burn
+asks the operator to type their callsign, because it costs everything they have built. The
+typed gate lives in `storage.ts`, not the template, so a second screen cannot forget it.
+
+The screen says where a wipe **stops**, which is the part worth saying: the watch still holds
+your board entry, the accountability log is on the node and is not yours to delete, and a
+browser has neither a keystore nor a secure erase. After a wipe it shows nothing at all —
+a terminal reporting "4 items destroyed" tells whoever is holding the phone that there was
+something to destroy.
+
 Remaining screens (directory, log review) once the protocol has stopped moving. UI built
 against an unproven payload gets rewritten when the payload changes, which is the whole
 reason for the gate.

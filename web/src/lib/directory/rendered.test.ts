@@ -252,7 +252,7 @@ describe('the field terminal', () => {
 
   it('has built every screen the loop needs', () => {
     const built = screens().map((p) => p.path);
-    for (const screen of ['sign-on', 'query', 'assist', 'distress', 'setup']) {
+    for (const screen of ['sign-on', 'query', 'assist', 'distress', 'setup', 'wipe']) {
       expect(
         built.some((p) => p.includes(`/terminal/${screen}/`)),
         `${screen} screen is not built`
@@ -323,6 +323,40 @@ describe('the field terminal', () => {
         ).toBe(true);
       }
     }
+  });
+
+  it('states where a wipe stops, rather than implying it is total', () => {
+    // An operator who believes a wipe removes them from the watch is wrong in a way that
+    // changes what they do next. Invariant 7 is a boundary, and the boundary is the part
+    // worth saying out loud.
+    const wipe = screens().find((p) => p.path.includes('/terminal/wipe/'))!;
+    expect(wipe.bodyText).toMatch(/still has your board entry/i);
+    expect(wipe.bodyText).toMatch(/accountability log is outside both/i);
+    // The browser's own limits, which no amount of care on our side removes.
+    expect(wipe.bodyText).toMatch(/no OS keystore/i);
+    expect(wipe.bodyText).toMatch(/unlinks it rather than scrubbing/i);
+  });
+
+  it('shapes the two destructive actions differently', () => {
+    // Panic wipe costs an evening and must be fast: a hold, rendered statically.
+    // Burn costs everything an operator has built, so it names that cost up front.
+    //
+    // The typed-callsign confirmation is not asserted here on purpose — it only exists once
+    // an identity is loaded on the client, and the prerendered page correctly shows the
+    // "nothing to burn" branch instead. The confirmation gate is covered where it lives.
+    const wipe = screens().find((p) => p.path.includes('/terminal/wipe/'))!;
+    expect(wipe.bodyText).toMatch(/Hold to wipe tonight/i);
+    expect(wipe.bodyText).toMatch(/identity included/i);
+    expect(wipe.bodyText).toMatch(/no recovery unless you set one up/i);
+    expect(wipe.bodyText).toMatch(/nothing to burn/i);
+  });
+
+  it('does not congratulate anyone after a wipe', () => {
+    // A terminal that reports "4 items destroyed" tells whoever is holding the phone that
+    // there was something to destroy. The screen returns to an ordinary Status instead.
+    const wipe = screens().find((p) => p.path.includes('/terminal/wipe/'))!;
+    expect(wipe.bodyText.toLowerCase()).not.toContain('wiped successfully');
+    expect(wipe.bodyText.toLowerCase()).not.toContain('items destroyed');
   });
 
   it('carries a manifest so it can be installed', () => {

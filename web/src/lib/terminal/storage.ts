@@ -84,6 +84,25 @@ export function burn(): void {
   localStorage.removeItem(ACCRUING);
 }
 
+/**
+ * Burns only when the operator has typed their callsign exactly.
+ *
+ * The gate lives here rather than in a template so it cannot be bypassed by a second screen
+ * that forgets it. Burn is the one action in the terminal with no recovery, and the check
+ * belongs next to the thing it guards.
+ *
+ * Returns whether it burned, so a caller can tell "refused" from "done" without re-deriving
+ * the rule.
+ */
+export function burnConfirmed(typed: string, callsign: string | null): boolean {
+  // No identity means nothing to burn — and an empty confirmation must never match an
+  // empty callsign into a successful destroy.
+  if (!callsign) return false;
+  if (typed.trim() !== callsign) return false;
+  burn();
+  return true;
+}
+
 /** What a wipe would actually remove, so the operator can be told before it happens. */
 export function tierSummary(): { accruing: string[]; wipeable: string[] } {
   return { accruing: Object.keys(read('accruing')), wipeable: Object.keys(read('wipeable')) };

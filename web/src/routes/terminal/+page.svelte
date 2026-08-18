@@ -154,6 +154,15 @@
   </section>
 {/if}
 
+{#if configured || identity}
+  <!-- Two taps from anywhere in the terminal. Not buried, and not a button large enough to
+       hit while putting the phone in a pocket. -->
+  <nav class="quiet">
+    <a href="/terminal/wipe/">Wipe this device</a>
+    <a href="/terminal/setup/">Setup</a>
+  </nav>
+{/if}
+
 <section class="install">
   <h2>Before you install</h2>
   <p>
@@ -210,6 +219,9 @@
   .actions.single { grid-template-columns: 1fr; }
   .actions :global(.action), .actions button { width: 100%; }
   .primary { border-color: var(--t-station); color: var(--t-station); }
+
+  .quiet { display: flex; gap: 1.2rem; }
+  .quiet a { color: var(--t-faint); font-size: .9rem; text-decoration: none; border-bottom: 1px solid var(--t-line); }
 
   /* Always its own row, always last, never adjacent to an ordinary action. */
   .distress {

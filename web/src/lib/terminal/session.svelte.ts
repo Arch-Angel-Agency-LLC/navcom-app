@@ -176,5 +176,23 @@ export const operator = {
    */
   standDownDistress() {
     distressController?.abort();
+  },
+
+  /**
+   * Drops everything this module is holding in memory, and sends nothing.
+   *
+   * A wipe clears storage; without this the screen would go on showing "On station —
+   * Downtown" from a variable, which is the wipe appearing to have failed at the moment an
+   * operator most needs to believe it worked.
+   *
+   * It deliberately does **not** stand down. Standing down is a signal, and a signal is
+   * visible — the operator wiping under duress is the last person who should be made to
+   * transmit. The board entry is the watch's, it is Live, and it expires on its own.
+   */
+  forget() {
+    session = null;
+    lastResponse = null;
+    error = null;
+    distressPhases = [];
   }
 };
