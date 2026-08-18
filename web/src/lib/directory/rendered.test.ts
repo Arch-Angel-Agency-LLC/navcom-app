@@ -36,6 +36,26 @@ interface Page {
   bodyText: string;
 }
 
+/**
+ * Text inside a record that is NOT part of a rendered field verdict.
+ *
+ * Rule 2's whole point is that a suppressed value is *structurally absent*. The field slots
+ * are covered by the same-field check below; this covers the other way it leaks — a
+ * component rendering `record.address` as ordinary prose, outside the FieldRow machinery
+ * that knows about suppression. The terminal's directory screen had exactly that in its
+ * first draft.
+ */
+function proseOutsideFieldSlots(el: HTMLElement): string {
+  if (el.getAttribute('data-display') !== undefined) return '';
+  return el.childNodes
+    .map((n) =>
+      n.nodeType === 3
+        ? (n.rawText ?? '')
+        : proseOutsideFieldSlots(n as HTMLElement)
+    )
+    .join(' ');
+}
+
 let pages: Page[] = [];
 /** Every element carrying data-record, on any page: one rendered record. */
 let rendered: { page: Page; el: HTMLElement; id: string }[] = [];
@@ -60,6 +80,16 @@ beforeAll(() => {
   );
 });
 
+/**
+ * How many real cases each rule actually looked at.
+ *
+ * A guard that examines nothing passes. Every rule here scans the real directory, so a data
+ * edit, a component rewrite, or a selector that stops matching can leave a rule green while
+ * checking an empty set — and nothing about the output would look different. These counters
+ * make silence fail.
+ */
+const examined = { rule1: 0, rule2: 0, rule3: 0, rule5: 0, rule6: 0, verdicts: 0 };
+
 describe('rendered display rules', () => {
   it('has rendered some records', () => {
     expect(rendered.length).toBeGreaterThan(0);
@@ -68,6 +98,7 @@ describe('rendered display rules', () => {
   it('rule 1 — every rendered volatile value carries an age', () => {
     for (const { path, doc } of pages) {
       for (const el of doc.querySelectorAll('[data-display="value"][data-class="volatile"]')) {
+        examined.rule1++;
         expect(
           el.querySelector('[data-age]'),
           `${path}: volatile field "${el.getAttribute('data-field')}" rendered without an age`
@@ -88,15 +119,15 @@ describe('rendered display rules', () => {
         const suppressed = record[field];
         if (typeof suppressed !== 'string' || suppressed.trim() === '') continue;
 
-        // Scoped to this record AND this field, which is what the rule actually says: the
-        // suppressed value must be structurally absent for the field that suppressed it.
+        examined.rule2++;
+
+        // Two checks, because the value can leak two ways and a single one misses one.
         //
-        // It used to compare against every rendered value on the page, which produced a
-        // false failure the moment the terminal put many records on one page: a record with
-        // a suppressed `hours` of "unknown" also renders `sex_offender_ok` as the value
-        // "unknown", which is a legitimate enum member of a different field, not a leak.
-        // The realistic leak — a summary element showing what a detail row suppressed —
-        // is same-record and same-field, and is still caught.
+        // (a) Rendered as a value for the SAME field — the summary-card-versus-detail-row
+        //     leak. This used to be compared against every rendered value on the page,
+        //     which false-failed the moment the terminal put many records on one page: a
+        //     record with a suppressed `hours` of "unknown" also renders `sex_offender_ok`
+        //     as the value "unknown", a legitimate enum member of a different field.
         const shownForField = el
           .querySelectorAll(`[data-display="value"][data-field="${field}"]`)
           .map((v) => v.structuredText.trim());
@@ -104,6 +135,15 @@ describe('rendered display rules', () => {
         expect(
           shownForField.some((s) => s.includes(suppressed)),
           `${page.path}: suppressed "${field}" value "${suppressed}" is rendered as a value`
+        ).toBe(false);
+
+        // (b) Printed as ordinary prose somewhere in the record, outside the field slots
+        //     entirely. Narrowing (a) to one field removed this case, which is the leak a
+        //     new component is most likely to introduce — and the terminal's own directory
+        //     screen had it in its first draft, printing record.address into a <p>.
+        expect(
+          proseOutsideFieldSlots(el).includes(suppressed),
+          `${page.path}: suppressed "${field}" value "${suppressed}" is printed as prose on ${id}`
         ).toBe(false);
       }
     }
@@ -128,6 +168,7 @@ describe('rendered display rules', () => {
       // The flag sits inside the card on the list page and above the header on the detail
       // page, so compare rendered reading order rather than DOM containment. Body text
       // only: <title> repeats the record name and would put it spuriously first.
+      examined.rule3++;
       const flag = el.querySelector('[data-flag]') ?? page.doc.querySelector('[data-flag]');
       expect(flag, `${page.path}: no flag rendered for flagged record ${id}`).not.toBeNull();
 
@@ -143,6 +184,7 @@ describe('rendered display rules', () => {
   it('rule 5 — unknown renders the word, never an empty cell', () => {
     for (const { path, doc } of pages) {
       for (const el of doc.querySelectorAll('[data-display="unknown"]')) {
+        examined.rule5++;
         expect(el.structuredText.trim().toLowerCase(), path).toBe('unknown');
       }
     }
@@ -151,6 +193,7 @@ describe('rendered display rules', () => {
   it('rule 6 — a seeded record carries its visible marker', () => {
     for (const { page, el } of rendered) {
       if (el.getAttribute('data-seeded') !== 'true') continue;
+      examined.rule6++;
       const marker =
         el.querySelector('[data-seeded-note]') ?? page.doc.querySelector('.notice--warn');
       expect(marker, `${page.path}: seeded record with no visible marker`).not.toBeNull();
@@ -169,11 +212,24 @@ describe('rendered display rules', () => {
       for (const field of el.querySelectorAll('[data-display][data-field]')) {
         const name = field.getAttribute('data-field') as ResourceField;
         const expected = displayField(record, name, now).kind;
+        examined.verdicts++;
         expect(
           field.getAttribute('data-display'),
           `${page.path}: "${name}" on ${id} rendered as ${field.getAttribute('data-display')}, logic says ${expected}`
         ).toBe(expected);
       }
+    }
+  });
+
+  it('actually examined a real case of every rule — a guard that checks nothing passes', () => {
+    // Declared last on purpose: it asserts the rules above were not green by vacancy.
+    // Without it, deleting the one flagged record from the seed data would silently retire
+    // rule 3, and the suite would look exactly the same as it does now.
+    //
+    // This is the failure that let rule 2 drift: nothing was watching whether the guard
+    // still had anything to guard.
+    for (const [rule, n] of Object.entries(examined)) {
+      expect(n, `${rule} examined nothing — it is passing vacuously`).toBeGreaterThan(0);
     }
   });
 });
