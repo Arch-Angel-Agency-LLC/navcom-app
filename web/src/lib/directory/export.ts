@@ -16,6 +16,7 @@
 
 import { confidenceForClass, isSeeded } from './confidence';
 import { displayField, formatDate } from './display';
+import type { Region } from './region';
 import type { Confidence, ResourceField, ResourceRecord, VolatilityClass } from './types';
 import { FIELD_CLASS, STALE_AFTER_DAYS, STALENESS_MARGIN_DAYS, ageInDays } from './volatility';
 
@@ -29,6 +30,8 @@ export type FieldVerdict =
 
 export interface ExportedRecord {
   id: string;
+  /** Which region's folder this came from. */
+  region: string | null;
   name: string;
   type: string;
   flag: string;
@@ -48,6 +51,12 @@ export interface ExportedRecord {
 
 export interface DirectoryExport {
   version: number;
+  /**
+   * Every region present, with the context its rows inherit — country, IANA timezone, and
+   * whether anyone has actually checked the data. `hours` and `curfew` are local times and
+   * are meaningless without this.
+   */
+  regions: Region[];
   /** When the verdicts below were computed. They are only as fresh as this. */
   built_at: string;
   /**
@@ -89,9 +98,14 @@ function verdictOf(record: ResourceRecord, field: ResourceField, now: Date): Fie
   };
 }
 
-export function buildExport(records: ResourceRecord[], now: Date): DirectoryExport {
+export function buildExport(
+  records: ResourceRecord[],
+  now: Date,
+  regions: Region[] = []
+): DirectoryExport {
   return {
     version: EXPORT_VERSION,
+    regions,
     built_at: now.toISOString(),
     staleness_margin_days: STALENESS_MARGIN_DAYS,
     stale_after_days: STALE_AFTER_DAYS,
@@ -101,7 +115,9 @@ export function buildExport(records: ResourceRecord[], now: Date): DirectoryExpo
       'display=unknown means nobody has confirmed it. It never means "no restriction".',
       'seeded=true means a public listing nobody has checked. Present it as visibly less trustworthy [C21].',
       'Attach `provenance` to any 20912 answer derived from a record. An answer without it must render as unverified [signals.spec].',
-      'These verdicts were computed at built_at. If this copy is older than staleness_margin_days, refetch rather than serving it.'
+      'These verdicts were computed at built_at. If this copy is older than staleness_margin_days, refetch rather than serving it.',
+      'hours and curfew are local times. Resolve them against the timezone of the record\'s region, listed in `regions`.',
+      'A region with status=seeded has been checked by nobody. Say so when presenting its rows.'
     ],
     count: records.length,
     records: records.map((record) => {
@@ -111,6 +127,7 @@ export function buildExport(records: ResourceRecord[], now: Date): DirectoryExpo
 
       return {
         id: record.id,
+        region: record.region ?? null,
         name: record.name,
         type: record.type,
         flag: record.flag,

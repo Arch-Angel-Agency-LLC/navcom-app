@@ -2,6 +2,7 @@
   import FieldRow from '$lib/components/FieldRow.svelte';
   import { displayField, displayRecord } from '$lib/directory';
   import { AVAILABILITY_FIELDS, FIELD_LABELS, INTAKE_FIELDS, labelValue } from '$lib/directory/load';
+  import { localTimeNote } from '$lib/directory/region';
   import type { PageData } from './$types';
 
   let { data }: { data: PageData } = $props();
@@ -67,6 +68,9 @@
 
   <section>
     <h2>Availability</h2>
+    {#if data.region}
+      <p class="hint">{localTimeNote(data.region)}</p>
+    {/if}
     <dl>
       {#each AVAILABILITY_FIELDS as field (field)}
         <FieldRow {field} label={FIELD_LABELS[field] ?? field} display={displayField(record, field, now)} />

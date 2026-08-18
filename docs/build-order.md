@@ -75,6 +75,10 @@ functions — the deploy runs `npm run verify`, so a build that breaks a display
 bundle budget cannot ship. Web Analytics and Speed Insights stay off: both inject a script,
 which would break the zero-JavaScript property and H8.
 
+**Data is partitioned by region** — `data/regions/<slug>/` with a manifest carrying country,
+IANA timezone, languages and whether anyone has checked it. Done while there was one region,
+because it is cheap now and painful once several people are editing one file.
+
 **What is left before this is a real directory:** data. Everything else works.
 
 ## Gated on session 1 passing

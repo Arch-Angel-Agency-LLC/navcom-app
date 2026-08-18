@@ -72,7 +72,10 @@ export const FIELD_CLASS: Record<ResourceField, VolatilityClass | null> = {
 
   reports_to: 'slow',
 
-  // Not directory content — verification metadata and free text carry no class.
+  // Not directory content — verification metadata, provenance and free text carry no class.
+  // `region` is attached by the loader and describes where a row lives, not what it claims,
+  // so it never goes stale.
+  region: null,
   last_verified: null,
   verified_by: null,
   method: null,

@@ -1,0 +1,8 @@
+{
+  "slug": "example",
+  "name": "Example Metro",
+  "country": "ZZ",
+  "timezone": "UTC",
+  "languages": ["en"],
+  "status": "example"
+}

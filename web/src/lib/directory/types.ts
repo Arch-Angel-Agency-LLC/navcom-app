@@ -74,6 +74,11 @@ export type VolatilityClass = 'static' | 'slow' | 'seasonal' | 'volatile';
 
 export interface ResourceRecord {
   id: string;
+  /**
+   * Which region's folder this came from. Attached by the loader, never read from the CSV,
+   * so a row cannot claim to be somewhere it is not. Always set on loaded records.
+   */
+  region?: string;
   name: string;
   type: ResourceType;
 

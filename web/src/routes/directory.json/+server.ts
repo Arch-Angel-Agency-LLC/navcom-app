@@ -1,5 +1,5 @@
 import { buildExport } from '$lib/directory/export';
-import { loadDirectory } from '$lib/directory/load';
+import { loadAll } from '$lib/directory/load';
 
 export const prerender = true;
 
@@ -8,7 +8,8 @@ export const prerender = true;
  * verdicts ship alongside the data rather than the consumer recomputing them.
  */
 export function GET() {
-  const body = JSON.stringify(buildExport(loadDirectory(), new Date()), null, 2);
+  const { records, regions } = loadAll();
+  const body = JSON.stringify(buildExport(records, new Date(), regions), null, 2);
   return new Response(body, {
     headers: {
       'content-type': 'application/json; charset=utf-8',

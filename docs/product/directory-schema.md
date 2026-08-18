@@ -152,7 +152,15 @@ form is a correction path that never gets used.
 
 Reporting that something is wrong requires one tap and no account.
 
-### Seeding a new metro
+### Regions, and seeding a new one
+
+Data is partitioned by region — `data/regions/<slug>/` holds a `resources.csv` and a
+`region.json`. The manifest carries what a row cannot say for itself: country, IANA
+timezone, the languages the data is written in, and whether anyone has actually checked it.
+
+**A row says a place opens at 19:00. Nothing in the row says local to where.** That is fine
+in one city and wrong the moment there are two. Shape in
+[`../../data/regions/README.md`](../../data/regions/README.md).
 
 **Seed structural facts. Never seed intake rules.**
 
@@ -193,4 +201,4 @@ hours, intake_hours, seasonal, capacity_signal,
 last_verified, verified_by, method, flag, notes
 ```
 
-Importable starter: [`../../data/resources.seed.csv`](../../data/resources.seed.csv)
+Importable starter: [`../../data/regions/example/resources.csv`](../../data/regions/example/resources.csv)

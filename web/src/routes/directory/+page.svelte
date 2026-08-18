@@ -1,6 +1,7 @@
 <script lang="ts">
   import RecordSummary from '$lib/components/RecordSummary.svelte';
   import { labelValue } from '$lib/directory/load';
+  import { localTimeNote } from '$lib/directory/region';
   import type { PageData } from './$types';
 
   let { data }: { data: PageData } = $props();
@@ -51,6 +52,17 @@
     </p>
   </div>
 
+  {#each data.regions as region (region.slug)}
+    <p class="region">
+      <strong>{region.name}</strong> ({region.country}) · {localTimeNote(region)}
+      {#if region.status === 'seeded'}
+        <span class="unchecked">Seeded from public sources — nobody has checked it.</span>
+      {:else if region.status === 'example'}
+        <span class="unchecked">Example data. Not a real place.</span>
+      {/if}
+    </p>
+  {/each}
+
   <p class="built-at">
     Checked-on dates below are exact. This page was rebuilt
     <time datetime={publishedOn}>{publishedOn}</time>, and anything close to going stale is
@@ -82,6 +94,15 @@
   }
 
   .notice { margin-bottom: 1rem; }
+
+  .region {
+    font-size: .92rem;
+    color: var(--muted);
+    padding: .6rem 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .region strong { color: var(--ink); }
+  .unchecked { display: block; color: var(--accent); }
 
   .built-at {
     font-size: 0.88rem;

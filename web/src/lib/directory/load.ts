@@ -1,17 +1,85 @@
 /**
  * Build-time directory load.
  *
- * The CSV is inlined by Vite at build time, so the published site is static HTML with no
- * data fetch and no runtime dependency on anything.
+ * Every region's CSV and manifest is inlined by Vite at build time, so the published site
+ * is static HTML with no data fetch and no runtime dependency on anything.
  */
 
-import csv from '../../../../data/resources.seed.csv?raw';
 import { parseDirectoryOrThrow } from './parse';
+import { parseRegion, type Region } from './region';
 import type { ResourceField, ResourceRecord } from './types';
 
-/** Throws during build if the CSV is malformed, so a bad row cannot ship. */
+const csvFiles = import.meta.glob('../../../../data/regions/*/resources.csv', {
+  query: '?raw',
+  import: 'default',
+  eager: true
+}) as Record<string, string>;
+
+const regionFiles = import.meta.glob('../../../../data/regions/*/region.json', {
+  eager: true
+}) as Record<string, { default: unknown }>;
+
+const slugOf = (path: string): string => path.replace(/.*\/regions\/([^/]+)\/.*/, '$1');
+
+export interface LoadedDirectory {
+  regions: Region[];
+  records: ResourceRecord[];
+}
+
+let cache: LoadedDirectory | null = null;
+
+/**
+ * Throws during build if any CSV is malformed, any manifest is invalid, or two regions
+ * claim the same record id — see data/regions/README.md on why ids are global.
+ */
+export function loadAll(): LoadedDirectory {
+  if (cache) return cache;
+
+  const regions: Region[] = [];
+  const records: ResourceRecord[] = [];
+  const seen = new Map<string, string>();
+
+  for (const [path, mod] of Object.entries(regionFiles)) {
+    regions.push(parseRegion(slugOf(path), mod.default));
+  }
+  regions.sort((a, b) => a.slug.localeCompare(b.slug));
+
+  for (const [path, csv] of Object.entries(csvFiles)) {
+    const slug = slugOf(path);
+    if (!regions.some((r) => r.slug === slug)) {
+      throw new Error(`data/regions/${slug}/ has resources.csv but no region.json`);
+    }
+    for (const record of parseDirectoryOrThrow(csv)) {
+      const already = seen.get(record.id);
+      if (already) {
+        throw new Error(
+          `Record id "${record.id}" is claimed by both "${already}" and "${slug}". ` +
+            `Ids are global because URLs are flat — prefix with the region slug.`
+        );
+      }
+      seen.set(record.id, slug);
+      // Region is attached here, never read from the CSV, so a row cannot claim to be
+      // somewhere it is not.
+      records.push({ ...record, region: slug });
+    }
+  }
+
+  records.sort((a, b) => a.name.localeCompare(b.name));
+  cache = { regions, records };
+  return cache;
+}
+
+/** Records across every region. */
 export function loadDirectory(): ResourceRecord[] {
-  return parseDirectoryOrThrow(csv).sort((a, b) => a.name.localeCompare(b.name));
+  return loadAll().records;
+}
+
+export function loadRegions(): Region[] {
+  return loadAll().regions;
+}
+
+export function regionOf(record: ResourceRecord): Region | undefined {
+  return loadAll().regions.find((r) => r.slug === record.region);
 }
 
 /**

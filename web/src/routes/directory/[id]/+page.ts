@@ -1,5 +1,5 @@
 import { error } from '@sveltejs/kit';
-import { loadDirectory } from '$lib/directory/load';
+import { loadDirectory, regionOf } from '$lib/directory/load';
 import type { EntryGenerator, PageLoad } from './$types';
 
 /** Tells the prerenderer which detail pages exist. */
@@ -9,5 +9,5 @@ export const load: PageLoad = ({ params }) => {
   const id = params.id.replace(/\/+$/, '');
   const record = loadDirectory().find((r) => r.id === id);
   if (!record) throw error(404, 'No such entry');
-  return { record, builtAt: new Date().toISOString() };
+  return { record, region: regionOf(record) ?? null, builtAt: new Date().toISOString() };
 };

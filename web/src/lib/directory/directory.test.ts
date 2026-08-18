@@ -5,11 +5,12 @@ import { describe, expect, it } from 'vitest';
 import { confidenceForClass, confidenceForField, isSeeded } from './confidence';
 import { displayField, displayRecord, formatDate, formatRelative } from './display';
 import { buildExport } from './export';
+import { parseRegion, localTimeNote } from './region';
 import { parseCsv, parseDirectory, parseDirectoryOrThrow } from './parse';
 import type { ResourceRecord } from './types';
 import { STALE_AFTER_DAYS, ageInDays, hemisphereOf, seasonIndex, seasonOf } from './volatility';
 
-const SEED_CSV = fileURLToPath(new URL('../../../../data/resources.seed.csv', import.meta.url));
+const SEED_CSV = fileURLToPath(new URL('../../../../data/regions/example/resources.csv', import.meta.url));
 
 /** Fixed so these tests do not start failing with the passage of time. */
 const NOW = new Date('2026-08-17T12:00:00Z');
@@ -349,5 +350,48 @@ describe('reports_to — the field the Medic asked for', () => {
     const r = record({ method: 'in_person', last_verified: '2026-07-28', reports_to: ['police'] });
     expect(displayField(r, 'hours', NOW).kind).not.toBe('value');
     expect(displayField(r, 'reports_to', NOW).kind).toBe('value');
+  });
+});
+
+describe('regions', () => {
+  const valid = {
+    slug: 'berlin', name: 'Berlin', country: 'DE',
+    timezone: 'Europe/Berlin', languages: ['de', 'en'], status: 'maintained'
+  };
+
+  it('accepts a well-formed manifest', () => {
+    expect(parseRegion('berlin', valid)).toMatchObject({ country: 'DE', timezone: 'Europe/Berlin' });
+  });
+
+  it('refuses a manifest whose slug disagrees with its folder', () => {
+    expect(() => parseRegion('munich', valid)).toThrow(/slug is "berlin" but the folder is "munich"/);
+  });
+
+  it('refuses a country that is not ISO 3166-1 alpha-2', () => {
+    expect(() => parseRegion('berlin', { ...valid, country: 'Germany' })).toThrow(/alpha-2/);
+    expect(() => parseRegion('berlin', { ...valid, country: 'de' })).toThrow(/alpha-2/);
+  });
+
+  it('refuses a timezone that is not an IANA name', () => {
+    expect(() => parseRegion('berlin', { ...valid, timezone: 'CET' })).toThrow(/IANA/);
+    expect(() => parseRegion('berlin', { ...valid, timezone: 'GMT+1' })).toThrow(/IANA/);
+  });
+
+  it('accepts UTC, which is how a region with no better answer says so', () => {
+    expect(parseRegion('berlin', { ...valid, timezone: 'UTC' }).timezone).toBe('UTC');
+  });
+
+  it('requires at least one language, as ISO 639-1', () => {
+    expect(() => parseRegion('berlin', { ...valid, languages: [] })).toThrow(/at least one/);
+    expect(() => parseRegion('berlin', { ...valid, languages: ['German'] })).toThrow(/639-1/);
+  });
+
+  it('requires an honest status', () => {
+    expect(() => parseRegion('berlin', { ...valid, status: 'good' })).toThrow(/status must be/);
+  });
+
+  it('states the timezone rather than implying it', () => {
+    expect(localTimeNote(parseRegion('berlin', valid))).toBe('Times are local to Europe/Berlin.');
+    expect(localTimeNote(parseRegion('berlin', { ...valid, timezone: 'UTC' }))).toBe('Times are UTC.');
   });
 });
