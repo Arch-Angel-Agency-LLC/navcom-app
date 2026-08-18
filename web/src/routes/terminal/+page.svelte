@@ -1,8 +1,20 @@
 <script lang="ts">
+  import { onMount } from 'svelte';
   import { capabilitySentence } from '@navcom/core';
   import { watch } from '$lib/terminal/watch.svelte';
+  import { loadConfig } from '$lib/terminal/config';
+  import { loadIdentity } from '$lib/terminal/identity';
 
   const s = $derived(watch.state);
+  let configured = $state(false);
+  let identity = $state<ReturnType<typeof loadIdentity>>(null);
+
+  onMount(() => {
+    configured = loadConfig() !== null;
+    identity = loadIdentity();
+    watch.start();
+    return () => watch.stop();
+  });
 
   const LABEL = {
     station: 'On station',
@@ -65,7 +77,7 @@
   </section>
 {/if}
 
-{#if watch.seenAt === null}
+{#if !configured}
   <section class="notyet">
     <h2>Not configured</h2>
     <p>
@@ -73,6 +85,21 @@
       person — nothing discovers a Watchtower on its own, because a list of Watchtowers is a
       list of where operators are.
     </p>
+    <p><a class="action" href="/terminal/setup/">Set up</a></p>
+  </section>
+{:else if watch.read.reason === 'stale'}
+  <section class="notyet">
+    <h2>Last word was {watch.read.ageSeconds ?? '?'}s ago</h2>
+    <p>
+      A Watchtower is configured and the relay is still serving its last message, but that
+      message is old enough that the daemon may be gone. <strong>Old is treated as Dark</strong>
+      — a stale event says what was true, not what is.
+    </p>
+  </section>
+{:else if !identity}
+  <section class="notyet">
+    <h2>No identity yet</h2>
+    <p>Your keypair is generated here and never leaves. <a href="/terminal/setup/">Create one</a>.</p>
   </section>
 {/if}
 

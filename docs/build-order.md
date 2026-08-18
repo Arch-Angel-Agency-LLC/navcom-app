@@ -107,6 +107,20 @@ Two rules are now enforced in code rather than only written down: a watch state 
 `automated-oncall` to `automated` when nobody is pageable or no drill has passed, and hard
 expiry can never drop a `distress` entry.
 
+**Field Terminal — connected.** Identity is generated on the device and never leaves it,
+the Watchtower pubkey and relays are entered by hand from a person, and Status subscribes to
+`10910` and renders what is actually true.
+
+**Verified against real relays rather than argued about.** With the daemon running, a
+terminal reads `automated`. With the daemon *killed* and the relay still faithfully serving
+its last message, the same terminal renders **Dark** — the replaceable-event corpse, caught
+live. A relay answering "nothing here" is read through `oneose`, so absence is a signal
+rather than a timeout guess.
+
+**Device storage is tiered** — accruing and wipeable, two keys rather than one, so panic
+wipe cannot take the wrong half by accident. Its limits are written where an operator can
+read them: a browser has no keystore, and `removeItem` unlinks rather than scrubs.
+
 **Field Terminal — Status screen: done.** Lives at `/terminal/`, same domain and one build,
 but in its own route group so it inherits none of the site's chrome, stylesheet or
 assumptions. It renders Dark before anything is configured, which is the correct answer
