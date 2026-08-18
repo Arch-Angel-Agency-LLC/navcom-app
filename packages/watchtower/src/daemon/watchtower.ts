@@ -256,9 +256,14 @@ export class WatchtowerDaemon {
           // difference makes them look identical on the board.
           const assist = payload as AssistPayload;
           const entry = this.board.get(event.pubkey);
+          // An absent urgency reads as UNSTATED, never as the lower of the two. Guessing
+          // "soon" from silence is the confident wrong answer [principle 9] applied to the
+          // one field that says how long someone has.
+          const urgency =
+            assist.urgency === "now" ? "NOW" : assist.urgency === "soon" ? "soon" : "UNSTATED";
           console.log(
             `[assist] ${entry?.callsign ?? event.pubkey.slice(0, 8)} ` +
-              `urgency=${assist.urgency === "now" ? "NOW" : "soon"}` +
+              `urgency=${urgency}` +
               (assist.text ? ` — ${assist.text}` : ""),
           );
           response = this.ack();

@@ -5,6 +5,7 @@
    * product.
    */
   import { onMount } from 'svelte';
+  import { isUnverified } from '@navcom/core';
   import { watch } from '$lib/terminal/watch.svelte';
   import { operator } from '$lib/terminal/session.svelte';
 
@@ -17,6 +18,12 @@
   });
 
   const answer = $derived(operator.lastResponse);
+  /**
+   * An ack is not an answer. The spec gives a query 30s to be acknowledged and 120s to be
+   * answered, so an ack here means the answer is still coming — rendering it as an answer
+   * with a missing badge would be the wrong shape of wrong.
+   */
+  const stillComing = $derived(answer?.type === 'ack');
 
   async function submit(e: SubmitEvent) {
     e.preventDefault();
@@ -70,18 +77,25 @@
       {answer.responder?.callsign ?? 'Watch'}
       {#if answer.responder?.kind === 'agent'}<span class="kind">agent</span>{/if}
     </p>
-    <p class="text">{answer.text ?? '(acknowledged, no answer yet)'}</p>
-
-    <!-- An answer without provenance renders as unverified. It does not render as fact. -->
-    {#if answer.provenance}
-      <p class="prov" data-provenance>
-        {answer.provenance.method === 'in_person' ? 'Seen in person' : answer.provenance.method},
-        checked {answer.provenance.verified}
+    {#if stillComing}
+      <p class="text pending">
+        {answer.text ?? 'Received. The answer is still coming.'}
       </p>
+      <p class="prov">Answers target 120 seconds. This screen updates when it arrives.</p>
     {:else}
-      <p class="prov unverified" data-provenance="none">
-        Unverified — no source given. <strong>Call first.</strong>
-      </p>
+      <p class="text">{answer.text ?? '(no text)'}</p>
+
+      <!-- An answer without provenance renders as unverified. It does not render as fact. -->
+      {#if isUnverified(answer)}
+        <p class="prov unverified" data-provenance="none">
+          Unverified — no source given. <strong>Call first.</strong>
+        </p>
+      {:else if answer.provenance}
+        <p class="prov" data-provenance>
+          {answer.provenance.method ?? 'source not stated'}{#if answer.provenance.verified},
+            checked {answer.provenance.verified}{:else}, <strong>never checked</strong>{/if}
+        </p>
+      {/if}
     {/if}
   </section>
 {/if}
@@ -97,4 +111,5 @@
   .text { color: var(--t-ink); font-size: 1.1rem; line-height: 1.5; margin: 0; }
   .prov { font-size: .85rem; color: var(--t-faint); margin: 0; }
   .prov.unverified { color: var(--t-oncall); }
+  .text.pending { color: var(--t-muted); }
 </style>

@@ -246,6 +246,33 @@ describe("query dispatch", () => {
   });
 });
 
+describe("assist dispatch", () => {
+  it("puts urgency in front of whoever holds watch, and never guesses it", async () => {
+    // "I need someone" and "I need someone now" ask for different responses. An ack that
+    // swallowed the difference would make them identical on the board, and defaulting an
+    // absent urgency to the lower of the two is the confident wrong answer applied to the
+    // one field that says how long someone has.
+    const log = vi.spyOn(console, "log").mockImplementation(() => {});
+    try {
+      const { pubkey, deliver, publishedEvents } = await started();
+      const operator = generateSecretKey();
+
+      deliver(signalEvent(operator, pubkey, "assist", { urgency: "now", text: "corner of 4th" }));
+      await waitForResponse(publishedEvents);
+      expect(log.mock.calls.flat().join("\n")).toMatch(/\[assist\].*urgency=NOW/);
+
+      log.mockClear();
+      deliver(signalEvent(operator, pubkey, "assist", {}));
+      await waitForResponse(publishedEvents);
+      const unstated = log.mock.calls.flat().join("\n");
+      expect(unstated).toMatch(/urgency=UNSTATED/);
+      expect(unstated).not.toMatch(/urgency=soon/);
+    } finally {
+      log.mockRestore();
+    }
+  });
+});
+
 describe("distress dispatch", () => {
   it("creates a board entry for an operator who never sent on-station and acks", async () => {
     const { daemon, pubkey, deliver, publishedEvents } = await started();
