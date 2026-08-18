@@ -106,6 +106,16 @@ Three things together make it honest:
 daily cadence; it will not save a build that is three months old. Any deployment must run
 on the schedule, not only on push.
 
+## Deploying from a workspace
+
+`vercel.json` at the repo root carries the build settings, so they are diffable rather than
+living only in a dashboard. **Vercel's Root Directory must be the repository root, not
+`web/`** — the site imports `@navcom/core`, which npm resolves through the workspace, and an
+install scoped to `web/` cannot see it.
+
+The build command is `npm run verify --workspace navcom-web`, so a deploy that breaks a
+display rule or the bundle budget fails instead of shipping.
+
 ## Budgets
 
 The device floor is a prepaid Android 8 with ~400MB free [C6], and it is a target rather
