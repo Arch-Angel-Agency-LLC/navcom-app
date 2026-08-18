@@ -97,6 +97,11 @@ publisher and reading as a live watch, and the callsign gap. Its runtime validat
 promoted into core, because a client parsing a response needs the same guarantees the
 daemon needed.
 
+**A stale `packages/core/dist` produced three phantom type errors** in consumers before it
+was made structural rather than remembered: `web` and `packages/watchtower` now rebuild core
+in a `pre`-hook before check, build and test. A build step you have to remember is a build
+step that gets skipped at the worst time.
+
 ## Unblocked — session 1 passed
 
 **Extract the shared core** — **done.** `packages/core` holds the attestation model, keys,
@@ -134,10 +139,35 @@ rather than a payload break across three clients and a node.
 
 **Two budgets, and the split is enforced.** The public site delivers **zero** JavaScript
 against a budget of zero — it fails on the first byte, because a document must stay readable
-with scripting off. The terminal is an application and gets 140 kB; it currently uses 36.4.
+with scripting off. The terminal is an application and gets 140 kB; the loop screens bring
+its worst page to 84.7 kB.
 
-Remaining screens once the protocol has stopped moving. UI built against an unproven
-payload gets rewritten when the payload changes, which is the whole reason for the gate.
+**Field Terminal — the loop runs through the phone.** Sign on, check in, Query, Assist,
+Stand down and Distress are wired to the transport in `packages/core`, so the CLI and the
+terminal send the same bytes through the same code rather than two implementations that
+agree until they don't.
+
+Three things came out of building the screens rather than reading the spec:
+
+- **`Distress` now ends only on a human.** The retry loop stopped on any acknowledgement,
+  including an agent's — which satisfied neither invariant 2 nor invariant 5 while looking,
+  on screen, exactly like help arriving. An agent answering is reported as *still looking
+  for a human* and the loop continues. A response with **no** `responder.kind` is treated as
+  not-human, because guessing is the one wrong guess this loop must never make
+- **`assist` carries a required `urgency`.** "I need someone" and "I need someone now" ask
+  for different responses, and a watch cannot tell them apart from an absent field. `text`
+  stays optional — requiring a reason delays the send at the moment sending matters
+- **Every attempt is on screen, including ones that never left the phone.** An operator who
+  knows nothing is getting through can act on that; one who believes help is coming when it
+  isn't has been misled at the worst possible moment
+
+Sign-on records what the watch said it could do **at the moment of signing on**. It is the
+operator's own note, not the node's, and the screen says so — the node-signed version is the
+capability receipt, and it lands when the daemon issues one.
+
+Remaining screens (directory, log review) once the protocol has stopped moving. UI built
+against an unproven payload gets rewritten when the payload changes, which is the whole
+reason for the gate.
 
 ## Gated on opening past people you personally vetted
 

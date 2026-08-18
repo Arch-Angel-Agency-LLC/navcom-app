@@ -242,10 +242,35 @@ describe('reader-facing documents are actually published', () => {
 });
 
 describe('the field terminal', () => {
-  const terminal = () => pages.find((p) => p.path.includes('/terminal/'));
+  /** Status specifically — the terminal now has several screens under /terminal/. */
+  const terminal = () => pages.find((p) => p.path.endsWith('/terminal/index.html'));
+  const screens = () => pages.filter((p) => p.path.includes('/terminal/'));
 
   it('is built', () => {
-    expect(terminal(), 'no terminal page in build/').toBeDefined();
+    expect(terminal(), 'no terminal Status page in build/').toBeDefined();
+  });
+
+  it('has built every screen the loop needs', () => {
+    const built = screens().map((p) => p.path);
+    for (const screen of ['sign-on', 'query', 'assist', 'distress', 'setup']) {
+      expect(
+        built.some((p) => p.includes(`/terminal/${screen}/`)),
+        `${screen} screen is not built`
+      ).toBe(true);
+    }
+  });
+
+  it('offers Distress from every screen that can send one', () => {
+    // Distress does not require being on station, and must never be more than one tap away.
+    for (const screen of ['query', 'assist']) {
+      const page = screens().find((p) => p.path.includes(`/terminal/${screen}/`))!;
+      const links = page.doc.querySelectorAll('a').map((a) => a.getAttribute('href'));
+      expect(links, `${screen} cannot reach Status`).toContain('/terminal/');
+    }
+    const distress = screens().find((p) => p.path.includes('/terminal/distress/'))!;
+    // Sending is a hold, never a tap — invariant 3, deliberate by construction.
+    expect(distress.bodyText).toMatch(/Hold to send/i);
+    expect(distress.bodyText).toMatch(/until a human answers/i);
   });
 
   it('is an application, so it does load a client bundle', () => {

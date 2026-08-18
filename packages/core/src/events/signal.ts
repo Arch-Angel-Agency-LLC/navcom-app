@@ -48,11 +48,19 @@ export interface AssistPayload {
    */
   text?: string;
   area?: string;
+  /**
+   * How long the watch has. Required, because "I need someone" and "I need someone now"
+   * ask for different responses and the watch cannot tell them apart from silence.
+   *
+   * One tap, not a sentence — which is why this stays required where `text` does not.
+   */
+  urgency: 'soon' | 'now';
 }
 
 export interface DistressPayload {
-  /** Last known position if the operator shares it; otherwise last known area. */
+  /** Last known position if the operator shares it; otherwise `area` carries what is known. */
   position: Position | null;
+  /** Coarse. Present even when position is null, so a responder has somewhere to start. */
   area: string | null;
   text?: string;
 }
@@ -62,7 +70,10 @@ export interface DistressPayload {
  *
  * The spec says retry indefinitely with backoff, and that requirement is what makes an
  * ephemeral transport acceptable here at all: relays do not store these events, so a single
- * failed publish is a signal nobody ever receives. Not yet implemented on either side.
+ * failed publish is a signal nobody ever receives.
+ *
+ * Implemented by `sendDistressUntilAcknowledged` in transport.ts, which stops only when a
+ * human acknowledges or the operator cancels — never on its own.
  */
 export const DISTRESS_RETRY_FOREVER = true;
 

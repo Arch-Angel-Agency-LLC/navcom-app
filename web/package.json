@@ -4,15 +4,19 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vite dev",
+    "budget": "node scripts/budget.mjs",
     "build": "vite build",
-    "preview": "vite preview",
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
+    "check:data": "vite-node scripts/check-data.ts",
+    "core": "npm --prefix ../packages/core run build",
+    "dev": "vite dev",
+    "prebuild": "npm run core",
+    "precheck": "npm run core",
+    "pretest": "npm run core",
+    "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
-    "budget": "node scripts/budget.mjs",
-    "verify": "npm run check && npm run check:data && npm run build && npm run test && npm run budget",
-    "check:data": "vite-node scripts/check-data.ts"
+    "verify": "npm run check && npm run check:data && npm run build && npm run test && npm run budget"
   },
   "devDependencies": {
     "@sveltejs/adapter-static": "^3.0.6",

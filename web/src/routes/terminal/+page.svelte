@@ -2,6 +2,7 @@
   import { onMount } from 'svelte';
   import { capabilitySentence } from '@navcom/core';
   import { watch } from '$lib/terminal/watch.svelte';
+  import { operator } from '$lib/terminal/session.svelte';
   import { loadConfig } from '$lib/terminal/config';
   import { loadIdentity } from '$lib/terminal/identity';
 
@@ -14,6 +15,14 @@
     identity = loadIdentity();
     watch.start();
     return () => watch.stop();
+  });
+
+  const session = $derived(operator.session);
+
+  /** Whole minutes remaining. Negative reads as over, not as a smaller number. */
+  const remaining = $derived.by(() => {
+    if (!session) return null;
+    return Math.round((session.expectedUntil - Date.now() / 1000) / 60);
   });
 
   const LABEL = {
@@ -55,6 +64,44 @@
     </p>
   {/if}
 </section>
+
+{#if session}
+  <!-- On station. What the board believes about you, so a wrong entry is visible here. -->
+  <section class="station" data-station>
+    <h2>On station</h2>
+    <p class="area">{session.area}</p>
+    <p class="until">
+      {#if remaining !== null && remaining > 0}
+        {remaining} min left of what you declared
+      {:else}
+        <strong>Past your declared time.</strong> The watch will nudge, and nothing more.
+      {/if}
+    </p>
+    <p class="told">
+      Told at sign-on: <span>{session.toldAtSignOn}</span>
+    </p>
+  </section>
+
+  <nav class="actions">
+    <a class="action" href="/terminal/query/">Query</a>
+    <a class="action" href="/terminal/assist/">Assist</a>
+    <button onclick={() => operator.routine()} disabled={operator.busy}>
+      {operator.busy ? '…' : 'Check in'}
+    </button>
+    <button onclick={() => operator.standDown()} disabled={operator.busy}>Stand down</button>
+  </nav>
+  <a class="action distress" href="/terminal/distress/">Distress</a>
+{:else if configured && identity}
+  <nav class="actions single">
+    <a class="action primary" href="/terminal/sign-on/">Sign on</a>
+  </nav>
+  <!-- Distress does not require being on station. Needing help does not wait for paperwork. -->
+  <a class="action distress" href="/terminal/distress/">Distress</a>
+{/if}
+
+{#if operator.error}
+  <p class="error">{operator.error}</p>
+{/if}
 
 <!-- The consequence, not the label. A word like "Automated" is not enough on its own. -->
 <section class="consequence" data-capability>
@@ -118,14 +165,6 @@
 </section>
 
 <style>
-  header { display: flex; flex-direction: column; gap: .2rem; }
-  .eyebrow {
-    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-    font-size: .72rem; letter-spacing: .16em; text-transform: uppercase;
-    color: var(--t-faint); margin: 0;
-  }
-  h1 { font-size: 1.7rem; margin: 0; letter-spacing: -.01em; }
-
   .state {
     display: grid;
     grid-template-columns: auto 1fr;
@@ -156,12 +195,21 @@
   }
   .consequence p { margin: 0; font-size: 1.08rem; line-height: 1.5; }
 
-  section h2 {
-    font-size: .78rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
-    color: var(--t-faint); margin: 0 0 .5rem;
+  .station { border: 2px solid var(--t-station); background: var(--t-raised); padding: 1rem 1.1rem; }
+  .station h2 { color: var(--t-station); }
+  .area { color: var(--t-ink); font-size: 1.25rem; font-weight: 650; margin: 0 0 .25rem; }
+  .until { font-size: .95rem; margin: 0 0 .5rem; }
+  .told { font-size: .82rem; color: var(--t-faint); margin: 0; }
+  .told span { font-style: italic; }
+
+  .actions { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; }
+  .actions.single { grid-template-columns: 1fr; }
+  .actions :global(.action), .actions button { width: 100%; }
+  .primary { border-color: var(--t-station); color: var(--t-station); }
+
+  /* Always its own row, always last, never adjacent to an ordinary action. */
+  .distress {
+    border-color: var(--t-dark); color: var(--t-dark); background: var(--t-sunk);
+    text-transform: uppercase; letter-spacing: .04em;
   }
-  section p { margin: 0 0 .6rem; color: var(--t-muted); line-height: 1.55; }
-  section p:last-child { margin-bottom: 0; }
-  .cost { color: var(--t-faint); font-size: .93rem; }
-  strong { color: var(--t-ink); font-weight: 650; }
 </style>

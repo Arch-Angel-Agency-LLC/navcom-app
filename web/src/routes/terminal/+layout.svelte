@@ -8,6 +8,7 @@
    * dead weight in a bundle sized for a prepaid Android 8.
    */
   import '$lib/terminal/tokens.css';
+  import '$lib/terminal/screen.css';
   let { children } = $props();
 </script>
 

@@ -12,12 +12,15 @@
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "daemon": "tsx src/daemon/index.ts",
     "cli": "tsx src/client/index.ts",
+    "core": "npm --prefix ../core run build",
+    "daemon": "tsx src/daemon/index.ts",
+    "lint": "eslint src test",
+    "prebuild": "npm run core",
+    "pretest": "npm run core",
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit -p tsconfig.json",
-    "lint": "eslint src test",
     "verify": "npm run typecheck && npm test"
   },
   "dependencies": {

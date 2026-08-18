@@ -156,9 +156,11 @@ program
   .description("Request assistance")
   .option("--text <text>", "details")
   .option("--area <area>", "coarse area")
+  .option("--now", "urgency: now (default is soon)")
   .action(async (opts) => {
     await withClient(program.opts(), async ({ pool, config, secretKey, pubkey }) => {
       const payload: AssistPayload = {
+        urgency: opts.now ? "now" : "soon",
         ...(opts.text ? { text: opts.text } : {}),
         ...(opts.area ? { area: opts.area } : {})
       };

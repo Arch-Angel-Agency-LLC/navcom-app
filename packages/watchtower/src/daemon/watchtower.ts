@@ -6,6 +6,7 @@ import { encryptPayload, decryptPayload } from "../shared/crypto.js";
 import { WATCH_STATE_VERSION } from "@navcom/core";
 import { KIND_WATCH_STATE, KIND_SIGNAL, KIND_DISTRESS, KIND_RESPONSE } from "../shared/kinds.js";
 import type {
+  AssistPayload,
   QueryPayload,
   ResponsePayload,
   SignalType,
@@ -250,6 +251,16 @@ export class WatchtowerDaemon {
         }
         case "assist": {
           this.board.touch(event.pubkey, now());
+          // Urgency is the whole point of an assist and must reach whoever holds watch.
+          // "soon" and "now" ask for different responses, and an ack that swallows the
+          // difference makes them look identical on the board.
+          const assist = payload as AssistPayload;
+          const entry = this.board.get(event.pubkey);
+          console.log(
+            `[assist] ${entry?.callsign ?? event.pubkey.slice(0, 8)} ` +
+              `urgency=${assist.urgency === "now" ? "NOW" : "soon"}` +
+              (assist.text ? ` — ${assist.text}` : ""),
+          );
           response = this.ack();
           break;
         }

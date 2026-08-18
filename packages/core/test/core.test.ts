@@ -6,6 +6,7 @@ import { open, seal } from '../src/crypto/envelope';
 import { buildWatchStateEvent, capabilitySentence, darkState, pageableNow, publishableWatchState, readWatchState, WATCH_STATE_VERSION } from '../src/events/watch-state';
 import { readWatchStateAt } from '../src/events/watch-state';
 import { appendEntry, entriesAbout, verifyChain } from '../src/log';
+import { sendDistressUntilAcknowledged } from '../src/transport';
 import { buildDistress, buildSignal, RESPONSE_WINDOW } from '../src/events/signal';
 import { isUnverified, type ResponsePayload } from '../src/events/response';
 import { KIND_DISTRESS, KIND_RESPONSE, KIND_SIGNAL, KIND_WATCH_STATE, isEphemeral, readTag } from '../src/events/kinds';
@@ -346,5 +347,151 @@ describe('a replaceable event outlives the daemon that published it', () => {
     const r = readWatchStateAt(live, { now: NOW_S });
     expect(r.dark).toBe(true);
     expect(r.reason).toBe('stale');
+  });
+});
+
+describe('distress keeps trying until a human acknowledges', () => {
+  // The spec requires retry with backoff, indefinitely. It is what makes an ephemeral
+  // transport acceptable for the one signal that matters: relays do not store these events,
+  // so a single failed publish is a signal nobody ever receives.
+  const secret = newSecretKey();
+  const wt = newSecretKey();
+  const watchtower = publicKeyOf(wt);
+  const ourPubkey = publicKeyOf(secret);
+  const payload = { position: null, area: 'north side' };
+
+  function fakePool(behaviour: {
+    publishFails?: number;
+    ackOnAttempt?: number;
+    /** Attempts on which an *agent* answers. An agent answer is not closure [invariant 5]. */
+    agentOnAttempts?: number[];
+    /** Answers with no responder kind at all — a broken responder, treated as not-human. */
+    facelessOnAttempts?: number[];
+  }) {
+    let publishes = 0;
+    const subs: ((e: unknown) => void)[] = [];
+    return {
+      publish(relays: string[]) {
+        publishes++;
+        const failing = publishes <= (behaviour.publishFails ?? 0);
+        return relays.map(() => (failing ? Promise.reject(new Error('relay refused')) : Promise.resolve('ok')));
+      },
+      subscribeMany(_r: string[], _f: unknown, params: { onevent(e: unknown): void }) {
+        const agent = behaviour.agentOnAttempts?.includes(publishes);
+        const faceless = behaviour.facelessOnAttempts?.includes(publishes);
+        if (publishes === behaviour.ackOnAttempt || agent || faceless) {
+          const responder = faceless
+            ? undefined
+            : agent
+              ? { kind: 'agent' as const, callsign: 'Mecha Jono' }
+              : { kind: 'human' as const, callsign: 'Wren' };
+          queueMicrotask(() =>
+            params.onevent({
+              content: seal(wt, ourPubkey, {
+                type: 'ack',
+                responder,
+                text: null,
+                provenance: null
+              })
+            })
+          );
+        }
+        subs.push(params.onevent);
+        return { close() {} };
+      },
+      close() {},
+      get publishes() { return publishes; }
+    };
+  }
+
+  const noSleep = async () => {};
+
+  it('an agent answering is not closure — the loop keeps going until a human does', async () => {
+    // Invariant 2: Distress terminates in a human, or tells the operator it could not.
+    // Invariant 5: an agent is never the sole responder. An agent ack that stopped the
+    // retries would satisfy neither, while looking on screen exactly like help arriving.
+    const pool = fakePool({ agentOnAttempts: [1, 2], ackOnAttempt: 3 });
+    const phases: string[] = [];
+    const res = await sendDistressUntilAcknowledged(
+      pool as never, ['wss://r'], secret, ourPubkey, watchtower, payload,
+      { ackWindowMs: 50, sleep: noSleep, onPhase: (p) => phases.push(p.phase) }
+    );
+
+    expect(phases.filter((p) => p === 'agent-holding')).toHaveLength(2);
+    expect(phases.filter((p) => p === 'acknowledged')).toHaveLength(1);
+    // The agent answers are reported, so the operator knows the signal is getting through —
+    // they are just not the end of it.
+    expect(phases.indexOf('acknowledged')).toBeGreaterThan(phases.lastIndexOf('agent-holding'));
+    expect(res.responder?.kind).toBe('human');
+  });
+
+  it('a response with no responder kind is not treated as a human', async () => {
+    // The spec makes responder.kind mandatory, so an absent one is a broken responder.
+    // Guessing "human" there is the one wrong guess this loop must never make.
+    const pool = fakePool({ facelessOnAttempts: [1], ackOnAttempt: 2 });
+    const phases: string[] = [];
+    const res = await sendDistressUntilAcknowledged(
+      pool as never, ['wss://r'], secret, ourPubkey, watchtower, payload,
+      { ackWindowMs: 50, sleep: noSleep, onPhase: (p) => phases.push(p.phase) }
+    );
+    expect(phases.filter((p) => p === 'agent-holding')).toHaveLength(1);
+    expect(res.responder?.kind).toBe('human');
+  });
+
+  it('reports every attempt, and stops only when acknowledged', async () => {
+    const pool = fakePool({ ackOnAttempt: 3 });
+    const phases: string[] = [];
+    const res = await sendDistressUntilAcknowledged(
+      pool as never, ['wss://r'], secret, ourPubkey, watchtower, payload,
+      { ackWindowMs: 50, sleep: noSleep, onPhase: (p) => phases.push(p.phase) }
+    );
+    expect(res.type).toBe('ack');
+    expect(phases).toContain('acknowledged');
+    // Two unanswered rounds before the one that landed.
+    expect(phases.filter((p) => p === 'no-answer')).toHaveLength(2);
+  });
+
+  it('distinguishes "never left the device" from "no answer"', async () => {
+    const pool = fakePool({ publishFails: 2, ackOnAttempt: 3 });
+    const phases: string[] = [];
+    await sendDistressUntilAcknowledged(
+      pool as never, ['wss://r'], secret, ourPubkey, watchtower, payload,
+      { ackWindowMs: 50, sleep: noSleep, onPhase: (p) => phases.push(p.phase) }
+    );
+    // The first two never reached a relay — a different emergency from being ignored, and
+    // reporting the wrong one sends an operator looking in the wrong place.
+    expect(phases.filter((p) => p === 'unreachable')).toHaveLength(2);
+    expect(phases).toContain('acknowledged');
+  });
+
+  it('never gives up on its own', async () => {
+    const pool = fakePool({ ackOnAttempt: 99 });
+    const controller = new AbortController();
+    let attempts = 0;
+    const run = sendDistressUntilAcknowledged(
+      pool as never, ['wss://r'], secret, ourPubkey, watchtower, payload,
+      {
+        ackWindowMs: 5,
+        sleep: async () => { if (++attempts >= 25) controller.abort(); },
+        signal: controller.signal
+      }
+    );
+    // It only stops because the operator aborted — never because it decided to.
+    await expect(run).rejects.toThrow(/cancelled by the operator/);
+    expect(attempts).toBeGreaterThanOrEqual(25);
+  });
+
+  it('backs off, and caps', async () => {
+    const pool = fakePool({ ackOnAttempt: 99 });
+    const waits: number[] = [];
+    const controller = new AbortController();
+    await sendDistressUntilAcknowledged(
+      pool as never, ['wss://r'], secret, ourPubkey, watchtower, payload,
+      {
+        ackWindowMs: 1, backoffMs: 100, maxBackoffMs: 400, signal: controller.signal,
+        sleep: async (ms) => { waits.push(ms); if (waits.length >= 6) controller.abort(); }
+      }
+    ).catch(() => {});
+    expect(waits.slice(0, 4)).toEqual([100, 200, 400, 400]);
   });
 });

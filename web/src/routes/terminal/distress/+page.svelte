@@ -1,0 +1,184 @@
+<script lang="ts">
+  /**
+   * Distress.
+   *
+   * Three rules shape this screen and none of them are negotiable:
+   *
+   *  - It is **always deliberate** [invariant 3]. Nothing here fires on a timer, a missed
+   *    window or inactivity, which is why sending is a hold rather than a tap.
+   *  - It **terminates in a human, or says it could not** [invariant 2]. Every attempt is
+   *    on screen, including the ones that never left the phone.
+   *  - An agent is **never the sole responder** [invariant 5]. An agent answering is shown
+   *    as "getting through", not as help.
+   */
+  import { onDestroy } from 'svelte';
+  import { operator } from '$lib/terminal/session.svelte';
+
+  const HOLD_MS = 1200;
+
+  let text = $state('');
+  let holdStart = $state<number | null>(null);
+  let progress = $state(0);
+  let frame: number | null = null;
+
+  const phases = $derived(operator.distress);
+  const acknowledged = $derived(
+    phases.find((p) => p.phase === 'acknowledged') as
+      | Extract<(typeof phases)[number], { phase: 'acknowledged' }>
+      | undefined
+  );
+
+  function tick() {
+    if (holdStart === null) return;
+    progress = Math.min((Date.now() - holdStart) / HOLD_MS, 1);
+    if (progress >= 1) {
+      release(true);
+      return;
+    }
+    frame = requestAnimationFrame(tick);
+  }
+
+  function press() {
+    if (operator.distressRunning) return;
+    holdStart = Date.now();
+    frame = requestAnimationFrame(tick);
+  }
+
+  function release(complete = false) {
+    if (frame !== null) cancelAnimationFrame(frame);
+    frame = null;
+    holdStart = null;
+    progress = 0;
+    if (complete) operator.raiseDistress(text.trim());
+  }
+
+  onDestroy(() => {
+    if (frame !== null) cancelAnimationFrame(frame);
+    // Deliberately does NOT cancel a running Distress. Navigating away is not standing down,
+    // and the send outlives this screen.
+  });
+
+  function describe(p: (typeof phases)[number]): string {
+    switch (p.phase) {
+      case 'sending': return `Attempt ${p.attempt} — sending`;
+      case 'sent': return `Attempt ${p.attempt} — left the phone`;
+      case 'unreachable': return `Attempt ${p.attempt} — never left the phone: ${p.error}`;
+      case 'no-answer': return `Attempt ${p.attempt} — sent, no answer`;
+      case 'agent-holding': return `Attempt ${p.attempt} — an agent answered. Still looking for a human`;
+      case 'acknowledged': return `${p.response.responder?.callsign ?? 'A human'} has it`;
+    }
+  }
+</script>
+
+<svelte:head>
+  <title>Distress · Field Terminal</title>
+  <meta name="description" content="Raise distress." />
+</svelte:head>
+
+<header>
+  <p class="eyebrow"><a href="/terminal/">← Status</a></p>
+  <h1>Distress</h1>
+</header>
+
+{#if !operator.distressRunning && phases.length === 0}
+  <section>
+    <p>
+      This wakes people up. It keeps sending until a human answers — <strong>not an
+      agent</strong> — and only you can stop it.
+    </p>
+    <label for="d">Anything you can say <span class="opt">optional</span></label>
+    <textarea id="d" bind:value={text} placeholder="two of them, heading east"></textarea>
+  </section>
+
+  <!-- A hold rather than a tap: fast enough under stress, hard to do by accident in a pocket. -->
+  <button
+    class="raise"
+    style="--fill: {progress * 100}%"
+    onpointerdown={press}
+    onpointerup={() => release()}
+    onpointerleave={() => release()}
+    onpointercancel={() => release()}
+  >
+    <span>{progress > 0 ? 'Keep holding…' : 'Hold to send'}</span>
+  </button>
+{/if}
+
+{#if phases.length > 0}
+  <section
+    class="live"
+    class:acked={!!acknowledged}
+    data-distress={acknowledged ? 'acknowledged' : operator.distressRunning ? 'running' : 'stopped'}
+  >
+    <h2>{acknowledged ? 'Answered' : operator.distressRunning ? 'Sending' : 'Stopped'}</h2>
+    <ol>
+      {#each phases as p, i (i)}
+        <li class={p.phase}>{describe(p)}</li>
+      {/each}
+    </ol>
+  </section>
+
+  {#if acknowledged}
+    <section class="answered">
+      <p><strong>{acknowledged.response.responder?.callsign ?? 'A human'}</strong> has it.</p>
+      {#if acknowledged.response.text}<p>{acknowledged.response.text}</p>{/if}
+    </section>
+  {:else if operator.distressRunning}
+    <section>
+      <p class="cost">
+        Still going. It will not stop on its own — if nothing is answering, that is what the
+        list above is telling you, and it is worth acting on directly.
+      </p>
+      <button class="stand-down" onclick={() => operator.standDownDistress()}>
+        Stand down — I am safe
+      </button>
+    </section>
+  {:else}
+    <section>
+      <p class="error" data-stopped>
+        <strong>Stopped without a human.</strong> Nobody acknowledged this. Nothing is
+        still trying.
+      </p>
+      <button class="raise small" onclick={() => operator.raiseDistress(text.trim())}>
+        Send again
+      </button>
+    </section>
+  {/if}
+{/if}
+
+{#if operator.error}
+  <p class="error">{operator.error}</p>
+{/if}
+
+<style>
+  .opt { color: var(--t-faint); font-size: .8rem; }
+  textarea { margin-top: .4rem; }
+
+  .raise {
+    position: relative; overflow: hidden;
+    min-height: 6rem; font-size: 1.3rem; letter-spacing: .04em;
+    border-color: var(--t-dark); color: var(--t-dark); background: var(--t-sunk);
+    text-transform: uppercase; touch-action: none; user-select: none;
+  }
+  .raise.small { min-height: 3.5rem; font-size: 1.05rem; }
+  /* Fills as the hold completes, so the operator can see how much longer to press. */
+  .raise::before {
+    content: ''; position: absolute; inset: 0 auto 0 0; width: var(--fill, 0%);
+    background: var(--t-dark); opacity: .28;
+  }
+  .raise span { position: relative; }
+
+  .live { border: 2px solid var(--t-dark); padding: 1rem; }
+  .live.acked { border-color: var(--t-station); }
+  ol {
+    list-style: none; margin: 0; padding: 0;
+    display: flex; flex-direction: column; gap: .35rem;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .88rem;
+    color: var(--t-muted); line-height: 1.4;
+  }
+  li.unreachable { color: var(--t-dark); }
+  li.agent-holding { color: var(--t-oncall); }
+  li.acknowledged { color: var(--t-station); font-size: 1rem; }
+
+  .answered p { color: var(--t-ink); font-size: 1.1rem; }
+  .stand-down { margin-top: .6rem; width: 100%; }
+</style>

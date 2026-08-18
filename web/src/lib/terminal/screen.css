@@ -1,0 +1,52 @@
+/*
+ * Shared furniture for terminal screens.
+ *
+ * Every screen has a header, some prose, usually a form and sometimes an error. Those were
+ * being restated per route, which is how two screens end up with different input heights
+ * and an operator learns the terminal twice.
+ *
+ * Scoped under .terminal so nothing here can reach the public site.
+ */
+
+.terminal header { display: flex; flex-direction: column; gap: .2rem; }
+
+.terminal .eyebrow {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: .72rem; letter-spacing: .16em; text-transform: uppercase;
+  color: var(--t-faint); margin: 0;
+}
+.terminal .eyebrow a { color: var(--t-faint); text-decoration: none; }
+
+.terminal h1 { font-size: 1.7rem; margin: 0; letter-spacing: -.01em; }
+.terminal h2 {
+  font-size: .78rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
+  color: var(--t-faint); margin: 0 0 .5rem;
+}
+
+.terminal section { display: flex; flex-direction: column; }
+.terminal section p { margin: 0 0 .6rem; color: var(--t-muted); line-height: 1.55; }
+.terminal section p:last-child { margin-bottom: 0; }
+.terminal strong { color: var(--t-ink); font-weight: 650; }
+
+.terminal form { display: flex; flex-direction: column; gap: .5rem; }
+.terminal label { font-size: .9rem; color: var(--t-muted); }
+.terminal input,
+.terminal textarea,
+.terminal select {
+  background: var(--t-sunk); border: 2px solid var(--t-line-strong); color: var(--t-ink);
+  font: inherit; font-size: 1rem; padding: .8rem; border-radius: 2px; min-height: 3.2rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  width: 100%;
+}
+.terminal textarea { min-height: 5rem; }
+
+.terminal .note { font-size: .9rem; color: var(--t-faint); margin: 0 0 .3rem; line-height: 1.5; }
+.terminal .cost { color: var(--t-faint); font-size: .93rem; }
+
+/* Failures are told plainly. A signal that did not send must never look like one that did. */
+.terminal .error {
+  color: var(--t-dark); border: 2px solid var(--t-dark); padding: .7rem .9rem; margin: 0;
+  line-height: 1.5;
+}
+
+.terminal button[disabled] { opacity: .55; cursor: default; }
