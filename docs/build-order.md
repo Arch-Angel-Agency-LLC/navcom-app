@@ -97,12 +97,36 @@ but in its own route group so it inherits none of the site's chrome, stylesheet 
 assumptions. It renders Dark before anything is configured, which is the correct answer
 rather than a placeholder, and states the consequence rather than the label.
 
+**Authorship is explicit in the wire format.** `oncall` is a list of authored declarations
+rather than a count the node picks; `last_drill` carries an author and an acknowledgements
+array; a `20912` names its responder as an author; accountability entries are hash-chained.
+None of it requires counter-signing to ship, and all of it makes counter-signing additive
+rather than a payload break across three clients and a node.
+
 **Two budgets, and the split is enforced.** The public site delivers **zero** JavaScript
 against a budget of zero — it fails on the first byte, because a document must stay readable
 with scripting off. The terminal is an application and gets 140 kB; it currently uses 36.4.
 
 Remaining screens once the protocol has stopped moving. UI built against an unproven
 payload gets rewritten when the payload changes, which is the whole reason for the gate.
+
+## Gated on opening past people you personally vetted
+
+**Counter-signed capability.** On-call operators declare their own reachability, drills
+carry acknowledgement signatures from whoever woke up, and log entries are counter-signed by
+their subjects. The slots exist and are empty; this fills them.
+
+The gate is honest rather than arbitrary. While the circle is people you trust directly, the
+node's own account of itself is adequate. The moment the pubkey goes wider, a Watchtower
+that vouches for itself is exactly the claim a compromised one has most reason to make.
+
+**Redundant escalation executors.** More than one box able to run the ladder, made
+idempotent by distress event id. Duplicate pages are a nuisance; a single executor dying
+mid-`Distress` is not. Paging is already specified as parallel rather than serial for the
+same reason — in an emergency you want everyone.
+
+This is ranked above decentralising the board on purpose: **a watch going Dark is
+survivable and specified. An escalation that never fires is not.**
 
 ## Gated on the Field Terminal
 
@@ -123,8 +147,19 @@ deferred.
 
 ## Not started, and not to be started
 
-Endorsements, presets, funding, propagation mechanics, recovery, allied interop, a second
-Watchtower, RelayNode, Mission Package ingestion.
+Endorsements, presets, funding, propagation mechanics, recovery, allied interop, RelayNode,
+Mission Package ingestion.
+
+**A multi-holder Watchtower** — signals sealed to a set of keys rather than one, so several
+nodes hold the same board — is a real option rather than an impossibility, and the earlier
+claim that "the watch cannot be decentralised" was wrong. What cannot be distributed is
+*who is accountable*: one name, because diffused responsibility means nobody acts. The board,
+query answering and escalation can all be held by more than one party.
+
+It is deferred on a cost rather than a principle. Sealing to M keys means M parties hold the
+operational picture, and the threat model here is doxxing — so decentralising the board
+widens exposure while narrowing dependence. That trade needs a reason, and one box run by
+one person for a handful of people they trust is not yet it.
 
 Each is designed. None is scope. A spec written before the loop is proven is a guess in a
 more confident format — [`spec/README.md`](spec/README.md) says so about itself.

@@ -3,7 +3,8 @@ import { describe, expect, it } from 'vitest';
 import { deriveWeight, ageInDays, known, unknown } from '../src/attestation';
 import { newSecretKey, publicKeyOf, secretFromHex, secretToHex } from '../src/crypto/keys';
 import { open, seal } from '../src/crypto/envelope';
-import { buildWatchStateEvent, capabilitySentence, darkState, publishableWatchState, readWatchState } from '../src/events/watch-state';
+import { buildWatchStateEvent, capabilitySentence, darkState, pageableNow, publishableWatchState, readWatchState, WATCH_STATE_VERSION } from '../src/events/watch-state';
+import { appendEntry, entriesAbout, verifyChain } from '../src/log';
 import { buildDistress, buildSignal, RESPONSE_WINDOW } from '../src/events/signal';
 import { isUnverified, type ResponsePayload } from '../src/events/response';
 import { KIND_DISTRESS, KIND_RESPONSE, KIND_SIGNAL, KIND_WATCH_STATE, isEphemeral, readTag } from '../src/events/kinds';
@@ -79,10 +80,15 @@ describe('keys and envelope', () => {
 });
 
 describe('watch state — what may honestly be published', () => {
+    const NODE = { kind: 'node' as const, callsign: 'watchtower' };
+  const onCall = (channel: 'sms' | 'console-open', mins = 60) => ({
+    author: NODE, channel, expires: NOW_S + mins * 60
+  });
   const base = {
     state: 'automated-oncall' as const, holder: 'Mecha Jono', holder_kind: 'agent' as const,
-    pageableOnCall: 2, since: NOW_S, agent_health: 'ok' as const,
-    last_drill: { at: NOW_S - 86400, result: 'pass' as const }
+    oncall: [onCall('sms'), onCall('sms')], since: NOW_S, agent_health: 'ok' as const,
+    last_drill: { at: NOW_S - 86400, result: 'pass' as const, author: NODE, acknowledged: [] },
+    now: NOW_S
   };
 
   it('publishes automated-oncall when the ladder is proven and reachable', () => {
@@ -90,16 +96,16 @@ describe('watch state — what may honestly be published', () => {
   });
 
   it('demotes to automated when nobody is pageable right now', () => {
-    expect(publishableWatchState({ ...base, pageableOnCall: 0 }).state).toBe('automated');
+    expect(publishableWatchState({ ...base, oncall: [] }).state).toBe('automated');
   });
 
   it('demotes to automated when no drill has ever passed', () => {
     expect(publishableWatchState({ ...base, last_drill: null }).state).toBe('automated');
-    expect(publishableWatchState({ ...base, last_drill: { at: 1, result: 'fail' } }).state).toBe('automated');
+    expect(publishableWatchState({ ...base, last_drill: { at: 1, result: 'fail', author: NODE, acknowledged: [] } }).state).toBe('automated');
   });
 
   it('never demotes station — a human is present regardless of drills', () => {
-    const s = publishableWatchState({ ...base, state: 'station', holder_kind: 'human', last_drill: null, pageableOnCall: 0 });
+    const s = publishableWatchState({ ...base, state: 'station', holder_kind: 'human', last_drill: null, oncall: [] });
     expect(s.state).toBe('station');
   });
 
@@ -112,7 +118,7 @@ describe('watch state — what may honestly be published', () => {
 
   it('tells an operator the consequence, not the label', () => {
     expect(capabilitySentence(publishableWatchState(base))).toMatch(/2 on-call, reachable now/);
-    expect(capabilitySentence(publishableWatchState({ ...base, pageableOnCall: 0 })))
+    expect(capabilitySentence(publishableWatchState({ ...base, oncall: [] })))
       .toMatch(/page nobody and tell you so/);
     expect(capabilitySentence(darkState())).toMatch(/No watch/);
   });
@@ -152,7 +158,10 @@ describe('signals', () => {
 
 describe('responses', () => {
   const answer = (provenance: ResponsePayload['provenance']): ResponsePayload => ({
-    type: 'answer', responder: 'Raven', responder_kind: 'human', text: 'Open until 22:00', provenance
+    type: 'answer',
+    responder: { kind: 'human', callsign: 'Raven' },
+    text: 'Open until 22:00',
+    provenance
   });
 
   it('an answer without provenance must render unverified', () => {
@@ -217,5 +226,84 @@ describe('kinds', () => {
     expect(isEphemeral(KIND_DISTRESS)).toBe(true);
     expect(isEphemeral(KIND_RESPONSE)).toBe(true);
     expect(isEphemeral(KIND_WATCH_STATE)).toBe(false);
+  });
+});
+
+describe('on-call is a list of statements, not a number', () => {
+  const NODE2 = { kind: 'node' as const, callsign: 'watchtower' };
+  const decl = (channel: 'sms' | 'console-open', expiresIn: number) => ({
+    author: NODE2, channel, expires: NOW_S + expiresIn
+  });
+
+  it('drops expired declarations — a stale one is not a person who will wake', () => {
+    expect(pageableNow([decl('sms', -60), decl('sms', 600)], NOW_S)).toHaveLength(2 - 1);
+  });
+
+  it('treats a console-open-only roster as empty, and the state says so', () => {
+    expect(pageableNow([decl('console-open', 600)], NOW_S)).toHaveLength(0);
+  });
+
+  it('keeps console-open when someone else is genuinely reachable', () => {
+    expect(pageableNow([decl('console-open', 600), decl('sms', 600)], NOW_S)).toHaveLength(2);
+  });
+
+  it('publishes only the reachable, so the count cannot exceed the evidence', () => {
+    const s = publishableWatchState({
+      state: 'automated-oncall', holder: null, holder_kind: 'agent',
+      oncall: [decl('sms', 600), decl('sms', -1)], since: NOW_S, agent_health: 'ok',
+      last_drill: { at: NOW_S, result: 'pass', author: NODE2, acknowledged: [] }, now: NOW_S
+    });
+    expect(s.oncall).toHaveLength(1);
+  });
+
+  it('carries a version so a consumer can notice the shape changed', () => {
+    expect(darkState().v).toBe(WATCH_STATE_VERSION);
+    expect(readWatchState('{"state":"automated"}').v).toBe(1);
+  });
+});
+
+describe('the accountability log', () => {
+  const actor = { kind: 'human' as const, callsign: 'Raven' };
+  const entry = (outcome: string) => ({
+    at: NOW_S, actor, action: 'acked' as const, subject: 'Wren', outcome
+  });
+
+  it('chains each entry to the one before it', () => {
+    let log = appendEntry([], entry('acknowledged sign-on'));
+    log = appendEntry(log, entry('answered query'));
+    expect(log[0].prev).toBeNull();
+    expect(log[1].prev).toBe(log[0].hash);
+    expect(verifyChain(log).intact).toBe(true);
+  });
+
+  it('detects an entry edited after the fact', () => {
+    let log = appendEntry([], entry('acknowledged sign-on'));
+    log = appendEntry(log, entry('answered query'));
+    const tampered = [...log];
+    tampered[0] = { ...tampered[0], outcome: 'something more flattering' };
+    const check = verifyChain(tampered);
+    expect(check.intact).toBe(false);
+    expect(check.brokenAt).toBe(0);
+  });
+
+  it('detects a removed entry', () => {
+    let log = appendEntry([], entry('a'));
+    log = appendEntry(log, entry('b'));
+    log = appendEntry(log, entry('c'));
+    expect(verifyChain([log[0], log[2]]).intact).toBe(false);
+  });
+
+  it('does NOT detect a false entry written at the time', () => {
+    // Honest limit. Chaining closes tampering; only a counter-signature by the subject
+    // closes fabrication, and nothing counter-signs yet.
+    const log = appendEntry([], entry('contacted the operator, all fine'));
+    expect(verifyChain(log).intact).toBe(true);
+    expect(log[0].countersig).toBeUndefined();
+  });
+
+  it('shows an operator only what concerns them', () => {
+    let log = appendEntry([], entry('x'));
+    log = appendEntry(log, { ...entry('y'), subject: 'Someone else' });
+    expect(entriesAbout(log, 'Wren')).toHaveLength(1);
   });
 });

@@ -6,4 +6,5 @@ export * from './events/watch-state';
 export * from './events/signal';
 export * from './events/response';
 export * from './board';
+export * from './log';
 export * from './directory';

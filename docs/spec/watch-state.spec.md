@@ -9,31 +9,55 @@ before signing on [C23, invariant 4].
 
 ```json
 {
+  "v": 2,
   "state": "station | automated-oncall | automated | dark",
   "holder": "callsign | null",
   "holder_kind": "human | agent | null",
-  "oncall_count": 2,
+  "oncall": [
+    { "author": { "kind": "human", "callsign": "Wren" },
+      "channel": "sms", "expires": 1755310000, "sig": "hex | absent" }
+  ],
   "since": 1755300000,
   "agent_health": "ok | degraded | down",
-  "last_drill": { "at": 1755300000, "result": "pass | fail" }
+  "last_drill": {
+    "at": 1755300000, "result": "pass | fail",
+    "author": { "kind": "node" }, "acknowledged": []
+  }
 }
 ```
 
 - `holder_kind` MUST be accurate. An agent MUST NOT be published as `human` [C25]
-- `agent_health: degraded` MUST NOT be published as `ok`. A degraded agent presenting as
-  working is the failure this field exists to prevent
-- **`oncall_count` MUST count only operators the ladder could page right now.** An
-  operator whose sole channel is `console-open` with no console open is not counted
-  [C40]. When the count is zero the state MUST be `automated`, never `automated-oncall` —
-  publishing an on-call human the ladder cannot reach is the same class of failure as
-  publishing an agent as a human [C23, invariant 4]
-- **`last_drill` MUST reflect the most recent escalation drill** [C29], and is `null` when
-  none has run. A failed or absent drill means the escalation path is unproven, so
-  `automated-oncall` MUST be published as `automated` until a drill passes — the on-call
-  claim is exactly what a drill tests. `station` is unaffected, because a human is
-  genuinely present regardless of drill state
-- When the node is unreachable, clients render **`dark`** — absence of the event is not
-  ambiguity, it is Dark
+- `agent_health: degraded` MUST NOT be published as `ok`
+- When the node is unreachable, clients render **`dark`** — absence is not ambiguity, it is Dark
+
+### On-call is a list of statements, not a count
+
+**`oncall` is an array of authored declarations, and the count is derived from its length.**
+A number can be inflated by whoever publishes it; a list of signed statements can only be
+inflated by forging keys, so a consumer counts evidence rather than trusting a total.
+
+- Only declarations that are **reachable right now** are published: unexpired, and not
+  `console-open` standing alone [C40]
+- When the reachable list is empty the state MUST be `automated`, never `automated-oncall`
+- A failed or absent drill also demotes `automated-oncall` to `automated` — the on-call
+  claim is exactly what a drill tests [C29]. `station` is never demoted: a human is present
+  regardless
+
+### The honest limit, stated in the spec rather than discovered later
+
+**Everything here is currently authored by the node, about the node.** `agents.md` says
+self-report grants nothing, and a Watchtower publishing its own capability is a self-report
+by that same standard.
+
+The shape does not assume it. `oncall[].sig` and `last_drill.acknowledged` exist and are
+empty, so operators signing for themselves is an **additive** change rather than a payload
+break. Until then, a consumer should read this as *what the Watchtower claims*, which is
+weaker than *what is true* — and is still worth publishing, because a contemporaneous signed
+claim makes a false one attributable.
+
+**Gate:** counter-signing ships before the Watchtower pubkey goes to anyone who has not been
+personally vetted. Inside a circle of people you trust directly, node self-report is
+adequate; the moment it isn't, the shape is already there.
 
 ## Board entries
 
@@ -115,7 +139,7 @@ The board is Live and expires. The accountability log is append-only and retaine
 records **actions, never positions**:
 
 ```
-timestamp · actor callsign · actor_kind · action · subject operator · outcome
+at · actor{kind, callsign} · action · subject · outcome · prev · hash · countersig?
 ```
 
 Actions: `took-watch`, `handed-over`, `acked`, `answered`, `marked-overdue`,
@@ -126,6 +150,23 @@ Actions: `took-watch`, `handed-over`, `acked`, `answered`, `marked-overdue`,
 - Retained 90 days by default, *configurable*
 - Agent actions logged including **inaction** — an overdue that passed without contact is
   an entry
+
+### The log is written by the party it holds accountable
+
+That is a real hole, not a quibble: [the Hostile Watch](../research/ecosystem-roster.md) is
+a named adversary whose stated mitigation is this log. A watch that can rewrite its own
+record defeats it.
+
+Two problems, closed separately and honestly:
+
+| | |
+|---|---|
+| **Tampering** — editing history afterwards | **Closed.** Each entry hashes its content plus the previous hash, so an edit anywhere breaks every link after it. An operator reviewing entries about themselves can verify the chain without trusting whoever wrote it |
+| **Fabrication** — a false entry written at the time | **Not closed.** Only `countersig` — the subject signing that this is what happened to them — closes it, and nothing counter-signs yet |
+
+The chain does not make a lie impossible and this spec does not pretend otherwise. Same gate
+as `oncall`: counter-signing ships before the Watchtower opens past people personally
+vetted.
 
 An operator reviewing a watch sees: *acknowledged your sign-on 21:04, answered your query
 22:41, no escalation.* Not a movement history.

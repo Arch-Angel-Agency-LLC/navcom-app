@@ -101,14 +101,13 @@ patterns on `20910`.
 ```json
 {
   "type": "ack | answer | escalation-status",
-  "responder": "callsign",
-  "responder_kind": "human | agent",
+  "responder": { "kind": "human | agent", "callsign": "...", "pubkey": "hex | absent" },
   "text": "string|null",
   "provenance": { "record_id": "...", "verified": "2026-08-14", "method": "in_person" }
 }
 ```
 
-- `responder_kind` MUST be present and accurate on every response [C25, invariant 5]
+- `responder.kind` MUST be present and accurate on every response [C25, invariant 5]
 - `provenance` MUST be present on any directory-derived answer [C32, H5]. An answer
   without provenance MUST render as unverified
 - Every signal MUST receive at least an `ack`. Silence is never a response

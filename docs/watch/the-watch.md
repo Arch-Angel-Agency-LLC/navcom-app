@@ -94,10 +94,20 @@ or
 The operator's device keeps it. Both sides hold the same record of what was and was not
 promised.
 
-This is not paperwork. It is the difference between *trust me* and *here is exactly what I
-can do, signed* — the same move as showing a directory field its age instead of asserting
-it is current. **An operator can check the thing behind them is real**, which is the one
-property a promise can never have.
+**What it proves, precisely.** The receipt is signed by the node, about the node — which is
+a self-report, and [`agents.md`](agents.md) says self-report grants nothing. So it does not
+establish that the watch is real. It establishes **what the Watchtower claimed, at that
+moment, in writing it cannot later deny.** A false claim becomes attributable and
+checkable-against-reality afterwards, rather than impossible.
+
+That is a smaller property than *proof* and it is still worth having: the alternative is a
+word like "Automated" and no record of what it was taken to mean.
+
+**What would make it evidence** is the party with the knowledge signing for themselves — an
+on-call operator declaring their own reachability rather than the node counting on their
+behalf. The payload already carries the slots for it. That ships before the Watchtower opens
+to anyone who has not been personally vetted; inside a circle you trust directly, the node's
+own account is adequate.
 
 A watch whose ladder is empty is still a watch worth signing on under — cached directory,
 playbooks, local logging, a duress fallback. What is never acceptable is not knowing.

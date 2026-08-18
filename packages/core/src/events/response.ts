@@ -8,6 +8,7 @@
 
 import { seal } from '../crypto/envelope';
 import type { SecretKey } from '../crypto/keys';
+import type { Author } from '../attestation';
 import { KIND_RESPONSE, tagInReplyTo, tagRecipient } from './kinds';
 
 export type ResponseType = 'ack' | 'answer' | 'escalation-status';
@@ -21,12 +22,19 @@ export interface Provenance {
 
 export interface ResponsePayload {
   type: ResponseType;
-  responder: string;
-  /** MUST be accurate. An operator must never be uncertain whether they are talking to a person. */
-  responder_kind: 'human' | 'agent';
+  /**
+   * Who answered — an author, not a name the node picked.
+   *
+   * `kind` MUST be accurate: an operator must never be uncertain whether they are talking
+   * to a person. Where `sig` is absent, the Watchtower is speaking on the responder's
+   * behalf, and a consumer may treat that as weaker than a signed answer.
+   */
+  responder: Author;
   text: string | null;
-  /** Present on any directory-derived answer. Absent means the client must render unverified. */
+  /** Present on any directory-derived answer. Absent means the client renders unverified. */
   provenance: Provenance | null;
+  /** Hex signature by `responder`, where they signed for themselves. */
+  sig?: string;
 }
 
 export function buildResponse(
