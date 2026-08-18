@@ -1,0 +1,8 @@
+{
+  "slug": "st-louis",
+  "name": "St. Louis metro",
+  "country": "US",
+  "timezone": "America/Chicago",
+  "languages": ["en", "es"],
+  "status": "seeded"
+}

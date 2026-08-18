@@ -35,8 +35,8 @@ Two tracks run in parallel, and only one of them is gated.
 
 ## Now
 
-**On the box.** Session 1: a daemon holding a board in memory, a CLI client, seven checks
-against a public relay. Definition of done in [`../CLAUDE.md`](../CLAUDE.md).
+**On the box.** Session 1 is **done — all seven definition-of-done checks pass** (confirmed
+2026-08-18). The gate below is open.
 
 **Here.** The `navcom.app` static site. It has **no dependency on the loop** — no protocol,
 no keys, no relay, no daemon — which is what makes it the correct parallel work rather
@@ -82,7 +82,7 @@ because it is cheap now and painful once several people are editing one file.
 
 **What is left before this is a real directory:** data. Everything else works.
 
-## Gated on session 1 passing
+## Unblocked — session 1 passed
 
 **Extract the shared core** — signal, crypto and board logic as one library. Before the
 first client, not after the second.
@@ -123,7 +123,6 @@ more confident format — [`spec/README.md`](spec/README.md) says so about itsel
 
 | | Blocks |
 |---|---|
-| **Which metro seeds the directory first** | The only thing between this and a usable directory |
 | Node service language for the box | Session 1 — TypeScript unless there's a reason |
 
 ## The seeding rule
