@@ -27,6 +27,13 @@
       Nothing here records anything about the people being served. This directory describes
       services, never recipients.
     </p>
+    <p class="quiet">
+      Maintained by volunteers. Every perishable fact shows its age, and &ldquo;call
+      first&rdquo; is a real answer rather than a missing one &mdash; please call ahead
+      before sending anyone anywhere. Data is
+      <a href="https://creativecommons.org/publicdomain/zero/1.0/" rel="noreferrer">CC0</a>:
+      free for anyone to use.
+    </p>
   </div>
 </footer>
 

@@ -1,0 +1,12 @@
+NavCom
+Copyright 2026 Archangel Agency
+
+This product includes software developed by Archangel Agency and contributors.
+
+The name "NavCom" is not licensed by the Apache License. Section 6 of that licence
+grants no trademark rights, and that is deliberate here rather than incidental: the
+name carries a promise about behaviour — that a Distress signal ends with a human or
+says it could not, that the directory shows its age instead of guessing. Fork the
+code freely. Call it something else.
+
+Three licences apply to different parts of this repository. See LICENSING.md.

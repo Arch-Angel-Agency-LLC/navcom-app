@@ -123,6 +123,23 @@ opening a pull request. Full guidance, including the rules that never bend, in
 The directory is readable by anyone at [navcom.app](https://navcom.app) — no account,
 nothing to install.
 
+## Licence
+
+Three, for three different things — [`LICENSING.md`](./LICENSING.md) explains why.
+
+| Code | Data | Docs |
+|---|---|---|
+| Apache-2.0 | CC0 1.0 | CC BY 4.0 |
+
+The directory data is public domain deliberately: a city, a 211 service or a mutual aid
+group should be able to use corrected listings with no friction. The name is not covered —
+"NavCom" is a claim about behaviour, so fork the code and call it something else.
+
+**Please read this before relying on the data.** It is maintained by volunteers and shows
+how old every perishable fact is, on purpose. When a check is too old to trust it says
+*call first* — a real answer, not a missing one. A blank means nobody established
+something, never that there is no restriction. Call ahead before sending anyone anywhere.
+
 ---
 
 A project of [Archangel Agency](https://archangel.agency).
