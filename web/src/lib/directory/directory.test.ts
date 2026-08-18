@@ -395,3 +395,12 @@ describe('regions', () => {
     expect(localTimeNote(parseRegion('berlin', { ...valid, timezone: 'UTC' }))).toBe('Times are UTC.');
   });
 });
+
+describe('the region template', () => {
+  it('ships an invalid manifest on purpose, so nobody deploys it unedited', () => {
+    const raw = JSON.parse(
+      readFileSync(fileURLToPath(new URL('../../../../data/regions/_template/region.json', import.meta.url)), 'utf8')
+    );
+    expect(() => parseRegion('_template', raw)).toThrow();
+  });
+});

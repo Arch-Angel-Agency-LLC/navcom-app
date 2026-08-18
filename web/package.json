@@ -11,7 +11,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "budget": "node scripts/budget.mjs",
-    "verify": "npm run check && npm run build && npm run test && npm run budget"
+    "verify": "npm run check && npm run check:data && npm run build && npm run test && npm run budget",
+    "check:data": "vite-node scripts/check-data.ts"
   },
   "devDependencies": {
     "@sveltejs/adapter-static": "^3.0.6",
@@ -24,6 +25,7 @@
     "svelte-check": "^4.0.0",
     "typescript": "^5.6.0",
     "vite": "^5.4.0",
-    "vitest": "^2.1.0"
+    "vitest": "^2.1.0",
+    "vite-node": "^2.1.0"
   }
 }

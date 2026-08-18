@@ -36,6 +36,15 @@ no locations of individuals, no medical details, no photographs. This directory 
 `warming` · `cooling` · `storage` · `legal` · `id_docs` · `mail` · `charging` ·
 `veterinary` · `youth` · `dv` (domestic violence) · `detox` · `daytime` (drop-in)
 
+**This list is Anglosphere-shaped, and that is a known limitation rather than a decision.**
+`warming` and `cooling` assume a temperate climate with a particular emergency-response
+model; `mail` assumes general-delivery services; `id_docs` assumes a documentation regime.
+Elsewhere the decisive categories may be water points, cash assistance, migration and asylum
+support, or family tracing.
+
+Extending it needs people with local knowledge — the same rule that governs the data, for
+the same reason. See [`../../CONTRIBUTING.md`](../../CONTRIBUTING.md).
+
 ---
 
 ## 2. Intake rules
@@ -171,8 +180,13 @@ in one city and wrong the moment there are two. Shape in
 
 Everything in §2 is different. `sobriety`, `pets`, `id_required`, `referral_required`,
 `sex_offender_ok`, `reports_to`, `curfew` and `belongings` are the fields this directory exists for, and
-they are missing from official listings *precisely because nobody maintains them*. They
-start `unknown` and stay `unknown` until a human with local knowledge verifies them.
+they are missing from official listings *precisely because nobody maintains them*.
+
+They may be recorded **if the service published them** — a site that states "no pets" is
+evidence, and `method: website` already marks it low-confidence and visibly seeded. They may
+never be recorded because they seemed likely. Nothing in a CSV distinguishes a published
+policy from an inference, which is why `npm run check:data` warns on every intake rule
+carrying `method: website` and asks a person to confirm which it was.
 
 A plausible guess in those fields looks like data, reads as authoritative, and sends
 someone somewhere that turns them away. That is the failure this entire schema is shaped

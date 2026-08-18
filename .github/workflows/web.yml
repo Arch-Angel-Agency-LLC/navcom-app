@@ -33,8 +33,9 @@ jobs:
 
       - run: npm ci
 
-      # Type check, build, tests (unit + against the built HTML), bundle budget.
-      # The budget fails the job rather than warning: the device floor is a real target.
+      # Type check, data check, build, tests (unit + against the built HTML), bundle budget.
+      # The budget fails the job rather than warning: the device floor is a real target,
+      # and the data check fails it rather than letting an invalid region reach a deploy.
       - run: npm run verify
 
       - uses: actions/upload-artifact@v4

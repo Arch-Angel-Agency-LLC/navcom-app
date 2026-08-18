@@ -111,6 +111,18 @@ Before proposing anything, read [`docs/research/lore.md`](./docs/research/lore.m
 explains why this isn't shaped like the software you're used to, and what happens if
 someone "fixes" that.
 
+## Contributing
+
+**The most valuable contribution is local knowledge, not code.** If you know which listing
+is wrong, that is the thing this project needs — the engineering is the easy 20%.
+
+Entries live in `data/regions/<region>/resources.csv`. Run `npm run check:data` before
+opening a pull request. Full guidance, including the rules that never bend, in
+[`CONTRIBUTING.md`](./CONTRIBUTING.md).
+
+The directory is readable by anyone at [navcom.app](https://navcom.app) — no account,
+nothing to install.
+
 ---
 
 A project of [Archangel Agency](https://archangel.agency).

@@ -1,0 +1,8 @@
+{
+  "slug": "CHANGE-ME",
+  "name": "Local name, in the local language",
+  "country": "XX",
+  "timezone": "Area/City",
+  "languages": ["xx"],
+  "status": "seeded"
+}

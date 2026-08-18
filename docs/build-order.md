@@ -51,7 +51,8 @@ than a distraction from the build order.
 | A5 | Status page — says *"escalation not built, no drills run"* until it isn't | **done** |
 | A6 | Deploy — Vercel, static, at `navcom.app` | **done** |
 
-`npm run verify` in `web/` runs tests, build and budget together.
+`npm run verify` in `web/` runs type-check, data check, build, tests and budget together.
+`npm run check:data` alone answers "is my CSV edit valid" in about a second.
 
 **Measured:** 37 pages, worst page 8.0 kB gzipped, **zero JavaScript delivered** — every
 page works with scripting disabled. Budget is enforced by `web/scripts/budget.mjs`, which
