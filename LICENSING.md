@@ -49,10 +49,49 @@ So, in plain language and not in legal language:
 > answer, not a missing one. A blank means nobody has established something, never that
 > there is no restriction. Please call ahead before sending anyone anywhere.**
 
+## There is no organisation behind this
+
+NavCom is not a business, not a non-profit, and not a registered entity. Nobody is trying
+to make money from it and there is no company to sue, sponsor, or join.
+
+That is not a disclaimer — it changes what these licences actually do, in three ways worth
+stating plainly.
+
+**Copyright rests with contributors, not an organisation.** There is no entity to hold it
+and none is needed. Each person owns what they wrote and licenses it to everyone else under
+the terms here. No CLA, no assignment, no paperwork.
+
+**The trademark clause is intent, not enforcement.** Apache section 6 withholds trademark
+rights, but with no entity there is no registered mark. Common-law rights from use are weak
+and jurisdiction-bound, and enforcing them takes standing and money that do not exist here.
+The request stands and rests on good faith: fork the code, and call it something else,
+because the name is a claim about behaviour.
+
+**It is why the data is CC0 rather than share-alike.** A copyleft data licence only protects
+anything if somebody will enforce it. Choosing one here would impose real friction on a 211
+service or a city — the exact reuse this project wants — in exchange for a protection that
+exists only on paper. Permissive is the honest choice when enforcement is not available.
+
+### What this means for data from elsewhere
+
+CC0 has a consequence worth naming, because it constrains how the directory can grow.
+
+**OpenStreetMap is ODbL**, which is share-alike for databases. Extracting names and
+addresses from it in bulk would make this a derivative database and pull the whole directory
+out of CC0. So OSM is used as a **candidate generator** — it proposes places that might
+matter, a person establishes the facts, and only what was independently established is
+published. Candidates are a working artifact and never become published data.
+
+Records enter `resources.csv` sourced from the organisation's own site, government open
+data, or a person who went there. Government open data is public domain and strong in the
+United States, patchy elsewhere; OSM is global and ODbL. **No single source is both**, and
+pretending otherwise is how a licence gets quietly broken.
+
 ## Contributing
 
 By contributing you agree your contribution is licensed under whichever of the three covers
-the files you touched. No CLA, no copyright assignment, no separate paperwork.
+the files you touched. You keep your own copyright — there is no entity to assign it to and
+none is wanted. No CLA, no paperwork.
 
 **Never contribute anything about the people being served** — no licence makes that
 acceptable, and it is refused rather than edited. See
