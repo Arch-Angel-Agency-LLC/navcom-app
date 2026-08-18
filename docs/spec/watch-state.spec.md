@@ -139,7 +139,7 @@ The board is Live and expires. The accountability log is append-only and retaine
 records **actions, never positions**:
 
 ```
-at · actor{kind, callsign} · action · subject · outcome · prev · hash · countersig?
+at · actor{kind, callsign, pubkey} · action · subject{kind, callsign, pubkey} · outcome · prev · hash · countersig?
 ```
 
 Actions: `took-watch`, `handed-over`, `acked`, `answered`, `marked-overdue`,
@@ -147,6 +147,10 @@ Actions: `took-watch`, `handed-over`, `acked`, `answered`, `marked-overdue`,
 
 - MUST NOT contain positions, areas, or query text
 - Each operator MUST be able to review entries where they are the subject [C33]
+- **`subject` is keyed on pubkey, never on callsign.** There is no registry, so callsigns
+  are not unique — two operators may both be Raven, and matching on the name would show one
+  person another's record. In the mechanism that holds the watch accountable, that is a
+  correctness failure rather than a cosmetic one
 - Retained 90 days by default, *configurable*
 - Agent actions logged including **inaction** — an overdue that passed without contact is
   an entry

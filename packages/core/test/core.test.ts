@@ -264,8 +264,10 @@ describe('on-call is a list of statements, not a number', () => {
 
 describe('the accountability log', () => {
   const actor = { kind: 'human' as const, callsign: 'Raven' };
+  const wren = { kind: 'human' as const, callsign: 'Wren', pubkey: 'a'.repeat(64) };
+  const otherWren = { kind: 'human' as const, callsign: 'Wren', pubkey: 'b'.repeat(64) };
   const entry = (outcome: string) => ({
-    at: NOW_S, actor, action: 'acked' as const, subject: 'Wren', outcome
+    at: NOW_S, actor, action: 'acked' as const, subject: wren, outcome
   });
 
   it('chains each entry to the one before it', () => {
@@ -303,7 +305,10 @@ describe('the accountability log', () => {
 
   it('shows an operator only what concerns them', () => {
     let log = appendEntry([], entry('x'));
-    log = appendEntry(log, { ...entry('y'), subject: 'Someone else' });
-    expect(entriesAbout(log, 'Wren')).toHaveLength(1);
+    log = appendEntry(log, { ...entry('y'), subject: otherWren });
+    // Two operators, same callsign, different keys. Matching on the name would return both,
+    // and the log would attribute one person's entries to another.
+    expect(entriesAbout(log, wren.pubkey)).toHaveLength(1);
+    expect(entriesAbout(log, otherWren.pubkey)).toHaveLength(1);
   });
 });

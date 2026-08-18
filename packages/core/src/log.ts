@@ -39,8 +39,15 @@ export interface LogEntry {
   /** Who acted. */
   actor: Author;
   action: LogAction;
-  /** The operator this concerns, if any. Their callsign, never a legal name. */
-  subject: string | null;
+  /**
+   * The operator this concerns, if any.
+   *
+   * An `Author`, not a callsign — callsigns are not unique. There is no registry, so two
+   * operators can both be Raven, and keying the record that holds the watch accountable on
+   * a non-unique name would attribute one person's entries to another. Matching is by
+   * pubkey; the callsign rides along for reading.
+   */
+  subject: Author | null;
   outcome: string;
   /**
    * Hex sha256 over this entry plus the previous hash. An edit anywhere breaks every
@@ -71,7 +78,9 @@ function digest(entry: NewEntry, prev: string | null): string {
     entry.actor.callsign ?? null,
     entry.actor.pubkey ?? null,
     entry.action,
-    entry.subject,
+    entry.subject?.kind ?? null,
+    entry.subject?.callsign ?? null,
+    entry.subject?.pubkey ?? null,
     entry.outcome,
     prev
   ]);
@@ -111,7 +120,11 @@ export function verifyChain(log: LogEntry[]): ChainCheck {
   return { intact: true, brokenAt: -1, reason: null };
 }
 
-/** What an operator sees when reviewing a watch: actions, never a movement history. */
-export function entriesAbout(log: LogEntry[], callsign: string): LogEntry[] {
-  return log.filter((e) => e.subject === callsign);
+/**
+ * What an operator sees when reviewing a watch: actions, never a movement history.
+ *
+ * Matched on pubkey. Passing a callsign would return whatever another Raven did.
+ */
+export function entriesAbout(log: LogEntry[], pubkey: string): LogEntry[] {
+  return log.filter((e) => e.subject?.pubkey === pubkey);
 }
