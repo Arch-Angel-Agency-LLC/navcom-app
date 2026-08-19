@@ -71,8 +71,38 @@ No watch, no server and no third party is involved.
   channel carried them
 - Unpairing is unilateral, immediate, and needs no notification. It stops *future* presence
   being readable and cannot recall what was already sent
-- A client MUST NOT suggest, rank, or discover peers. There is no directory of operators and
-  nothing may imply one [C23]
+- A client MUST NOT suggest or rank peers. Discovery is limited to what operators have
+  chosen to publish about themselves — see below
+
+## Being findable, or not
+
+**Hidden is the default and it is complete.** An operator who publishes nothing can still
+pair by QR, use everything, and be watched. Nothing is withheld from them and nothing
+suggests they are half set up.
+
+**Hidden is the absence of an event, not a flag.** There is no "hidden: true" anywhere,
+because a stored flag is a thing that can be published by mistake. A hidden operator simply
+has no profile on any relay.
+
+Publishing one is a single opt-in, and it carries:
+
+- Callsign
+- Optionally a region, at **metro granularity** — *St. Louis* is a city, *Swansea IL*
+  narrows somebody to a few thousand people
+- That they will accept an invite
+
+It MUST NOT carry an address, a schedule, a position, or who they patrol with. It uses the
+standard nostr metadata event, so nothing new is invented and other tools understand it.
+
+### Why this is not the forbidden directory
+
+An earlier rule here forbids a directory of Watchtowers, *"because a list of Watchtowers is
+a list of where operators are."* That still holds, and it is about **where the watches
+physically live.**
+
+A person choosing to be findable is a different thing, and conflating the two would leave
+the most common user — somebody who knows nobody — with no way into the network at all. A
+published profile says *"I exist and you may write to me."* It does not say where anyone is.
 
 ## Operator keypairs
 

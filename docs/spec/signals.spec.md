@@ -14,6 +14,7 @@ retrievable by a client that just connected.
 | `20911` | ephemeral | **Distress** | Separate kind so clients and relays can prioritise it independently of routine traffic |
 | `20912` | ephemeral | **Response** | Acknowledgements, query answers, escalation status |
 | `20913` | ephemeral | **Peer presence** | Who is out, sent operator-to-operator with no watch involved |
+| `20914` | ephemeral | **Public presence** | *"Raven is out tonight."* Unencrypted, and structurally cannot carry a position |
 
 Ephemeral kinds (20000–29999) are not expected to be stored by relays — required by
 [C27], since the board MUST NOT become a queryable history.
@@ -23,8 +24,25 @@ Ephemeral kinds (20000–29999) are not expected to be stored by relays — requ
 Every payload here is sealed. Nothing readable crosses a relay, and a relay operator sees
 routing metadata only [C36].
 
-Peer presence (`20913`) is sealed to the operator's paired peers; everything else is sealed
-to the **Watchtower**, not to whoever happens to be holding watch.
+Peer presence (`20913`) is sealed to the operator's paired peers. Public presence (`20914`)
+is not sealed at all, and carries nothing worth sealing. Everything else is sealed to the
+**Watchtower**, not to whoever happens to be holding watch.
+
+### On post-quantum encryption
+
+Asked and answered, recorded so it is not re-argued: **it would not address the concerns
+that prompted it.** Public presence is unencrypted by design, and no cipher protects data
+published in the clear. The other worry is metadata — a relay sees which key published,
+when, and to whom — and stronger encryption does not hide an envelope.
+
+Where it would genuinely help is harvest-now-decrypt-later, and that threat is weak here: a
+`Distress` from last Tuesday is worth little in 2040. Against that: nostr has no
+post-quantum standard, event signatures would remain quantum-vulnerable even if the
+encryption did not, and a custom scheme would leave every relay and client that exists.
+
+Revisit if nostr standardises one. Do not build one.
+
+## Invites, and pairing at a distance
 The event `p`-tags the Watchtower pubkey. See [`README.md`](./README.md) for why, and what
 it costs.
 
@@ -172,6 +190,36 @@ exists — so the separation is about who *receives* it, not about tidiness.
 Not a feed. A peer view is **current state**: who is out, roughly where, until when. A
 history of where anyone has been is the thing the rules forbid outright, and the difference
 between the two is one careless `push` in a client.
+
+## `20914` — Public presence
+
+A name, and nothing else. It exists so the network has a pulse — so somebody opening the app
+can see it is real and in use.
+
+```json
+{
+  "kind": 20914,
+  "tags": [],
+  "content": "{\"callsign\":\"Raven\",\"status\":\"out\"}"
+}
+```
+
+**Unencrypted, deliberately.** There is no point pretending otherwise: public means public,
+and no amount of cryptography protects something published in the clear.
+
+### There is nowhere to put a position, and that is the design
+
+The payload has two fields. **Not "do not include a position" — there is no field for one,
+at any precision, ever.** A rule can be forgotten by a client author at 2am; a missing field
+cannot.
+
+This is the same choice made for accountability-log outcomes, for the same reason: a leak
+that cannot be expressed does not need to be policed.
+
+- Published only while the operator's presence setting is `city` or `network`
+  [`../product/visibility.md`](../product/visibility.md). `off` and `team` publish nothing at all
+- **A name, never a count.** A total invites gaming and tells a reader nothing
+- Ephemeral and heartbeated, like `20913`. Standing down publishes `status: stood-down`
 
 ## `20911` — Distress
 

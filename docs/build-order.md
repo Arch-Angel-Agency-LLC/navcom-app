@@ -415,7 +415,9 @@ rather than four screens and a memory of a phone number.
 | | Item | Fate | Owner | Cost of not doing it |
 |---|---|---|---|---|
 | 0 | **The app works with no Watchtower at all** | **before everything** | agent | **A solo operator currently cannot use NavCom.** Setup demands a pubkey "handed to you in person", so anyone who knows nobody is stuck on "Not configured" forever and Sign-on, Query, Assist and Distress all refuse. The most common user is the one the product turns away at the door |
-| 0a | **Peer pairing and presence** — QR, sealed to peers, heartbeat | **before the watch work** | agent | Two of the seven ways people actually work get *nothing* today: a team out with nobody home, and a team whose leader is also on the street. Both need to see each other, and neither needs a watch, a server or a leader to do it |
+| 0a | **Peer pairing and presence** — QR, sealed to peers, heartbeat | **before the watch work** | agent |
+| 0b | **Findable profiles and invites** | with 0a | agent | The actual fix for cold start: hidden by default, one opt-in to publish a callsign and a metro, and a NIP-17 invite so pairing works at a distance rather than only over coffee |
+| 0c | **Public presence** — `20914`, a name and nothing else | with 0b | agent | Gives the network a pulse. Structurally cannot carry a position: the payload has no field for one | Two of the seven ways people actually work get *nothing* today: a team out with nobody home, and a team whose leader is also on the street. Both need to see each other, and neither needs a watch, a server or a leader to do it |
 | 1 | **Your own person, one tap away** | **first** | agent | Reordered — see below. Without a box and without a native app, this is the entire safety net once everyone is asleep. It works for a lone operator, needs no watch, no roster and no server |
 | 2 | **One human on-call with a proven channel** | needs a box | **human** | Real paging all night needs something that stays awake. One config entry and one command that works |
 | 3 | **Drills** — weekly, randomised, published | after 2 | agent | `last_drill` stays null, so a watch that *"cannot demonstrate a passing drill is presumed broken"* is permanently presumed broken. Also the Sleeper's main mitigation |
@@ -495,7 +497,10 @@ is intelligence and strategy, NavCom is field and tactics.** NavCom is complete 
 and sends de-identified patterns upward if and when there are any. Revisit when there is
 real traffic, not before.
 
-**`presets`** still cannot be given a fate, because nobody can currently say what it is.
+**`presets` has a fate**, and it turned out to be already designed: the Ghost / Team / Open
+visibility presets in [`product/visibility.md`](product/visibility.md). Not a missing
+feature — an unbuilt one. **Deferred**, and it needs the profile and presence work below
+before it means anything.
 
 ## Declined, not deferred
 
