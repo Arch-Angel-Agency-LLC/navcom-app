@@ -9,11 +9,16 @@
   import { watch } from '$lib/terminal/watch.svelte';
   import { operator } from '$lib/terminal/session.svelte';
 
+  // No watch added and a watch that is down are different situations, and an operator
+  // acts differently on each. They must not render as the same sentence.
+  let hasWatch = $state(true);
+
   let urgency = $state<'soon' | 'now'>('soon');
   let text = $state('');
   let sent = $state(false);
 
   onMount(() => {
+    hasWatch = operator.hasWatch;
     watch.start();
     return () => watch.stop();
   });
@@ -66,7 +71,14 @@
     you need someone</strong>, and the watch can ask.
   </p>
 
-  {#if watch.state.state === 'dark'}
+  {#if !hasWatch}
+  <section>
+    <p class="error">
+      <strong>Assist goes to a watch</strong>, and you have not added one. There is nobody
+      to ask.
+    </p>
+  </section>
+{:else if watch.state.state === 'dark'}
     <p class="error">No watch. This will send, and nobody will see it until one is up.</p>
   {/if}
   {#if operator.error}

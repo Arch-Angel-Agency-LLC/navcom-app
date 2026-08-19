@@ -50,10 +50,23 @@ let distressController: AbortController | null = null;
 
 const pool = new SimplePool();
 
+/**
+ * Two different absences, and conflating them was the wall.
+ *
+ * No identity is genuinely unfinished setup. **No watch is not** — it is the ordinary state
+ * of an operator who patrols alone, and the message an operator sees has to tell them which
+ * one they are in. "This terminal is not set up yet" told a lone operator their app was
+ * broken when it was working exactly as designed.
+ */
 function ctx() {
-  const config = loadConfig();
   const identity = loadIdentity();
-  if (!config || !identity) throw new Error('This terminal is not set up yet.');
+  if (!identity) throw new Error('Create a callsign first — everything else needs one.');
+  const config = loadConfig();
+  if (!config) {
+    throw new Error(
+      'This goes to a watch, and you have not added one. Nothing to send it to.'
+    );
+  }
   return { config, identity };
 }
 
@@ -90,6 +103,15 @@ async function run<T>(fn: () => Promise<T>): Promise<T | null> {
 
 export const operator = {
   get session(): SignOn | null { return session; },
+  /** Whether this device has an identity. The only genuinely required setup step. */
+  get hasIdentity(): boolean { return loadIdentity() !== null; },
+  /**
+   * Whether a Watchtower has been added.
+   *
+   * False is a **normal, complete** state — not an error and not half-finished setup. Most
+   * of the app works without one, and nothing may imply otherwise.
+   */
+  get hasWatch(): boolean { return loadConfig() !== null; },
   get busy(): boolean { return busy; },
   get error(): string | null { return error; },
   get lastResponse(): ResponsePayload | null { return lastResponse; },

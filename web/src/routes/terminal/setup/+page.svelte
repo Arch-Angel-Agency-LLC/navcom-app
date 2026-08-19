@@ -58,7 +58,7 @@
 {/if}
 
 <section>
-  <h2>1 · Identity</h2>
+  <h2>Your callsign — the only step</h2>
   {#if identity}
     <p class="done">
       <strong>{identity.callsign}</strong>
@@ -72,15 +72,26 @@
   {:else}
     <form onsubmit={makeIdentity}>
       <label for="callsign">Callsign</label>
-      <p class="note">What the board shows. Never a legal name.</p>
+      <p class="note">
+        How you are known. Never a legal name. Once this exists the app is ready — the
+        section below is optional and most operators will not have one at first.
+      </p>
       <input id="callsign" bind:value={callsign} autocomplete="off" spellcheck="false" />
       <button type="submit">Generate keypair</button>
     </form>
   {/if}
 </section>
 
-<section>
-  <h2>2 · Watchtower</h2>
+<section class="later">
+  <h2>A watch — optional, and only if somebody gave you one</h2>
+  <p class="note">
+    <strong>Skip this.</strong> You do not need a watch to use NavCom, and having none is
+    how most operators work. Come back when somebody hands you one.
+  </p>
+  <p class="note">
+    What it adds: Query, Assist and Distress — the three things that need a person on the
+    other end. What it does not change: everything else, which already works.
+  </p>
   <p class="note">
     Handed to you in person, on paper or by whatever you already use. <strong>Nothing
     discovers a Watchtower on its own</strong> — a list of them would be a list of where
@@ -118,6 +129,8 @@
   }
   textarea { min-height: 5rem; }
   button { margin-top: .4rem; }
+  /* Visibly secondary, so nobody reads it as a step they are failing to complete. */
+  .later { border-top: 1px solid var(--t-line); padding-top: 1.2rem; opacity: .82; }
   .note { font-size: .9rem; color: var(--t-faint); margin: 0 0 .3rem; line-height: 1.5; }
   .note strong, .done strong { color: var(--t-ink); }
   .done { color: var(--t-muted); display: flex; gap: .6rem; align-items: baseline; flex-wrap: wrap; }

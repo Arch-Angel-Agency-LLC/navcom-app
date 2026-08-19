@@ -126,6 +126,15 @@
   </nav>
   <!-- Distress does not require being on station. Needing help does not wait for paperwork. -->
   <a class="action distress" href="/terminal/distress/">Distress</a>
+{:else if identity}
+  <!--
+    Identity but no watch. This is a COMPLETE state, not an unfinished one — it is how an
+    operator who patrols alone works, and it is the most common way to use this app. So it
+    shows what is usable rather than what is missing.
+  -->
+  <nav class="actions single">
+    <a class="action primary" href="/terminal/directory/">Cached directory</a>
+  </nav>
 {/if}
 
 {#if operator.error}
@@ -137,7 +146,7 @@
   <p>{capabilitySentence(s)}</p>
 </section>
 
-{#if s.state === 'dark'}
+{#if s.state === 'dark' && configured}
   <section class="offline">
     <h2>Dark is not an error</h2>
     <p>
@@ -158,15 +167,32 @@
   </section>
 {/if}
 
-{#if !configured}
+{#if !identity}
   <section class="notyet">
-    <h2>Not configured</h2>
+    <h2>Start here</h2>
     <p>
-      This terminal has no Watchtower yet. Someone hands you a pubkey and a relay list in
-      person — nothing discovers a Watchtower on its own, because a list of Watchtowers is a
-      list of where operators are.
+      Pick a callsign. It takes one screen, nothing is sent anywhere, and there is no
+      account to create — the key is made on this device and never leaves it.
     </p>
-    <p><a class="action" href="/terminal/setup/">Set up</a></p>
+    <p><a class="action" href="/terminal/setup/">Choose a callsign</a></p>
+  </section>
+{:else if !configured}
+  <section class="notyet">
+    <h2>No watch, and that is a normal way to work</h2>
+    <p>
+      Nobody is watching. Most operators patrol alone and this is what that looks like —
+      it is not unfinished setup, and nothing here is waiting on you.
+    </p>
+    <p>
+      <strong>What works right now:</strong> the cached directory, with no signal at all,
+      and everything on this device.
+    </p>
+    <p class="cost">
+      <strong>What does not:</strong> Query, Assist and Distress all go to a watch, and there
+      is nothing to send them to. If somebody gives you a Watchtower — in person, because
+      nothing discovers one — you can <a href="/terminal/setup/">add it</a> and they start
+      working.
+    </p>
   </section>
 {:else if watch.read.reason === 'stale'}
   <section class="notyet">
@@ -177,14 +203,9 @@
       — a stale event says what was true, not what is.
     </p>
   </section>
-{:else if !identity}
-  <section class="notyet">
-    <h2>No identity yet</h2>
-    <p>Your keypair is generated here and never leaves. <a href="/terminal/setup/">Create one</a>.</p>
-  </section>
 {/if}
 
-{#if configured || identity}
+{#if identity}
   <!-- Two taps from anywhere in the terminal. Not buried, and not a button large enough to
        hit while putting the phone in a pocket. -->
   <nav class="quiet">
@@ -196,16 +217,19 @@
 {/if}
 
 <section class="install">
-  <h2>Before you install</h2>
+  <h2>Adding this to your home screen</h2>
   <p>
-    You can rename this when you add it to your home screen, and you should think about
-    whether you want to. <strong>A phone that is borrowed, searched or taken shows whatever
-    name is on the icon.</strong>
+    You can rename it, and you should think about whether you want to. <strong>A phone that
+    is borrowed, searched or taken shows whatever name is on the icon.</strong>
   </p>
   <p class="cost">
-    Installing adds two things the browser cannot do: Distress from a locked screen, and an
-    SMS fallback when there is no watch. Neither exists yet. Staying in the browser costs you
-    nothing else.
+    <!--
+      No pitch, because there is nothing to pitch: native apps are deferred, so the home
+      screen version and this one are the same app with the same abilities. When that stops
+      being true, the honest sentence goes here and nowhere else.
+    -->
+    It is the same app either way — a home screen icon and no browser bar. Nothing is added
+    and nothing is withheld.
   </p>
 </section>
 

@@ -13,6 +13,7 @@
    */
   import { onDestroy } from 'svelte';
   import { operator } from '$lib/terminal/session.svelte';
+  import { onMount } from 'svelte';
 
   const HOLD_MS = 1200;
 
@@ -20,6 +21,20 @@
   let holdStart = $state<number | null>(null);
   let progress = $state(0);
   let frame: number | null = null;
+  /**
+   * Whether there is anywhere to send this.
+   *
+   * Read after mount, and it never gates the button. A prerendered page must render some
+   * default, and both are wrong: defaulting to "armed" briefly promises what it cannot do,
+   * and defaulting to "disarmed" briefly refuses a real emergency during hydration. Letting
+   * the press always register removes the choice — the operator's action is never swallowed,
+   * and what actually happened is reported the instant they let go.
+   */
+  let hasWatch = $state(true);
+
+  onMount(() => {
+    hasWatch = operator.hasWatch;
+  });
 
   const phases = $derived(operator.distress);
   const acknowledged = $derived(
@@ -90,6 +105,21 @@
   <p class="eyebrow"><a href="/terminal/">← Status</a></p>
   <h1>Distress</h1>
 </header>
+
+{#if !hasWatch}
+  <!-- Said before the button as well as after, because reading it first is better than
+       finding out by holding it. The button still works: see the note on `hasWatch`. -->
+  <section data-no-watch>
+    <p class="error">
+      <strong>There is nowhere to send this.</strong> Distress goes to a watch and you have
+      not added one, so holding the button would raise nobody.
+    </p>
+    <p class="cost">
+      Nothing on this phone can reach a person for you yet. If you are going out alone,
+      tell somebody where you are going — that is not a thing an app does better.
+    </p>
+  </section>
+{/if}
 
 {#if !operator.distressRunning && phases.length === 0}
   <section>

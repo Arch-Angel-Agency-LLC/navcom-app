@@ -344,11 +344,48 @@ describe('the field terminal', () => {
     expect(modules + scripts, 'terminal ships no client code').toBeGreaterThan(0);
   });
 
+  it('treats having no watch as a normal state, not unfinished setup', () => {
+    // The prerendered page IS the no-identity, no-watch state, which makes it exactly what
+    // a first-time visitor sees. Until now it said "Not configured" and offered no action
+    // at all -- so a lone operator, the commonest user, was told the app was broken when it
+    // was working as designed.
+    const t = terminal()!;
+    expect(t.bodyText).not.toMatch(/not configured/i);
+    expect(t.bodyText).toMatch(/normal way to work|Start here/i);
+  });
+
+  it('offers a first-time visitor something to do', () => {
+    // The wall: every action was gated on a Watchtower "handed to you in person", so
+    // somebody who knows nobody had no way in at all.
+    const links = terminal()!.doc.querySelectorAll('a').map((a) => a.getAttribute('href'));
+    expect(links, 'no way to start').toContain('/terminal/setup/');
+  });
+
+  it('never disables the Distress control, whatever the state', () => {
+    // A prerendered page has to render some default and both are wrong: "armed" briefly
+    // promises what it cannot do, "disarmed" briefly refuses a real emergency during
+    // hydration. So the press always registers and the truth arrives when they let go --
+    // an operator's action on this screen is never swallowed.
+    const d = screens().find((p) => p.path.includes('/terminal/distress/'))!;
+    const hold = d.doc.querySelector('button.raise');
+    expect(hold, 'no hold button').not.toBeNull();
+    expect(hold!.getAttribute('disabled'), 'Distress must never be disabled').toBeUndefined();
+  });
+
+  it('says a watch is optional on the setup screen', () => {
+    const setup = screens().find((p) => p.path.includes('/terminal/setup/'))!;
+    expect(setup.bodyText).toMatch(/only step/i);
+    expect(setup.bodyText).toMatch(/optional/i);
+    expect(setup.bodyText).toMatch(/Skip this/i);
+  });
+
   it('renders Dark before anything is configured, not an error or a spinner', () => {
     const t = terminal()!;
     const state = t.doc.querySelector('[data-state]');
     expect(state?.getAttribute('data-state')).toBe('dark');
-    expect(t.bodyText).toContain('Dark is not an error');
+    // The built page is the FIRST-VISIT state: no identity, no watch. So what it must show
+    // is a way to begin, not an explanation of a watch nobody has yet.
+    expect(t.bodyText).toMatch(/Start here/i);
     expect(t.bodyText.toLowerCase()).not.toContain('connecting');
     expect(t.bodyText.toLowerCase()).not.toContain('loading');
   });
@@ -361,7 +398,18 @@ describe('the field terminal', () => {
   });
 
   it('says what is lost without a watch rather than implying Dark is equivalent', () => {
-    expect(terminal()!.bodyText).toMatch(/Query needs a watch/i);
+    // The capability sentence carries this on the first-visit page: no watch means Distress
+    // reaches nobody, and that is said before anyone could rely on it.
+    expect(terminal()!.bodyText).toMatch(/Distress will page nobody/i);
+  });
+
+  it('makes no install pitch while native apps are deferred', () => {
+    // There is nothing to pitch: the home screen version is the same app with the same
+    // abilities. A pitch for a capability that does not exist is the exact failure the
+    // capability-claim test exists to catch.
+    const t = terminal()!;
+    expect(t.bodyText).not.toMatch(/locked screen|SMS fallback/i);
+    expect(t.bodyText).toMatch(/same app either way/i);
   });
 
   it('never claims a capability that is not built', () => {
