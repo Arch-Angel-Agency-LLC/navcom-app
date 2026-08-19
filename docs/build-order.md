@@ -321,6 +321,13 @@ failure-mode tests in [`spec/escalation.spec.md`](spec/escalation.spec.md) are w
 **Native Android/iOS** is Mk1, for the two capabilities a PWA cannot provide. Decided,
 deferred.
 
+## Declined, not deferred
+
+Some real problems are not on this page at all, on purpose — see
+[`declined.md`](declined.md). Everything below is **deferred**: designed, sequenced, and
+waiting. The difference matters, because a page where every gap becomes future work is a
+page that only grows.
+
 ## Not started, and not to be started
 
 Endorsements, presets, funding, propagation mechanics, recovery, allied interop, RelayNode,

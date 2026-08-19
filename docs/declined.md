@@ -1,0 +1,145 @@
+# What NavCom Declines
+
+A gap needs a third fate.
+
+| Fate | Lives in |
+|---|---|
+| **Fixed** | the code |
+| **Deferred** — designed, sequenced, not yet built | [`build-order.md`](build-order.md) |
+| **Declined** — a real problem we are not taking on | here |
+
+Without this page, every honest observation becomes an obligation and the obligation list
+only grows. Nobody here has an institution behind them; capacity is what it is. **Declining
+out loud is cheaper than a promise nobody can keep, and more honest than silence.**
+
+This is not the [anti-patterns table](../CLAUDE.md), which lists conventional solutions that
+are *wrong* here. These are problems that are **real, correctly identified, and someone
+else's — or nobody's.**
+
+## How to use it
+
+- When you find a gap, ask whether it belongs here **before** it goes to `build-order.md`
+- Every entry names the actual problem, never a strawman version of it
+- Every entry names **what declining costs**, because that cost is the honest part
+- Declining is not denying. A real problem stays written here even though we are not solving
+  it, so the next person finds a decision instead of an oversight
+- An entry can be reversed — by deciding to build it, not by forgetting this page
+
+---
+
+## Things the system will never know
+
+### Whether anyone is safe
+
+The board holds **declarations**: someone said they were going out, for roughly this long,
+in roughly this area. An operator can set routine check-ins to `Never` and be correctly
+shown as active for eight hours with no contact at all. Nothing is wrong; `routine_interval:
+null` is deliberate and stays.
+
+We decline to infer safety from any of it. There is no arrangement of missed windows,
+inactivity or silence that this system will read as *"they are in trouble"* — that is
+invariant 3, and it is not negotiable at any capacity.
+
+**Cost:** the Team Lead wants to *"see who's out and know they got home"* and gets only the
+first half. Someone will read "active" as "fine."
+
+**Instead:** every surface showing the board must be built so a declaration cannot be
+mistaken for a monitor. That is a wording and layout problem, not a mechanism one, and it is
+the Console's hardest design problem.
+
+### Whether the accountability log is complete
+
+Tampering is closed by chaining. Selective disclosure is closed by inclusion proofs against
+a published root. **Omission is not closed, and will not be.** A watch that never writes an
+entry publishes a commitment to a log that never contained it, and every proof still
+verifies. Counter-signing narrows this to entries the subject saw; it cannot cover an entry
+shown to nobody.
+
+**Cost:** an operator can never prove the record is *whole*, only that what is in it was not
+edited afterwards.
+
+**Instead:** say so on the screen, above the entries, before they are fetched.
+
+## Things we will not decide
+
+### Disputes between operators
+
+If two people disagree about what happened, NavCom holds **records, not verdicts**. There is
+no appeal, no arbitration, no moderation queue, and no role with authority to rule. Nothing
+tasks anyone; nothing judges anyone.
+
+**Cost:** real conflicts will happen and the software will be no help.
+
+**Instead:** the log, reviewable by the people it concerns, so an argument at least has
+shared facts.
+
+### Whether an agent is trustworthy
+
+Unverifiability is answered by **limits, not better tests**. A sufficiently good performance
+is indistinguishable from the real thing on any test it anticipates, so passing a drill means
+*"no evidence found yet"* and never *"verified."*
+
+**Cost:** we cannot tell you the agent is safe. We can only tell you what it is unable to do.
+
+### What goes in a playbook
+
+**Do not generate playbook content.** Confident wrong guidance is the Medic's kill trigger,
+and plausible-sounding safety content is worse than none. Field playbooks, directory seed
+data and the `type` taxonomy need humans with local knowledge.
+
+**Cost:** the knowledge layer stays thin until people write it.
+
+## Things we will not provide
+
+### Uptime
+
+One box, run by one person, for people they know. There is no SLA, no redundancy for the
+watch itself, and no promise that anyone is holding it tonight.
+
+**Dark is a supported state precisely because availability is declined.** That is the trade,
+and it is why the watch state is visible before sign-on rather than after.
+
+**Cost:** an operator may go out with nothing behind them. They will know that before they
+go, which is the entire point.
+
+### Anonymity that also accrues standing
+
+You can contribute without a persistent identity, or you can build standing that travels
+with you. **Not both.** Standing is a history attached to a key; a contribution with no
+durable identifier cannot accrue one, and a key that accrues one is pseudonymous rather than
+anonymous — linkable across everything it signs.
+
+**Cost:** the Convert has the best directory knowledge in the network and the most reason to
+be unlinkable. She has to choose, and the choice is not reversible for anything already
+signed.
+
+**Instead:** state the trade at the moment of contribution, in those words. Never write
+"anonymous" where "pseudonymous" is what is true.
+
+### Protection from someone holding your unlocked phone
+
+Panic wipe destroys the Wipeable tier. Burn destroys both tiers and the offline caches.
+Neither is a secure erase — a browser unlinks storage rather than scrubbing the pages
+underneath, there is no OS keystore, and browser history survives both.
+
+**Cost:** a phone taken by someone patient and equipped is a phone taken.
+
+**Instead:** say exactly where the boundary is, on the screen that does the wiping.
+
+### An onboarding flow that replaces a person
+
+The first night is not a software problem. A person who says *"stay behind me, we're not
+doing anything clever tonight"* beats any flow, and building the flow would produce exactly
+the streaks-and-nudges surface the rules forbid.
+
+**Cost:** the Newcomer needs somebody, and if nobody is available the software will not
+substitute.
+
+---
+
+## What is **not** declined, so nobody mistakes this page for a licence
+
+Everything in [`build-order.md`](build-order.md) is deferred, not declined — endorsements,
+recovery, propagation, allied interop, the RelayNode, counter-signing, redundant escalation
+executors. They are designed and sequenced. Moving something here requires a decision, and
+that decision should be recorded in the commit that moves it.

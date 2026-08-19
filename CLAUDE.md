@@ -102,6 +102,7 @@ Every one is a conventional solution that is wrong here.
 | Show a count of anything | Provenance by name. A number invites gaming |
 | Build a nice map view | Device floor is a prepaid Android 8 with 400MB free |
 | **Write a new rule when you find a gap** | **The rules are already one idea restated many times, and that is why they read as a compliance regime.** Check whether [`attestation.md`](docs/attestation.md) already covers it. Prefer deleting a rule to adding one |
+| **Turn every gap you find into work** | A gap has three fates, not two: fixed, deferred, or **declined**. Nobody here has an institution behind them, and an obligation list that only grows is how a volunteer network drowns. Check [`declined.md`](docs/declined.md) before the build order |
 
 ## Where things live
 
@@ -109,6 +110,7 @@ Every one is a conventional solution that is wrong here.
 |---|---|
 | `docs/attestation.md` | **The primitive.** Read first — most rules are this, aimed somewhere |
 | `docs/positioning.md` | What this is and who it's for |
+| `docs/declined.md` | **Real problems we are not taking on.** Check before adding to the build order |
 | `docs/spec/` | **Normative.** Event kinds, state machines, windows |
 | `docs/watch/` | The watch model, narrative |
 | `docs/product/` | Identity, data tiers, visibility, directory, funding |
