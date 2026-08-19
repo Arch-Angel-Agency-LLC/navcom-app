@@ -346,164 +346,132 @@ acknowledgement carries a human author, and it carries the actual human's callsi
 - **No node-side emergency contact.** The spec prefers device-initiated anyway, so
   `CONTACT` is currently always skipped — failure mode 5, which is tested
 
-## What is left, and who has to do it
+## What is left, in the order it should be done
 
-Four rules govern this table, and they exist because a plan can fail in ways a feature list
-cannot.
+Four rules govern this, and they exist because a plan fails in ways a feature list does not.
 
 1. **Every item has a fate** — do, defer, or [decline](declined.md). A list that only ranks
    is a list nothing ever leaves
-2. **Sequence comes from [`principles.md`](principles.md)**, not from whoever is writing.
-   *Never the people served → operator safety → accuracy → the field runs standalone →
-   opt-in → no feed → everything else*
-3. **Every item names an owner** — agent, human, or either. Directory data, playbooks and
-   the `type` taxonomy are **not agent work**, and an item with no owner is an item nobody
-   does
+2. **Sequence comes from [`principles.md`](principles.md)**, not from whoever is writing
+3. **Every item names an owner** — agent, human, or either. An item with no owner is an item
+   nobody does
 4. **Every item names what *not* doing it costs.** If that cost cannot be stated, the item
-   should be declined rather than deferred. That is the test, not a formality
+   should be declined rather than deferred
 
-No dates. A volunteer network's capacity is not knowable in advance, and a plan with dates
-in it is a plan that is wrong.
+No dates. A volunteer network's capacity is not knowable in advance.
+
+### The thing this ordering is built around
+
+**Most of the remaining safety work is blocked on people, not code.** On-call needs a
+person. Intake rules need somebody with local knowledge. Playbooks need a human,
+permanently.
+
+So the code that comes first is the code that makes the human work possible or worth doing —
+not more machinery around a knowledge layer that is still empty. Twelve invented directory
+records means the one part of NavCom that works with no watch, no signal and no peers is the
+one part that is useless.
+
+Milestones rather than a ranked list, because each has a state you can be in or not.
+
+---
+
+## Milestone 1 — One operator, alone, tonight
+
+**Done when:** somebody patrolling alone in one metro can look up a real shelter with no
+signal, and has a record of their own night.
+
+| | Item | Owner | Cost of not doing it |
+|---|---|---|---|
+| 1.1 | **The scraper** — public half of the directory, one metro then twenty | agent | The unlock for everything else. Brief: [`product/seeding.md`](product/seeding.md) |
+| 1.2 | **Intake rules for places you know** | **human, local** | The half no scraper produces, and the half the directory exists for. Ten records done properly beats a thousand skeletons |
+| 1.3 | **Your own patrol record** | agent | What a lone operator gets every night. Already specced, including the safe export |
+| 1.4 | **Coming home** — stand-down confirmed by name | agent | Nearly free, and the close of the night |
+
+Nothing here needs a watch, a box, a peer or a network.
+
+## Milestone 2 — One watch, actually staffed
+
+**Done when:** a `Distress` raises a real human, and `last_drill` is a pass rather than null.
+
+| | Item | Owner | Cost |
+|---|---|---|---|
+| 2.1 | **One human on-call with a proven channel** | **human — you** | The ladder pages nobody and everything under it is theatre. One config entry and `navcom-escalation --check` |
+| 2.2 | **Drills** — weekly, randomised, published | agent | A watch that cannot demonstrate a passing drill is presumed broken, so today it is permanently presumed broken |
+| 2.3 | **Web push as a paging channel** | agent | The one native-grade capability a web app already has on both platforms. How somebody gets woken without an app store |
+| 2.4 | Keyless pagers | either | Redundancy without trust. Cheap, and it decouples always-on from trusted |
+
+**2.1 is not code and nothing in this milestone is real without it.**
+
+## Milestone 3 — Two people who met once
+
+**Done when:** two operators who paired over coffee can see each other patrol, with no watch,
+no box and no leader.
+
+| | Item | Owner | Cost |
+|---|---|---|---|
+| 3.1 | **Peer pairing and presence** — QR, sealed to peers, heartbeat | agent | Two of the seven ways people work get *nothing* today |
+| 3.2 | **Findable profiles and invites** | agent | The actual fix for cold start: pairing at a distance rather than only in person |
+| 3.3 | **Public presence** — a name, never a pin | agent | Gives the network a pulse |
+| 3.4 | **Live position sharing** — watch and peers only | agent | Never publicly optable. See [`product/visibility.md`](product/visibility.md) |
+| 3.5 | Buddy pairing between two solos | agent | Probably the commonest real arrangement after pure solo |
+
+## Milestone 4 — A squad with no box
+
+**Done when:** four people take turns holding watch on their phones.
+
+| | Item | Owner | Cost |
+|---|---|---|---|
+| 4.1 | **Watch as a mode of the app** | agent | Replaces the Console-from-the-box plan entirely |
+| 4.2 | **Sealing to several keys** | agent | The enabling change. Without it, rotating watch means sharing one key forever |
+| 4.3 | **A declaration must not read as a safety monitor** | agent | The hardest problem in this milestone, and it is wording and layout rather than mechanism |
+| 4.4 | Handover | agent | Specified since the beginning, never implemented, and phone-held watch makes it nightly |
+
+## Milestone 5 — The properties we have written down
+
+Each is self-contained and none blocks an operator. **None may be claimed publicly before it
+ships** — the status page states what is built.
+
+| | Item | Owner |
+|---|---|---|
+| 5.1 | **Post-quantum hybrid sealing** — ML-KEM-768 beside the classical exchange | agent |
+| 5.2 | **Anchor the log root to Bitcoin** — OpenTimestamps, daily | agent |
+| 5.3 | Saying no to an `Assist` | agent |
+| 5.4 | Weather-activated warming and cooling centres | agent |
+| 5.5 | Battery state | agent |
+| 5.6 | Supplies | either |
+| 5.7 | Never write "anonymous" where "pseudonymous" is true | agent |
+
+## Deferred, with reasons
+
+| | Item | Why |
+|---|---|---|
+| — | Counter-signing | Gate holds: not needed while the circle is people vetted personally |
+| — | Redundant executors on separate hardware | Blocked on hardware, not code |
+| — | **Native apps, both platforms** | Deprioritised. Adds locked-screen `Distress`, silent SMS (Android), and a phone holding watch overnight (Android). None blocking, and the web app stays complete |
+| — | Mecha Jono holding the board | Session 2, one function call |
+| — | Endorsements, funding, propagation, recovery, RelayNode | Designed, not scope |
+| — | Off-grid / LoRa bridge | Waiting on hardware — the cyberdeck |
+| — | Playbooks | **Human, permanently.** Not agent work |
 
 ### The seven ways people actually work, and who is served
 
-| | Today |
-|---|---|
-| Solo on patrol | **Nothing.** Cannot get past setup. Item 0 |
-| Team on patrol, no leader | **Nothing.** No way to see each other. Item 0a |
-| Team on patrol with a leader | **Nothing**, and there is no concept of a team anywhere in the product |
-| Solo on watch | **Well served.** This is what got built first |
-| Team on patrol, watcher at home | Served — but the watcher sees a flat list with no grouping |
-| **Agent on watch** | Holds the board, answers questions, and **cannot close a `Distress`** — an agent is never the sole responder [invariant 5]. A 24/7 agent watch is a query desk, not a safety net, and anyone setting one up should be told that in those words |
-| Team on watch | Handover is specified and unimplemented, and a phone-held watch makes it nightly |
-
-Four of seven are unserved or barely served, and three of those four are the ones that need
-no watch at all. That is what items 0 and 0a exist to fix, and it is why they come before
-work on the watch itself.
-
-### Two things reorder this list
-
-**First: drills are gated on the roster, and the roster is gated on a person, not on code.**
-
-A drill run today pages nobody, succeeds at doing nothing, and records `pass`. That `pass`
-would then flip `automated-oncall` into publishable on the strength of a test that exercised
-nothing. `navcom-escalation --check` exists to prove a channel works before anyone relies on
-it, and it refuses an empty roster rather than reporting success.
-
-**Second, and it moves what comes first: without a box, the watch sleeps when people do.**
-
-Native apps are deferred, so there is no background execution on anyone's phone. A
-phone-held watch is up only while somebody has the app open and is looking at it — which is
-exactly what the `console-open` channel means, and why the spec already refuses to count it
-for someone going to bed.
-
-The consequence, stated rather than discovered: **for a squad with no box, `Distress` after
-everyone falls asleep reaches nobody.** The ladder handles that correctly — it says nobody
-is coming — but saying it is not the same as covering it.
-
-So the operator's **own emergency contact moves to the front of the list.** It is the only
-part of the safety net that does not need a box, a roster, a native app or anybody awake.
-
-It cannot be silent, and that limit is real: a web app can open a message composer or a
-dialler, but the operator has to tap send. So it is not cover for being unconscious — the
-case [`declined.md`](declined.md) already says this system does not cover. What it is: a
-lone operator holding Distress, and their own person being one tap away at that moment
-rather than four screens and a memory of a phone number.
-
-### Operator safety
-
-| | Item | Fate | Owner | Cost of not doing it |
-|---|---|---|---|---|
-| 0 | **The app works with no Watchtower at all** | **before everything** | agent | **A solo operator currently cannot use NavCom.** Setup demands a pubkey "handed to you in person", so anyone who knows nobody is stuck on "Not configured" forever and Sign-on, Query, Assist and Distress all refuse. The most common user is the one the product turns away at the door |
-| 0a | **Peer pairing and presence** — QR, sealed to peers, heartbeat | **before the watch work** | agent |
-| 0b | **Findable profiles and invites** | with 0a | agent | The actual fix for cold start: hidden by default, one opt-in to publish a callsign and a metro, and a NIP-17 invite so pairing works at a distance rather than only over coffee |
-| 0c | **Public presence** — `20914`, a name and nothing else | with 0b | agent | Gives the network a pulse. Structurally cannot carry a position: the payload has no field for one | Two of the seven ways people actually work get *nothing* today: a team out with nobody home, and a team whose leader is also on the street. Both need to see each other, and neither needs a watch, a server or a leader to do it |
-| 1 | **Your own person, one tap away** | **first** | agent | Reordered — see below. Without a box and without a native app, this is the entire safety net once everyone is asleep. It works for a lone operator, needs no watch, no roster and no server |
-| 2 | **One human on-call with a proven channel** | needs a box | **human** | Real paging all night needs something that stays awake. One config entry and one command that works |
-| 3 | **Drills** — weekly, randomised, published | after 2 | agent | `last_drill` stays null, so a watch that *"cannot demonstrate a passing drill is presumed broken"* is permanently presumed broken. Also the Sleeper's main mitigation |
-| 2a | **Keyless pagers** — several, run anywhere, holding no key | with 2 | either | A `20911` is visible on relays without being readable, so waking people up needs no trust. This is redundant executors, made cheap: run three, learn nothing, and a missed page stops being one machine's fault |
-| 3a | **Web push as a paging channel, sent by the box** | after 2 | agent | The one native-grade capability a web app already has on both platforms — iPhone included, since 16.4. It is how an on-call person gets woken without an app store. The box holds the subscriptions, so no new third party beyond the browser's own push service |
-| 4 | Redundant executors | **defer — blocked on hardware, not code** | human | A single executor dying mid-`Distress`. `LadderRegistry` is already idempotent by event id; there is no second machine |
-| 5 | **Native apps, both platforms** | **deferred — decided 2026-08-19** | agent | Deprioritised deliberately. Native adds three things: `Distress` from a locked screen, silent SMS, and a phone holding the watch overnight. All real; none blocking. The web app is the surface and it stays complete, which is what this page always said |
-| 5a | **Live position sharing** — off by default, four settings: off / area name / ~500m / exact | do | agent | A `Distress` carries the last known position or nothing. **Live only, never a track** — where somebody *was* is the single most dangerous thing this system could hold, and it is what anyone trying to unmask an operator wants most. It lives with the list of who is out, expires with it, and never reaches the permanent log |
-| 5b | **Buddy pairing** — two solo operators watching each other's check-ins | do | agent | Probably the most common real arrangement after pure solo: two people who patrol alone, on different nights, who agree to watch each other. Not a squad — no shared callsign, no shared anything. Needs almost nothing new |
-| 5c | **Battery state** | do — small | agent | A phone at 8% is a safety fact, not a UI detail. It matters to the operator carrying it, and to everyone else if that phone is holding the watch |
-
-### Accuracy
-
-| | Item | Fate | Owner | Cost |
-|---|---|---|---|---|
-| 6 | **Console: a declaration must not read as a safety monitor** | with the Console | agent | Stated in [`declined.md`](declined.md). The Team Lead reads "active" as "fine". Wording and layout, not mechanism |
-| 6a | **Post-quantum hybrid sealing** — ML-KEM-768 beside the classical exchange | do | agent | Self-contained: one module in core, nothing else changes. Costs ~1 KB per recipient per message and ~15 KB of bundle. **The claim ships when the code does, not before** |
-| 7 | **Never write "anonymous" where "pseudonymous" is true** | do — small | agent | The Convert's highest-stakes overclaim, and the words are not written yet |
-| 7a | **Anchor the log root to Bitcoin** — OpenTimestamps, daily | do | agent | Closes the one gap in the accountability story that clients cannot close for themselves: a stretch of time nobody was watching. Free, no wallet, no token, a few hundred bytes. Also lets an operator verify a root they never saw, which is every new and every offline operator |
-| 8 | Counter-signing | defer — gate holds | agent | Closes omission. Not needed while the circle is people vetted personally |
-| 8a | **Saying no to an `Assist`** | do — small | agent | Right now the only ways not to help are silence and guilt. "Not tonight" should be a real answer that closes the request. **Never counted, never tallied** — a tally of declines is a compliance metric and the rules kill it |
-
-### The field runs standalone
-
-| | Item | Fate | Owner | Cost |
-|---|---|---|---|---|
-| 9 | **Directory data — the scraper** | do | agent | Twelve invented records means the one thing that always works is the one thing that is useless. Public half only: names, addresses, phones, hours. Brief in [`product/seeding.md`](product/seeding.md) |
-| 9a | **Directory data — the intake rules** | ongoing | **human, local knowledge** | The half no scraper produces, and the half the directory exists for. *"What is left before this is a real directory: data."* |
-| 10 | **Playbooks** | ongoing | **human, permanently** | Not agent work. Confident wrong guidance is the Medic's kill trigger |
-| 10a | **Your own patrol record, and a safe way to publish it** | do | agent | See below — it is already a requirement, and the argument for it is that withholding it does not stop anyone sharing |
-| 10b | **Coming home** — stand-down confirmed by name | do — nearly free | agent | *"Wren, 02:14, home."* The close of the night. Ranked the single best value-for-cost item in [`what-fiction-skips.md`](research/what-fiction-skips.md) and still not built |
-| 10c | **Weather** — warming and cooling centres open on conditions, not schedule | do | agent | The field already exists (`seasonal: weather_activated`). Below freezing changes the whole shape of a night: different destinations, different urgency, different supplies. An operator needs that before they leave |
-| 10d | **Supplies** — socks, water, hygiene kits, naloxone | do | either | Mundane, and it is what keeps a team functioning week to week. Must survive several people editing offline at once and resolve without a merge screen |
-
-### Your own patrol record
-
-Lots of RLSH stream their patrols and post the footage. Their own activity is not a secret,
-and pretending otherwise would be designing for somebody who does not exist.
-
-**So the record is theirs, and publishing it is theirs.** The requirement is already written
-down under the Public Face: *give him something designed to leave the app, or he will
-screenshot something that shouldn't.* Withholding a safe export does not stop anyone
-sharing — it just guarantees the sharing is done badly.
-
-Three lines it must not cross:
-
-- **It contains nobody but them.** Your movements are yours to publish. Raven's are not, and
-  Raven did not agree to anything. A record that names who you were out with, without their
-  say-so, publishes somebody else's whereabouts
-- **It contains nothing about anyone served.** No query text — *"bed tonight, fleeing
-  partner, has a dog"* is a person's situation, and it is the one thing that is never
-  recorded anywhere [invariant 1]
-- **Coarse by default when it leaves.** The stream showed a street corner; the export should
-  not carry GPS coordinates the stream never did
-
-What it holds is what a paper logbook would: date, area, out and in, how long, and whatever
-the operator wrote themselves.
-
-**Where it lives is the operator's choice, made once and priced honestly.** Kept across a
-panic wipe, a year of patrols survives a bad night — and a seized phone shows a year of
-patrols. Off by default. The Protest Medic wants it off; the Public Face wants it on; both
-are right about their own situation, which is exactly the kind of choice
-[`principles.md`](principles.md) says an operator may make for themselves.
-
-### Everything else
-
-| | Item | Fate |
+| | Today | Fixed by |
 |---|---|---|
-| 11 | **Watch as a mode of the app**, beyond item 6 | do — this replaces the Console-from-the-box plan |
-| 12 | **Mecha Jono holding the board** | defer — session 2, and it is one function call. Everything in [`agents.md`](watch/agents.md) is about what happens *around* it |
-| 13 | Endorsements, funding, propagation, recovery, RelayNode | defer — designed, not scope |
-| 14 | **Multi-holder Watchtower** | **unblocked** — a squad with no box is the reason it was waiting for |
-| 15 | **Native Android/iOS** | defer to Mk1 — decided |
+| Solo on patrol | Works — callsign, directory, own person one tap away | Milestone 1 completes it |
+| Team on patrol, no leader | **Nothing.** No way to see each other | 3.1 |
+| Team on patrol with a leader | **Nothing**, and there is no concept of a team | 3.1, 4.1 |
+| Solo on watch | Well served. This is what got built first | — |
+| Team on patrol, watcher at home | Served; the watcher sees a flat list with no grouping | 4.1 |
+| **Agent on watch** | Holds the board, answers questions, and **cannot close a `Distress`** — an agent is never the sole responder. A 24/7 agent watch is a query desk, not a safety net | Nothing fixes this, by design. Say it plainly to anyone setting one up |
+| Team on watch | Handover specified, unimplemented | 4.4 |
 
 ### Awaiting a decision
 
-**Mission Package ingestion has a fate now.** It is a thing Starcom *produces*; NavCom does
-not consume one today and does not need to. The relationship is one way and small: **Starcom
-is intelligence and strategy, NavCom is field and tactics.** NavCom is complete without it,
-and sends de-identified patterns upward if and when there are any. Revisit when there is
-real traffic, not before.
+**Cannot be given a fate until somebody can describe it:** nothing. `presets` turned out to
+be the Ghost / Team / Open visibility presets in
+[`product/visibility.md`](product/visibility.md) — not a missing feature, an unbuilt one.
+Deferred until Milestone 3 gives it something to configure.
 
-**`presets` has a fate**, and it turned out to be already designed: the Ghost / Team / Open
-visibility presets in [`product/visibility.md`](product/visibility.md). Not a missing
-feature — an unbuilt one. **Deferred**, and it needs the profile and presence work below
-before it means anything.
 
 ## Declined, not deferred
 
