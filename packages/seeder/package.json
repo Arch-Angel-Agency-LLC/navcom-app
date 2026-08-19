@@ -1,0 +1,20 @@
+{
+  "name": "@navcom/seeder",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "bin": { "navcom-seed": "dist/cli.js" },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "core": "npm --prefix ../core run build",
+    "prebuild": "npm run core",
+    "pretest": "npm run core",
+    "precheck": "npm run core",
+    "seed": "tsx src/cli.ts",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit -p tsconfig.check.json",
+    "verify": "npm run typecheck && npm test"
+  },
+  "dependencies": { "@navcom/core": "file:../core" },
+  "devDependencies": { "tsx": "^4.19.2", "typescript": "^5.7.2", "vitest": "^2.1.8" }
+}

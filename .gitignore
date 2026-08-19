@@ -10,3 +10,7 @@ build/
 .env
 .env.*
 !.env.example
+
+# Seeder working files: the CSV is the artefact, these are not.
+data/regions/*/.cache/
+data/regions/*/.seed-report.json

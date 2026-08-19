@@ -44,6 +44,34 @@ That combination makes a record render **visually distinct and marked unverified
 surface, which is already tested against the built HTML. The scraper's job is to be honest
 about provenance; the display layer is already honest about what that provenance is worth.
 
+## The rule the first real run taught
+
+**A source that cannot distinguish the thing that matters must not be used for that
+category.**
+
+Learned twice in one afternoon, from OpenStreetMap over St. Louis:
+
+- `healthcare=centre` and `amenity=clinic` returned 23 records: a medical school building, a
+  cancer centre, four private urgent-care franchises, two travel clinics, five home-health
+  agencies, and a medspa. The Medic wants *"the nearest ER that won't call police"* — free
+  or low-barrier care for somebody with no insurance and no address. **No generic healthcare
+  tag can tell you that**, and a private urgent care in the list is not a neutral extra: an
+  operator sends somebody there and they are turned away or billed
+- `amenity=shelter` is worse. In OSM it means **a structure that keeps rain off** — picnic
+  pavilions, storm cellars, bus stops. After excluding bus stops it still returned "Tornado
+  Shelter", "Duck Shelter" and "Bowl Lake Pavilion" as emergency accommodation. A wasted
+  journey is bad; a park pavilion listed as a shelter is somebody walking there at midnight
+  in February
+
+Only `social_facility` describes a *service* rather than a building, and services are what
+this directory holds. So OSM contributes shelters, meals, day centres and outreach — and
+**medical stays empty rather than wrong** until a source that lists low-barrier care
+specifically is wired up.
+
+The result of applying that: St. Louis went from 88 scraped records to 11, and every one of
+the 11 is a real service. **Fewer records, all of them plausible, is the trade to make every
+time.**
+
 ## Where the public half comes from
 
 Roughly in order of quality. Confirm licensing per source before shipping any of them — most

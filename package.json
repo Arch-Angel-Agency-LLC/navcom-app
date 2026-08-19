@@ -3,9 +3,10 @@
   "private": true,
   "workspaces": [
     "packages/*",
-    "web"
+    "web",
+    "packages/seeder"
   ],
   "scripts": {
-    "verify": "npm run verify --workspace @navcom/core && npm run verify --workspace @navcom/watchtower && npm run verify --workspace navcom-web"
+    "verify": "npm run verify --workspace @navcom/core && npm run verify --workspace @navcom/watchtower && npm run verify --workspace @navcom/seeder && npm run verify --workspace navcom-web"
   }
 }

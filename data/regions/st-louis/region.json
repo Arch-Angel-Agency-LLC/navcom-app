@@ -3,6 +3,19 @@
   "name": "St. Louis metro",
   "country": "US",
   "timezone": "America/Chicago",
-  "languages": ["en", "es"],
-  "status": "seeded"
+  "languages": [
+    "en",
+    "es"
+  ],
+  "status": "seeded",
+  "sources": {
+    "osm": {
+      "bbox": [
+        -90.42,
+        38.48,
+        -90.1,
+        38.78
+      ]
+    }
+  }
 }
