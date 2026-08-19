@@ -89,6 +89,20 @@ data and the `type` taxonomy need humans with local knowledge.
 
 **Cost:** the knowledge layer stays thin until people write it.
 
+### Interoperating with an allied agency
+
+The Liaison wants their people visible to ours for one night, then gone — federation without
+membership, time-boxed and scoped to an operation. It is a real requirement and it is
+genuinely hard.
+
+**There is no allied agency.** Building federation before anyone asks for it is designing
+against an imagined counterparty, and the shape they need will be decided by who they turn
+out to be.
+
+**Cost:** a joint operation with another group has no tooling and will be run over the phone.
+
+**Instead:** the design stays written down in the roster. Reverse this the day someone asks.
+
 ## Things we will not provide
 
 ### Uptime
@@ -115,6 +129,24 @@ signed.
 
 **Instead:** state the trade at the moment of contribution, in those words. Never write
 "anonymous" where "pseudonymous" is what is true.
+
+### Storing your emergency contact on the node
+
+The escalation ladder's contact rung is **device-initiated**: your own phone reaches your own
+person, so no number is stored anywhere. The node-initiated version — the box holding phone
+numbers for operators and dialling them — is declined.
+
+Storing a roster of operators' personal contacts on one machine is the concentration this
+whole design exists to avoid, and it is the single most useful thing a subpoena or a seizure
+could find.
+
+**Cost is real and should not be softened:** the case node-initiated uniquely covers is *the
+operator cannot act* — unconscious, restrained, phone taken. That is the actual emergency,
+and declining this means the ladder cannot cover it.
+
+**Instead:** the ladder reaches on-call humans, and where it cannot, it says so. An operator
+who wants coverage for being unable to act should tell somebody where they are going, which
+is not a thing software does better.
 
 ### Protection from someone holding your unlocked phone
 

@@ -57,24 +57,46 @@ entry can carry a discreet name and icon, and browsers may evict a non-installed
 cached storage under pressure. On a phone with 400MB free, that second one is the
 difference between the directory being there at 2am and not.
 
-## The Console is served from the box
+## Holding watch is a mode of the app, not a second application
 
-**Not from navcom.app, and not from the public web at all.**
+**Reversed on 2026-08-19.** This page previously said the Console must be served from the
+box and never from `navcom.app`. The reasoning was: signals are encrypted to a key that
+lives on the box and never leaves it, so a Console served from a public origin could never
+decrypt anything.
 
-Signals are NIP-44 encrypted to the Watchtower key, and
-[`spec/bootstrap.spec.md`](spec/bootstrap.spec.md) says that key is generated on the box,
-stored there, and never leaves it. A Console served from a public origin could therefore
-never decrypt anything — it would need the private key in the browser, which breaks the
-one assumption the encryption model rests on.
+That reasoning was sound and its premise was not. **It assumed there is a box.** A squad of
+four RLSH has no box, no spare machine and nobody who wants to run one — and requiring one
+meant those squads could not have a watch at all. Remove the box and the rule dissolves with
+it: the field app already generates a private key in the browser and never transmits it, and
+a watch view does exactly the same thing.
 
-So the Console renders in a browser over LAN or localhost, served by the box. It is a web
-app in the sense that it uses a browser, not in the sense that it is on the web.
+So there is **one application**, and holding watch is something you take up in it. The
+person at home on the sofa with a phone is the watch that night; somebody else is the watch
+tomorrow. See [`spec/bootstrap.spec.md`](spec/bootstrap.spec.md) for where the key lives in
+each arrangement.
 
-Useful consequence: **the Console has no public endpoint** — nothing to discover, attack,
-or subpoena at a hosting provider.
+**The box does not go away — it becomes optional.** Run one and the watch is up all night.
+Don't, and the watch is up while somebody is awake and holding it. Same app, same protocol,
+same wire format.
 
-> Inferred from the encryption model rather than stated in an earlier spec. Recorded here
-> so it stops being re-derived.
+### What this costs, said plainly
+
+- **Everyone in a squad can read every signal**, on watch or off, because the payload must
+  be readable by whoever picks up the watch next. Acceptable inside a squad that already
+  knows who is out. Not acceptable for a wider network, and the box arrangement remains the
+  answer there
+- **Dark becomes the common case.** A phone-held watch is asleep most of the night. That
+  puts the weight on the offline directory and on what a lone operator can do without a
+  watch, which is where it belongs anyway
+- **The field view must not drift into a dispatch console.** Two applications enforced that
+  by accident of architecture; one application enforces it by discipline. There is still no
+  verb that assigns anyone to anything
+
+### What does not change
+
+Nothing is served from `navcom.app` that was not already: it delivers code, never keys. An
+operator's key and a phone-held Watchtower key are both made in the browser and stay there,
+so there is still nothing at the hosting provider to subpoena.
 
 ## One shared core
 

@@ -407,25 +407,21 @@ reporting success.
 
 | | Item | Fate |
 |---|---|---|
-| 11 | Console, beyond item 6 | do — the gate is open |
+| 11 | **Watch as a mode of the app**, beyond item 6 | do — this replaces the Console-from-the-box plan |
 | 12 | **Mecha Jono holding the board** | defer — session 2, and it is one function call. Everything in [`agents.md`](watch/agents.md) is about what happens *around* it |
 | 13 | Endorsements, funding, propagation, recovery, RelayNode | defer — designed, not scope |
-| 14 | Multi-holder Watchtower | defer on cost, not principle |
+| 14 | **Multi-holder Watchtower** | **unblocked** — a squad with no box is the reason it was waiting for |
 | 15 | **Native Android/iOS** | defer to Mk1 — decided |
 
 ### Awaiting a decision
 
-**Proposed for [`declined.md`](declined.md), not yet moved:**
+**Mission Package ingestion has a fate now.** It is a thing Starcom *produces*; NavCom does
+not consume one today and does not need to. The relationship is one way and small: **Starcom
+is intelligence and strategy, NavCom is field and tactics.** NavCom is complete without it,
+and sends de-identified patterns upward if and when there are any. Revisit when there is
+real traffic, not before.
 
-- **Allied interop / the Liaison.** Federation without membership is genuinely hard and
-  there is no allied agency. Decline until one exists and asks; the design survives either way
-- **Node-side emergency contact**, as distinct from item 3. It means storing phone numbers
-  on the box, which is what the threat model hates — but the case it uniquely covers is
-  *the operator cannot act*, which is the actual emergency. **This may not be cheaply
-  declinable**, and saying so beats pretending
-
-**Cannot be given a fate until somebody can describe them:** `presets`, and Mission Package
-ingestion. Naming that is an output of this plan, not a gap in it.
+**`presets`** still cannot be given a fate, because nobody can currently say what it is.
 
 ## Declined, not deferred
 
@@ -434,7 +430,7 @@ Some real problems are not on this page at all, on purpose — see
 waiting. The difference matters, because a page where every gap becomes future work is a
 page that only grows.
 
-## On the multi-holder Watchtower
+## The multi-holder Watchtower — no longer deferred
 
 **A multi-holder Watchtower** — signals sealed to a set of keys rather than one, so several
 nodes hold the same board — is a real option rather than an impossibility, and the earlier
@@ -442,10 +438,14 @@ claim that "the watch cannot be decentralised" was wrong. What cannot be distrib
 *who is accountable*: one name, because diffused responsibility means nobody acts. The board,
 query answering and escalation can all be held by more than one party.
 
-It is deferred on a cost rather than a principle. Sealing to M keys means M parties hold the
-operational picture, and the threat model here is doxxing — so decentralising the board
-widens exposure while narrowing dependence. That trade needs a reason, and one box run by
-one person for a handful of people they trust is not yet it.
+It was deferred on a cost rather than a principle. Sealing to M keys means M parties hold
+the operational picture, and the threat model here is doxxing — so it widens exposure while
+narrowing dependence. That trade needed a reason.
+
+**The reason arrived: a squad with no box.** Four RLSH who patrol together have nobody
+willing to run a machine, and requiring one meant they could not have a watch at all. Inside
+a squad the exposure is not new — all four already know who is out. That is what being a
+squad means. Outside one it would be, which is why the box arrangement stays.
 
 Everything deferred above is designed, and none of it is scope. A spec written before the
 loop is proven is a guess in a more confident format — [`spec/README.md`](spec/README.md)

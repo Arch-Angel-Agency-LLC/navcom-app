@@ -19,10 +19,30 @@ Ephemeral kinds (20000–29999) are not expected to be stored by relays — requ
 
 ## Encryption
 
-All payloads NIP-44 encrypted to the **Watchtower key** — the node's key, not the
-individual watch holder's. See [`README.md`](./README.md) for why, and what it costs.
+All payloads encrypted to the **Watchtower**, not to whoever happens to be holding watch.
+The event `p`-tags the Watchtower pubkey. See [`README.md`](./README.md) for why, and what
+it costs.
 
-Event `p`-tags the Watchtower pubkey. Content is the encrypted JSON payload below.
+Sealing to the *Watchtower* rather than to a person is what makes handover free: watch
+changes hands without anything being re-encrypted, and a signal in flight during a handover
+is still readable by whoever picks it up.
+
+**One Watchtower may be held by more than one key.** A box holds one; a squad with no box
+holds one key per phone [`bootstrap.spec.md`](bootstrap.spec.md). Both are supported, and
+the wire format is the same either way:
+
+- **One key** — NIP-44 to the Watchtower pubkey, directly
+- **Several keys** — the payload is encrypted once under a fresh random key, and that key is
+  wrapped separately for each member. The event still `p`-tags the Watchtower pubkey, so a
+  sender needs the member list but a relay learns nothing extra
+
+A client MUST NOT be required to know which arrangement is in use before it can send.
+Discovering that a Watchtower is squad-held is part of being given its address in person,
+the same conversation that already hands over the pubkey and the relay list.
+
+**Membership changes are not retroactive.** Removing a member stops them reading *future*
+signals. It cannot un-send what they could already read, and no wording anywhere may imply
+otherwise.
 
 ## `20910` — Signal
 

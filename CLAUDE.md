@@ -1,8 +1,11 @@
 # Operating Brief
 
-NavCom is **the Watchtower**: someone is always on watch while operators are out. Two
-applications joined by a duty relationship — a Console for whoever holds watch, a Field
-Terminal for whoever's on the street.
+NavCom is **the Watchtower**: someone is on watch while operators are out. **One
+application, two modes** — you take up the watch, or you go out. The same person does both
+on different nights, so it is one app you learn once.
+
+A box can hold the watch all night. A squad without one holds it on a phone, passed to
+whoever is awake. Both are supported; neither is the degraded version.
 
 It is **infrastructure for acting without authority while remaining accountable**. Everyone
 here works without an institution behind them, so the only thing that can carry belief is
@@ -40,7 +43,7 @@ seeded for the St. Louis metro.
 | Field Terminal | PWA at `navcom.app` — try instantly, no install, fully capable | Decided |
 | Native mobile | Android/iOS at Mk1, for the two things a PWA **cannot** do: `Distress` from a locked screen, and SMS duress fallback when Dark. Not a capability tier | Decided, deferred |
 | UI framework | Svelte | Decided |
-| Console | Web app served **from the box**, never the public web — the Watchtower key never leaves it | Decided |
+| Watch | A mode of the same app, not a separate Console. A box may hold it all night; a squad without one holds it on a phone | Decided 2026-08-19, reversing "served from the box" |
 | Relay topology | Public relays for MVP; self-hosted RelayNode at Mk1 | Decided |
 | Node services | TypeScript unless there's a reason — shared payload types with the clients | Decided |
 

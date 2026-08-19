@@ -5,16 +5,46 @@ single signal can be sent.
 
 ## The Watchtower keypair
 
-The node holds one secp256k1 keypair. Generated once, stored on the box, never leaves it.
+One secp256k1 keypair identifies a Watchtower. **Its pubkey is the Watchtower address**:
+signals are `p`-tagged to it and the `10910` watch state event is signed by it.
 
-- **Its pubkey is the Watchtower address.** Signals are NIP-44 encrypted to it and
-  `p`-tagged to it. The `10910` watch state event is signed by it
+Where the private half lives depends on who is holding watch, and there are two supported
+answers. Both are first-class; neither is a degraded version of the other.
+
+### On a box
+
+Generated on the node, stored there, never copied off. This is the answer for a watch that
+is up all night.
+
 - MUST be generated on the node, not on a laptop and copied
-- MUST be readable only by the node processes — file permissions, not a secret store, for
-  MVP
-- **Compromise means the whole board is readable.** There is no key rotation story yet;
-  it is a Mk1 requirement, not an MVP one, and it is recorded here so nobody assumes one
-  exists
+- MUST be readable only by the node processes — file permissions, not a secret store, for MVP
+
+### On the phones of a squad
+
+A squad with no hardware and no technical member is the common case, and requiring a box to
+have a watch at all means those squads have none. So the watch may instead be **held in the
+app by whoever is awake**, and handed to whoever is awake next.
+
+This requires signals to be readable by more than one key, which is specified in
+[`signals.spec.md`](signals.spec.md). Consequences, stated rather than discovered:
+
+- **Every member of the squad can read every signal, on watch or off.** That is the trade,
+  and it is only acceptable where the squad already knows who is out — which is what being
+  a squad means. It is not acceptable for a wider network
+- **The watch is Dark whenever nobody is holding it**, which will be most of the night. Dark
+  is a supported state and is reported honestly; it is not a failure of this arrangement, it
+  is the arrangement
+- Adding a member changes what future signals are readable by. It MUST NOT retroactively
+  open past ones
+
+### Common to both
+
+- **Compromise means the whole board is readable.** There is no key rotation story yet; it
+  is a Mk1 requirement, not an MVP one, and it is recorded here so nobody assumes one exists
+- **The private key is never transmitted to a server.** A phone-held Watchtower key is
+  generated in the app and stays there, exactly as an operator's own key already does.
+  `navcom.app` serves code, never keys, so there is nothing at the host to subpoena in
+  either arrangement
 
 ## Operator keypairs
 
