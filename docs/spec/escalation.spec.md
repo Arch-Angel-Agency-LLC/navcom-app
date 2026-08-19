@@ -15,6 +15,16 @@ or route through it. A degraded, hung, or hostile agent MUST NOT impair escalati
 way — this is what makes the safety guarantee structural rather than a promise from an
 entity whose alignment is unverifiable.
 
+**And it MUST get its trigger from the relays, not from the daemon.** A design where the
+daemon receives the `20911` and hands it to the executor satisfies "separate process" on
+paper while leaving a hung daemon able to take escalation down with it — the requirement
+failing in exactly the way it was written to prevent. The executor subscribes on its own.
+
+The cost is that two processes hold the Watchtower key, doubling where it lives. That is
+accepted: the alternative is an escalation path depending on the availability of the
+component most likely to hang. Run them under **separate supervisor units** — sharing one
+means a crash loop in either restarts the other, and the separation becomes a comment.
+
 ## Trigger
 
 Only a `20911` Distress event. Never a timer, a missed window, an overdue, or an agent's
@@ -52,6 +62,7 @@ matters.
 | State | Action | Window |
 |---|---|---|
 | `PAGING` | Page all on-call via each registered channel | 300s |
+| *(skipped)* | An empty pageable roster MUST go straight to `CONTACT`, and with no contact either, straight to `EXHAUSTED`. Waiting out a window with nobody on the other end is five minutes the operator does not have, and it looks identical to a ladder that is working | — |
 | `CONTACT` | Operator's emergency contact — device-initiated where the phone responds, node-initiated where opted in | 300s |
 | `EXHAUSTED` | Report failure to the operator | terminal |
 | `ACKNOWLEDGED` | Stop. A human has it | terminal |
@@ -60,7 +71,15 @@ matters.
 
 **Acknowledgement** means a human explicitly accepting — a tap, a reply, an answered call.
 Delivery receipts, read receipts, and app-open events MUST NOT count. Someone whose phone
-buzzed is not someone who woke up.
+buzzed is not someone who woke up. On the wire this is a `distress-ack` signal
+[`signals.spec.md`](signals.spec.md).
+
+An acknowledgement from outside the on-call roster MUST be refused and logged. Strictness is
+the safe direction here: a ladder that keeps paging is survivable, and one stopped by
+somebody who is not coming is not.
+
+A ladder that has already reached `EXHAUSTED` still accepts an acknowledgement. Somebody
+arriving late is still somebody arriving.
 
 ## Reporting
 
@@ -73,6 +92,14 @@ The operator MUST receive a `20912` on **every** transition [C42]:
 
 `EXHAUSTED` MUST reach the operator's own device even with no watch and no network — a
 local fallback message. An operator who knows nobody is coming can act on that.
+
+**This one is the client's job, and it is the only part of the ladder the node cannot report
+on**, because the case it covers is the node being gone. The client concludes it from time
+alone: past the ladder's whole budget (`paging + contact`, 600s by default) a working watch
+would already have said something, so silence means there is no working watch.
+
+It is a **message, not a state**. The client MUST keep retrying — only the operator ends a
+`Distress` — and MUST say it once rather than repeating it.
 
 ## Paging channels [C40]
 
@@ -89,6 +116,15 @@ not on-call.
 `console-open` MUST NOT be offered as a sole channel to someone going to sleep. If it is
 the only registered channel, the node treats the roster as empty for paging purposes and
 says so.
+
+**A channel names what was registered; the node owns the mechanism.** No provider is
+embedded — the node runs a configured command per on-call entry, as argv rather than a shell
+string so nothing in a payload can become a command. Embedding a provider would put a third
+party in the one path that must not depend on anybody's uptime but the node operator's own.
+
+Registering a channel is a **condition of the role**, enforced at startup: an on-call entry
+with no way to wake anyone is refused rather than paged into nothing and then reported as
+paged.
 
 ## Emergency contact
 

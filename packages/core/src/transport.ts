@@ -149,6 +149,19 @@ export type DistressPhase =
    * proves the signal is getting through and nothing more — the loop keeps going.
    */
   | { phase: 'agent-holding'; attempt: number; response: ResponsePayload }
+  /**
+   * **Nobody is coming, and the device worked that out by itself.**
+   *
+   * Failure mode 4 in `escalation.spec.md`: `EXHAUSTED` must reach the operator's own
+   * device even with no watch and no network. Every other phase here describes what the
+   * node said; this one is what the phone concluded when the node said nothing at all —
+   * which is the case where the operator most needs to be told, and the one where the node
+   * is least able to tell them.
+   *
+   * Emitted **once**, and it does not stop anything. Retrying continues, because only the
+   * operator ends a Distress. It is a message, not a state.
+   */
+  | { phase: 'nobody-answering'; attempt: number; elapsedMs: number }
   | { phase: 'acknowledged'; response: ResponsePayload };
 
 export interface DistressOptions {
@@ -161,8 +174,18 @@ export interface DistressOptions {
   onPhase?: (phase: DistressPhase) => void;
   /** Aborts the retry loop. Only an operator, or an acknowledgement, should do this. */
   signal?: AbortSignal;
+  /**
+   * How long without a human before the device says so on its own.
+   *
+   * Defaults to the ladder's whole budget — 300s paging plus 300s contact. Past that, a
+   * working node would already have reported `EXHAUSTED`, so silence means the node is not
+   * working and the phone is the only thing left that can tell the operator.
+   */
+  localExhaustedAfterMs?: number;
   /** Injected for tests so they do not wait in real time. */
   sleep?: (ms: number) => Promise<void>;
+  /** Injected for tests. Real code has no business reading a clock it cannot control. */
+  clock?: () => number;
 }
 
 const defaultSleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
@@ -197,8 +220,13 @@ export async function sendDistressUntilAcknowledged(
   const sleep = opts.sleep ?? defaultSleep;
   const report = opts.onPhase ?? (() => {});
 
+  const clock = opts.clock ?? (() => Date.now());
+  const localExhaustedAfter = opts.localExhaustedAfterMs ?? 600_000;
+  const startedAt = clock();
+
   let backoff = opts.backoffMs ?? 2_000;
   let attempt = 0;
+  let saidNobodyAnswering = false;
 
   for (;;) {
     if (opts.signal?.aborted) throw new Error('Distress cancelled by the operator');
@@ -229,6 +257,15 @@ export async function sendDistressUntilAcknowledged(
       } catch {
         report({ phase: 'no-answer', attempt });
       }
+    }
+
+    // Said once, and it changes nothing. The loop keeps going because only the operator
+    // ends a Distress — but an operator who knows nobody is coming can act on that, and one
+    // who is still watching attempt numbers tick up has been told nothing useful.
+    const elapsedMs = clock() - startedAt;
+    if (!saidNobodyAnswering && elapsedMs >= localExhaustedAfter) {
+      saidNobodyAnswering = true;
+      report({ phase: 'nobody-answering', attempt, elapsedMs });
     }
 
     await sleep(backoff);

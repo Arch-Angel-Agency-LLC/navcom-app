@@ -40,7 +40,16 @@ export const SIGNAL_TYPES = [
    * ask with: the node answers about whoever signed the request, so asking for somebody
    * else's record is not a permission the payload can express.
    */
-  'log-review'
+  'log-review',
+  /**
+   * "I have this" — an on-call human accepting a `Distress`, and the only thing that stops
+   * the ladder.
+   *
+   * A signal rather than a new kind: it is a message to the watch like any other. It MUST
+   * be an explicit act by a person. A delivery receipt, a read receipt or an app-open event
+   * MUST NOT be routed into it — someone whose phone buzzed is not someone who woke up.
+   */
+  'distress-ack'
 ] as const;
 export type SignalType = (typeof SIGNAL_TYPES)[number];
 

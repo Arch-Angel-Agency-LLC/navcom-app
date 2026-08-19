@@ -35,7 +35,7 @@ Event `p`-tags the Watchtower pubkey. Content is the encrypted JSON payload belo
 ```
 
 `signal-type` MUST be one of: `on-station` · `routine` · `query` · `assist` ·
-`stood-down` · `log-review`
+`stood-down` · `log-review` · `distress-ack`
 
 The type is an unencrypted tag so a client can filter without decrypting. This leaks
 *that* a signal of a given type occurred, not its content. `distress` is deliberately not
@@ -82,6 +82,17 @@ patterns on `20910`.
 Both optional. **There is no subject field, and that is the access control**: the node
 answers about the pubkey that signed the request, so one operator asking for another's
 record is not something the payload can express.
+
+**`distress-ack`** — *"I have this."* The only thing that stops the escalation ladder.
+```json
+{ "distress_id": "<20911 event id>" }
+```
+- MUST be an explicit act by a person. A delivery receipt, a read receipt or an app-open
+  event MUST NOT be routed into it — someone whose phone buzzed is not someone who woke up
+- The executor MUST refuse an ack from a sender who is not on the on-call roster, and MUST
+  log the refusal. A ladder that keeps paging is survivable; one stopped by somebody who is
+  not coming is not
+- An agent MUST NOT acknowledge [invariant 5]
 
 **`stood-down`** — `{}`.
 
@@ -146,6 +157,7 @@ record is not something the payload can express.
 | `query` | answer within 120s; ack within 30s if answer will take longer |
 | `assist` | ack within 60s, resolution within 300s |
 | `log-review` | answer within 120s. Not urgent — nobody is in the street waiting on it |
+| `distress-ack` | 10s. One tap, and somebody is waiting on it as they are waiting on nothing else |
 | `distress` | see [`escalation.spec.md`](./escalation.spec.md) |
 
 A missed window is not an error condition. It is displayed to the operator as an

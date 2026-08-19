@@ -90,11 +90,17 @@ export interface LogReviewPayload {
   limit?: number;
 }
 
+/** Accepting a specific `Distress`. The id is the `20911` event being answered. */
+export interface DistressAckPayload {
+  distress_id: string;
+}
+
 export type SignalPayload =
   | OnStationPayload
   | QueryPayload
   | AssistPayload
   | LogReviewPayload
+  | DistressAckPayload
   | Record<string, never>;
 
 /** Response windows, in seconds. Surfaced to the operator rather than hidden. */
@@ -106,6 +112,9 @@ export const RESPONSE_WINDOW: Record<SignalType | 'distress', number | null> = {
   'stood-down': 60,
   // Not urgent. It is a records request, and nobody is in the street waiting on it.
   'log-review': 120,
+  // Acknowledging is the fastest thing in the system: it is one tap, and somebody is
+  // waiting on it in a way they are not waiting on anything else.
+  'distress-ack': 10,
   distress: null
 };
 

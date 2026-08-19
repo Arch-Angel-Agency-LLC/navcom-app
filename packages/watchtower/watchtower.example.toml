@@ -55,3 +55,9 @@ path = "/var/lib/navcom/accountability.jsonl"
 # Entries older than this are dropped on start. Rotation records the dropped tail's final
 # hash so the chain still verifies afterwards rather than looking tampered with.
 retention_days = 90
+
+# ---------------------------------------------------------------------------
+# The escalation executor reads its own config file, not this one.
+# See escalation.example.toml. That separation is deliberate: the executor must
+# not depend on the daemon for anything, including configuration.
+# ---------------------------------------------------------------------------

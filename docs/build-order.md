@@ -309,11 +309,44 @@ survivable and specified. An escalation that never fires is not.**
 **Console.** Served from the box over LAN or localhost — see [`delivery.md`](delivery.md)
 for why it cannot be served from navcom.app.
 
-## Gated, and treated differently
+## The escalation ladder — built, unproven, and running with nobody on-call
 
-**The escalation ladder.** It does not get the move-fast treatment the loop gets. The seven
-failure-mode tests in [`spec/escalation.spec.md`](spec/escalation.spec.md) are written
-*before* it ships, not after.
+Invariant 2 had nothing behind it until now: every `Distress` the daemon received wrote
+`escalation-not-attempted` to the accountability log. It no longer does.
+
+**The seven failure modes are tests, and they are the interface.** Six are in
+`packages/core/test/escalation.test.ts`, numbered to match the spec so a later reader can
+check the list is still complete rather than taking anyone's word. The seventh — *node down
+at time of distress* — is the one failure the node structurally cannot report on, so it is
+tested on the client instead, and its absence from that file is noted there as a decision.
+
+**The executor gets its trigger from the relays, not from the daemon.** A design where the
+daemon receives the `20911` and hands it over satisfies "separate process" on paper while
+leaving a hung daemon able to take escalation down with it — the requirement failing in
+exactly the way it was written to prevent. The cost is two processes holding the Watchtower
+key, and it is the right trade against an escalation path that depends on the component most
+likely to hang.
+
+**No provider is embedded.** A channel names what was registered; the node runs a configured
+command per on-call entry, argv rather than a shell string. Anything else puts a third party
+in the one path that must not depend on anybody's uptime but the node operator's own.
+
+**The `responder` field on a transition is load-bearing.** A client stops retrying on a
+`human` responder, so a machine saying *"paging"* must not be authored as one — that would
+end a `Distress` with nobody on the other side while looking like it worked. Only the
+acknowledgement carries a human author, and it carries the actual human's callsign.
+
+**What is still missing, and it is most of the value:**
+
+- **No drills.** `last_drill` stays null, so `automated-oncall` still publishes as
+  `automated`. Weekly randomised drills, published to the status page, are next
+- **No roster anywhere.** A `Distress` today pages nobody, reaches the end of the ladder at
+  once, and says so. That is the ladder working correctly; it is not the ladder helping, and
+  the status page says exactly that
+- **No node-side emergency contact.** The spec prefers device-initiated anyway, so
+  `CONTACT` is currently always skipped — failure mode 5, which is tested
+
+## Gated, and treated differently
 
 **Mecha Jono holding the board** is session 2, and it is one function call. Everything in
 [`watch/agents.md`](watch/agents.md) is about what happens *around* that call.

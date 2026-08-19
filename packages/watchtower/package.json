@@ -8,13 +8,15 @@
   "private": true,
   "bin": {
     "watchtower-daemon": "./dist/daemon/index.js",
-    "watchtower-cli": "./dist/client/index.js"
+    "watchtower-cli": "./dist/client/index.js",
+    "navcom-escalation": "dist/escalation/index.js"
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "cli": "tsx src/client/index.ts",
     "core": "npm --prefix ../core run build",
     "daemon": "tsx src/daemon/index.ts",
+    "escalation": "tsx src/escalation/index.ts",
     "lint": "eslint src test",
     "prebuild": "npm run core",
     "pretest": "npm run core",

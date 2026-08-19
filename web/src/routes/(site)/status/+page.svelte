@@ -30,8 +30,14 @@
   <div class="notice notice--stop">
     <p class="notice__label">Escalation</p>
     <p>
-      <strong>Not built. No drills have run.</strong> There is no watch to raise anyone, and
-      nothing here should be relied on in an emergency.
+      <strong>Built, unproven, and running with nobody on-call.</strong> The ladder exists
+      and its seven failure paths are tested — but no drill has ever run, and no deployment
+      has a roster. A Distress today pages nobody, reaches the end of the ladder at once, and
+      tells the operator so.
+    </p>
+    <p>
+      That is the ladder working correctly. <strong>It is not the ladder helping.</strong>
+      Nothing here should be relied on in an emergency.
     </p>
   </div>
 

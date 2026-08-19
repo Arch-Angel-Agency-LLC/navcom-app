@@ -459,6 +459,56 @@ describe('distress keeps trying until a human acknowledges', () => {
 
   const noSleep = async () => {};
 
+  it('tells the operator nobody is coming, from the device, with no node involved', async () => {
+    // Failure mode 4 in escalation.spec.md: EXHAUSTED must reach the operator's own device
+    // even with no watch and no network. Every other phase reports what the node SAID; this
+    // is what the phone concluded when the node said nothing -- the exact case where the
+    // node cannot be the one to say it.
+    const pool = fakePool({ ackOnAttempt: 99 });
+    const controller = new AbortController();
+    const phases: string[] = [];
+    let clock = 0;
+
+    await sendDistressUntilAcknowledged(
+      pool as never, ['wss://r'], secret, ourPubkey, watchtower, payload,
+      {
+        ackWindowMs: 1,
+        localExhaustedAfterMs: 600_000,
+        clock: () => clock,
+        // The clock only moves when the loop sleeps, so this is deterministic.
+        sleep: async (ms) => { clock += ms; if (clock > 900_000) controller.abort(); },
+        signal: controller.signal,
+        onPhase: (p) => phases.push(p.phase)
+      }
+    ).catch(() => {});
+
+    expect(phases.filter((p) => p === 'nobody-answering'), 'said exactly once').toHaveLength(1);
+    // It is a message, not a state: the loop was still trying when the operator stopped it.
+    const saidAt = phases.indexOf('nobody-answering');
+    expect(phases.slice(saidAt + 1)).toContain('sending');
+  });
+
+  it('does not say nobody is coming while the ladder still has time to run', async () => {
+    const pool = fakePool({ ackOnAttempt: 99 });
+    const controller = new AbortController();
+    const phases: string[] = [];
+    let clock = 0;
+
+    await sendDistressUntilAcknowledged(
+      pool as never, ['wss://r'], secret, ourPubkey, watchtower, payload,
+      {
+        ackWindowMs: 1,
+        localExhaustedAfterMs: 600_000,
+        clock: () => clock,
+        sleep: async (ms) => { clock += ms; if (clock > 60_000) controller.abort(); },
+        signal: controller.signal,
+        onPhase: (p) => phases.push(p.phase)
+      }
+    ).catch(() => {});
+
+    expect(phases).not.toContain('nobody-answering');
+  });
+
   it('an agent answering is not closure — the loop keeps going until a human does', async () => {
     // Invariant 2: Distress terminates in a human, or tells the operator it could not.
     // Invariant 5: an agent is never the sole responder. An agent ack that stopped the

@@ -1,0 +1,47 @@
+# The escalation executor.
+#
+# Run this as a SEPARATE process from the daemon, under a SEPARATE supervisor unit. If they
+# share a unit, a crash loop in one restarts the other and "separate failure domains"
+# becomes a comment rather than a property.
+#
+#   navcom-escalation /etc/navcom/escalation.toml
+
+[identity]
+# The same Watchtower key the daemon uses -- the executor must decrypt 20911 itself rather
+# than being handed events by a process that might be hung. Two processes therefore hold the
+# key. That cost is real and accepted: the alternative is an escalation path that depends on
+# the availability of the component most likely to hang.
+privkey_path = "/var/lib/navcom/watchtower.key"
+
+[relays]
+# Its own subscription. This is what makes the separation structural.
+urls = ["wss://relay.damus.io", "wss://nos.lol"]
+
+[escalation]
+# How long to wait for an on-call human before moving on. Configurable; the spec's default
+# is 300. Shortening it does not make help arrive sooner -- it only reaches "nobody is
+# coming" sooner, which is sometimes the more useful truth.
+paging_window_seconds = 300
+contact_window_seconds = 300
+
+# Everyone here is paged AT ONCE. In an emergency you want everyone, and walking a roster in
+# order spends the only resource that matters.
+#
+# Registering a channel is a CONDITION of the on-call role -- an entry with no way to wake
+# anyone is refused at startup rather than paged into nothing.
+#
+# `command` is argv, never a shell string, so nothing in a distress payload can become a
+# command. {{message}} and {{callsign}} are substituted per argument.
+#
+# [[escalation.oncall]]
+# callsign = "Wren"
+# channel  = "sms"
+# command  = ["signal-cli", "-a", "+15550000", "send", "-m", "{{message}}", "+15550100"]
+#
+# [[escalation.oncall]]
+# callsign = "Raven"
+# channel  = "push"
+# command  = ["curl", "-fsS", "-d", "{{message}}", "https://ntfy.sh/your-private-topic"]
+
+# With no entries at all, a Distress pages nobody, reaches EXHAUSTED immediately, and the
+# operator is told so. That is the ladder working correctly. It is not the ladder helping.

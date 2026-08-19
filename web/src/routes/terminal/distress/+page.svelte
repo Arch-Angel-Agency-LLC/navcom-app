@@ -28,6 +28,15 @@
       | undefined
   );
 
+  /**
+   * The device worked out that nobody is coming.
+   *
+   * This does not mean the sending stopped — it has not, and only the operator can stop it.
+   * It means enough time has passed that a working watch would already have said so, and
+   * the phone is the only thing left able to tell the operator that.
+   */
+  const nobodyAnswering = $derived(phases.some((p) => p.phase === 'nobody-answering'));
+
   function tick() {
     if (holdStart === null) return;
     progress = Math.min((Date.now() - holdStart) / HOLD_MS, 1);
@@ -65,6 +74,8 @@
       case 'unreachable': return `Attempt ${p.attempt} — never left the phone: ${p.error}`;
       case 'no-answer': return `Attempt ${p.attempt} — sent, no answer`;
       case 'agent-holding': return `Attempt ${p.attempt} — an agent answered. Still looking for a human`;
+      case 'nobody-answering':
+        return `${Math.round(p.elapsedMs / 60000)} minutes, no human. Still sending`;
       case 'acknowledged': return `${p.response.responder?.callsign ?? 'A human'} has it`;
     }
   }
@@ -116,6 +127,24 @@
       {/each}
     </ol>
   </section>
+
+  <!--
+    Above the attempt list and above the stand-down control, because it is the only thing on
+    this screen that changes what the operator should do next.
+  -->
+  {#if nobodyAnswering && !acknowledged}
+    <section class="nobody" data-nobody-answering>
+      <h2>Nobody is coming</h2>
+      <p>
+        Long enough has passed that a working watch would have answered or told you it
+        couldn't. <strong>Assume no one is on their way</strong> and act on that.
+      </p>
+      <p class="cost">
+        This phone worked that out on its own — it is not a message from the watch, and it
+        does not mean the sending stopped. It hasn't. Only you can stop it.
+      </p>
+    </section>
+  {/if}
 
   {#if acknowledged}
     <section class="answered">
@@ -177,6 +206,10 @@
   }
   li.unreachable { color: var(--t-dark); }
   li.agent-holding { color: var(--t-oncall); }
+  li.nobody-answering { color: var(--t-dark); font-weight: 650; }
+
+  .nobody { border: 2px solid var(--t-dark); background: var(--t-sunk); padding: 1rem 1.1rem; }
+  .nobody h2 { color: var(--t-dark); font-size: 1.1rem; letter-spacing: .02em; }
   li.acknowledged { color: var(--t-station); font-size: 1rem; }
 
   .answered p { color: var(--t-ink); font-size: 1.1rem; }
