@@ -382,7 +382,7 @@ signal, and has a record of their own night.
 
 | | Item | Owner | Cost of not doing it |
 |---|---|---|---|
-| 1.1 | **The scraper** — public half of the directory, one metro then twenty | agent | The unlock for everything else. Brief: [`product/seeding.md`](product/seeding.md) |
+| 1.1 | **The scraper** — `packages/seeder`, five commands, public half only | agent | The unlock for everything else. Architecture and the agent contract: [`product/seeding.md`](product/seeding.md) |
 | 1.2 | **Intake rules for places you know** | **human, local** | The half no scraper produces, and the half the directory exists for. Ten records done properly beats a thousand skeletons |
 | 1.3 | **Your own patrol record** | agent | What a lone operator gets every night. Already specced, including the safe export |
 | 1.4 | **Coming home** — stand-down confirmed by name | agent | Nearly free, and the close of the night |

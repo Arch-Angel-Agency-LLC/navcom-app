@@ -60,21 +60,140 @@ are open, some are not, and this list is a starting point rather than a cleared 
 
 ## Shape of the thing
 
-Per region, producing `data/regions/<slug>/resources.csv`.
+`packages/seeder`, a workspace package alongside the others. Per region, producing
+`data/regions/<slug>/resources.csv` — **committed to the repository**, not fetched at
+runtime. That matters more than it looks: the output of every run is a git diff somebody can
+read, which is the review mechanism.
 
-1. **Fetch** — cache raw responses on disk. Re-running must not re-hit anyone's server, and
-   a source that changes shape should be diffable against what it returned last time
-2. **Normalise** — map each source's vocabulary onto `ResourceType`. Anything that does not
-   map cleanly becomes `other` rather than a guess
-3. **Deduplicate** — the same shelter appears in three sources under two names. Match on
-   proximity plus name similarity, and **when unsure, keep both** — a duplicate is a
-   nuisance, a wrongly-merged record is two half-truths welded together
-4. **Emit** — the existing CSV schema, and `npm run check:data` must pass. It already
-   validates every enum and every date
+### Five commands, and each one does a single thing
 
-**Ids are global across regions** and must be stable across runs, or every re-scrape looks
-like a mass deletion followed by a mass creation. Derive them from something durable —
-source plus source-id — never from a row number.
+```
+navcom-seed fetch  <region> [--source osm]   # the only command that touches the network
+navcom-seed build  <region>                  # cache -> proposed CSV. Deterministic, offline
+navcom-seed diff   <region>                  # what would change, against what is committed
+navcom-seed apply  <region>                  # write it
+navcom-seed audit  <region>                  # check committed data against the rules
+```
+
+**`fetch` and `build` are separate on purpose.** `build` is pure, offline and free, so
+normalisation can be iterated on a hundred times without hitting a shelter's website once.
+Politeness and speed happen to want the same thing here.
+
+`audit` runs in CI against committed data, so the rules below are enforced on every change
+rather than at the moment somebody remembers them.
+
+### Region config
+
+Adding a metro is adding a `region.json`. Nothing in the code changes.
+
+```json
+{
+  "slug": "st-louis", "country": "US", "timezone": "America/Chicago",
+  "sources": {
+    "osm":  { "bbox": [-90.4, 38.4, -90.1, 38.8] },
+    "hud":  { "coc": "MO-500" },
+    "city": { "url": "https://..." }
+  }
+}
+```
+
+### Ids must be stable across runs
+
+Otherwise every re-scrape reads as a mass deletion followed by a mass creation, and the diff
+that was supposed to be reviewable becomes unreadable. Derive them from something durable —
+`<region>-<source>-<hash of the source's own id>` — never from a row number or a name.
+
+## The rule, made unbreakable
+
+The brief above says never to write the intake columns. **A brief is a thing an agent can
+reason its way around at 3am, so it is also a type.**
+
+```ts
+/** What a scraper is permitted to produce. The intake fields are not in it. */
+export type SeededRecord = Pick<
+  ResourceRecord,
+  'id' | 'name' | 'type' | 'address' | 'lat' | 'lon' | 'phone' | 'hours' | 'cost' | 'languages'
+>;
+```
+
+`emit` takes `SeededRecord[]` and fills every remaining column with an empty string. There is
+no argument, no override and no flag. **A scraper cannot set `pets` because there is nowhere
+to put it** — the same choice made for accountability-log outcomes and for the public
+presence payload, for the same reason: a leak that cannot be expressed does not need
+policing.
+
+## Merging: human rows are sacred
+
+`build` loads what is committed and partitions it.
+
+| Row | What happens |
+|---|---|
+| `method` is **not** `website` — somebody checked it | **Untouched. Always.** Never rewritten, never deleted, never reordered |
+| `method` is `website` — a previous scrape | Replaced wholesale by this run |
+
+Two consequences worth stating, because both look like bugs otherwise:
+
+- **A human-verified record that public sources no longer list stays.** It goes in the report
+  as a review item. The human knew something the scraper does not, and a shelter missing from
+  a listing site has not necessarily closed
+- **The scraper cannot correct a human row's phone number.** If public data now disagrees,
+  that is a review item too. The scraper proposes; a person disposes
+
+## The report is the agent contract
+
+Every command writes machine-readable JSON to `data/regions/<slug>/.seed-report.json`.
+An agent should never have to parse a log line.
+
+```json
+{
+  "region": "st-louis",
+  "at": "2026-08-19T21:00:00Z",
+  "sources": [
+    { "name": "osm",  "ok": true,  "records": 142, "ms": 3100 },
+    { "name": "hud",  "ok": false, "error": "403", "records": 0 }
+  ],
+  "proposed": { "added": 40, "changed": 12, "unchanged": 88, "protected": 9 },
+  "review": [
+    { "id": "st-louis-osm-4a1c", "reason": "human-verified, no longer in public sources" },
+    { "id": "st-louis-hud-77b2", "reason": "public phone differs from verified phone" }
+  ],
+  "refused": [
+    { "url": "https://...", "reason": "robots.txt disallow" }
+  ]
+}
+```
+
+**Partial failure is a normal outcome, not a crash.** A source returning 403 leaves every
+other source's records intact and says which one broke. A run that silently produces half a
+region is worse than one that stops, and worse still than one that says so.
+
+## What an agent actually does
+
+```
+navcom-seed fetch st-louis        # network, cached, polite
+navcom-seed build st-louis        # offline, deterministic
+navcom-seed diff  st-louis        # read the report
+                                  # -> anything in `review` is a question for a human
+navcom-seed apply st-louis
+npm run check:data                # existing validator, must pass
+                                  # -> commit; the diff is the review
+```
+
+Re-running `fetch` on a warm cache costs nothing and hits nobody. Re-running `build` is free
+and deterministic — same cache in, same CSV out, byte for byte. **An interrupted run is
+resumed by running it again**, and there is no state anywhere but the cache and the CSV.
+
+## Politeness is not optional
+
+The targets are small organisations serving people in crisis, and several run on donated
+hosting. A scraper that degrades a shelter's website has done direct harm to the people it
+claims to serve.
+
+- **Identify yourself** in the user agent, with a contact address that a person reads
+- **One request at a time per host**, with a delay between them. There is no deadline here
+- **Honour `robots.txt`**, and record every refusal in the report rather than silently
+  skipping it
+- **Cache aggressively.** The politest request is the one not made
 
 ## Rules the scraper itself must follow
 
@@ -99,6 +218,29 @@ source plus source-id — never from a row number.
 - **Never delete a human-verified record.** If a scrape no longer finds a place that somebody
   checked in person, that is a **flag for review**, not a deletion. The human knew something
   the scraper does not
+
+## What makes the dataset good rather than merely present
+
+The difference between a directory somebody uses and one they open once:
+
+- **Coordinates on everything.** Without them there is no "nearest", ever. Geocode from OSM
+  where a source gives only an address
+- **Phone numbers that dial.** Normalised to E.164 so a `tel:` link works on the first tap.
+  This is the single most-used field on the whole surface at 11pm
+- **Types that are right.** A warming centre filed as a shelter sends somebody somewhere that
+  will not take them. When a source's category does not map cleanly, `other` is the honest
+  answer and it is better than a confident wrong one
+- **Deduplication that actually works.** The same shelter under two names in three sources is
+  the normal case. **When unsure, keep both** — a duplicate is a nuisance; a wrongly-merged
+  record is two half-truths welded together and neither is recoverable
+- **Coverage over depth.** Twenty metros of skeletons beats one metro of skeletons, because
+  the operator who opens this in a city nobody has touched still gets addresses and phone
+  numbers
+
+**Hours are deliberately left as free text**, not parsed into a schedule. An "open now"
+indicator computed from a scraped string is a confident wrong answer waiting for a public
+holiday, and it is exactly the failure the display rules exist to prevent. A human-readable
+string with a visible age is the honest version.
 
 ## Where this leaves the directory
 
