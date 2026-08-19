@@ -387,6 +387,9 @@ reporting success.
 | 3 | **Device-initiated emergency contact** | do | agent | The `CONTACT` rung is always skipped. Device-initiated stores no number anywhere, which is why the spec prefers it |
 | 4 | Redundant executors | **defer — blocked on hardware, not code** | human | A single executor dying mid-`Distress`. `LadderRegistry` is already idempotent by event id; there is no second machine |
 | 5 | Lock-screen `Distress`, SMS duress fallback | defer to Mk1 | agent | The two things a PWA categorically cannot do |
+| 5a | **Live position sharing** — off by default, four settings: off / area name / ~500m / exact | do | agent | A `Distress` carries the last known position or nothing. **Live only, never a track** — where somebody *was* is the single most dangerous thing this system could hold, and it is what anyone trying to unmask an operator wants most. It lives with the list of who is out, expires with it, and never reaches the permanent log |
+| 5b | **Buddy pairing** — two solo operators watching each other's check-ins | do | agent | Probably the most common real arrangement after pure solo: two people who patrol alone, on different nights, who agree to watch each other. Not a squad — no shared callsign, no shared anything. Needs almost nothing new |
+| 5c | **Battery state** | do — small | agent | A phone at 8% is a safety fact, not a UI detail. It matters to the operator carrying it, and to everyone else if that phone is holding the watch |
 
 ### Accuracy
 
@@ -395,6 +398,7 @@ reporting success.
 | 6 | **Console: a declaration must not read as a safety monitor** | with the Console | agent | Stated in [`declined.md`](declined.md). The Team Lead reads "active" as "fine". Wording and layout, not mechanism |
 | 7 | **Never write "anonymous" where "pseudonymous" is true** | do — small | agent | The Convert's highest-stakes overclaim, and the words are not written yet |
 | 8 | Counter-signing | defer — gate holds | agent | Closes omission. Not needed while the circle is people vetted personally |
+| 8a | **Saying no to an `Assist`** | do — small | agent | Right now the only ways not to help are silence and guilt. "Not tonight" should be a real answer that closes the request. **Never counted, never tallied** — a tally of declines is a compliance metric and the rules kill it |
 
 ### The field runs standalone
 
@@ -402,6 +406,40 @@ reporting success.
 |---|---|---|---|---|
 | 9 | **Directory data** | ongoing | **human, local knowledge** | *"What is left before this is a real directory: data."* Everything else works |
 | 10 | **Playbooks** | ongoing | **human, permanently** | Not agent work. Confident wrong guidance is the Medic's kill trigger |
+| 10a | **Your own patrol record, and a safe way to publish it** | do | agent | See below — it is already a requirement, and the argument for it is that withholding it does not stop anyone sharing |
+| 10b | **Coming home** — stand-down confirmed by name | do — nearly free | agent | *"Wren, 02:14, home."* The close of the night. Ranked the single best value-for-cost item in [`what-fiction-skips.md`](research/what-fiction-skips.md) and still not built |
+| 10c | **Weather** — warming and cooling centres open on conditions, not schedule | do | agent | The field already exists (`seasonal: weather_activated`). Below freezing changes the whole shape of a night: different destinations, different urgency, different supplies. An operator needs that before they leave |
+| 10d | **Supplies** — socks, water, hygiene kits, naloxone | do | either | Mundane, and it is what keeps a team functioning week to week. Must survive several people editing offline at once and resolve without a merge screen |
+
+### Your own patrol record
+
+Lots of RLSH stream their patrols and post the footage. Their own activity is not a secret,
+and pretending otherwise would be designing for somebody who does not exist.
+
+**So the record is theirs, and publishing it is theirs.** The requirement is already written
+down under the Public Face: *give him something designed to leave the app, or he will
+screenshot something that shouldn't.* Withholding a safe export does not stop anyone
+sharing — it just guarantees the sharing is done badly.
+
+Three lines it must not cross:
+
+- **It contains nobody but them.** Your movements are yours to publish. Raven's are not, and
+  Raven did not agree to anything. A record that names who you were out with, without their
+  say-so, publishes somebody else's whereabouts
+- **It contains nothing about anyone served.** No query text — *"bed tonight, fleeing
+  partner, has a dog"* is a person's situation, and it is the one thing that is never
+  recorded anywhere [invariant 1]
+- **Coarse by default when it leaves.** The stream showed a street corner; the export should
+  not carry GPS coordinates the stream never did
+
+What it holds is what a paper logbook would: date, area, out and in, how long, and whatever
+the operator wrote themselves.
+
+**Where it lives is the operator's choice, made once and priced honestly.** Kept across a
+panic wipe, a year of patrols survives a bad night — and a seized phone shows a year of
+patrols. Off by default. The Protest Medic wants it off; the Public Face wants it on; both
+are right about their own situation, which is exactly the kind of choice
+[`principles.md`](principles.md) says an operator may make for themselves.
 
 ### Everything else
 
