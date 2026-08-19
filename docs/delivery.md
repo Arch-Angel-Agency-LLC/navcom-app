@@ -30,18 +30,34 @@ operators [C1, principle 6].
 site in a browser tab share one origin storage — installing adds a launcher and removes
 browser chrome. It does not move keys, add features, or change what the app can see.
 
-### The two things a PWA cannot do
+### What native actually adds — three things, none of them blocking
 
-Native Android/iOS is deferred to Mk1, and it exists for exactly two reasons:
+Deferred deliberately, and the list is shorter and more accurate than it used to be. This
+page previously said `Distress` from a locked screen was *"categorically"* impossible on
+iOS. **That has not been true since iOS 18**, which lets a third-party app put a Control on
+the Lock Screen that fires an action without opening the app. Correcting it here because a
+stale impossibility is how a real option gets ruled out for years without anyone rechecking.
 
 - **`Distress` from a locked screen.** [`spec/signals.spec.md`](spec/signals.spec.md) makes
-  this a MUST. A PWA cannot — categorically on iOS, and on Android only after unlocking,
-  which is not a mechanism in the situation that matters
-- **SMS duress fallback when Dark.** A PWA can only open the SMS composer and hope
-  someone taps send
+  it a MUST. Achievable natively on both platforms; not achievable in a web app on either
+- **A phone holding the watch overnight.** Android only, via a foreground service. iOS will
+  not run an app indefinitely in the background whatever you do — so the always-on watch
+  stays the box's job, and that is the box's honest remaining pitch
+- **Silent SMS fallback when Dark.** Android only. iOS never lets an app send a message
+  without the person tapping send
 
 Nothing else justifies a native build. In particular, *"it feels more like a real app"*
 does not.
+
+**What the web app already does on both platforms**, and which was underrated here: it
+installs to the home screen, runs full screen, works entirely offline, and — since iOS
+16.4 — **receives push notifications**. Push is a real paging channel for an on-call
+operator, on an iPhone, with no app store involved.
+
+The honest cost of staying web-only on iOS is not capability so much as **discovery**:
+Android browsers offer an install prompt, and iOS has none. Somebody has to already know
+about Share → Add to Home Screen. That is the strongest argument for eventual store
+presence, and it is a distribution argument rather than a technical one.
 
 ### The install prompt is the hazard
 

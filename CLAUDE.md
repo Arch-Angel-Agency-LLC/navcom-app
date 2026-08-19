@@ -41,7 +41,7 @@ seeded for the St. Louis metro.
 | | Decision | Status |
 |---|---|---|
 | Field Terminal | PWA at `navcom.app` — try instantly, no install, fully capable | Decided |
-| Native mobile | Android/iOS at Mk1, for the two things a PWA **cannot** do: `Distress` from a locked screen, and SMS duress fallback when Dark. Not a capability tier | Decided, deferred |
+| Native mobile | Deprioritised 2026-08-19. Adds three things: locked-screen `Distress` (both platforms — iOS 18 Controls make this possible, contrary to an earlier note), a phone holding the watch overnight (Android only), and silent SMS (Android only). None blocking | Decided, deferred |
 | UI framework | Svelte | Decided |
 | Watch | A mode of the same app, not a separate Console. A box may hold it all night; a squad without one holds it on a phone | Decided 2026-08-19, reversing "served from the box" |
 | Relay topology | Public relays for MVP; self-hosted RelayNode at Mk1 | Decided |
@@ -52,9 +52,10 @@ seeded for the St. Louis metro.
 impair escalation.
 
 **The install prompt is where every banned pattern would re-enter.** No banners, no "get the
-app," no feature withheld to pressure an install. The only honest pitch is the true one, said
-once: *installing adds lock-screen `Distress` and SMS fallback.* An operator who stays on the
-web is a complete operator.
+app," no feature withheld to pressure an install. While native is deferred there is nothing
+to pitch at all, and the app says nothing. An operator on the web is a complete operator —
+that was always the position, and deprioritising native returns to it rather than retreating
+to it.
 
 ### Two roles the design requires a human for
 

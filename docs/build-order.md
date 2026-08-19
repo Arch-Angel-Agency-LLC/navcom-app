@@ -365,28 +365,45 @@ cannot.
 No dates. A volunteer network's capacity is not knowable in advance, and a plan with dates
 in it is a plan that is wrong.
 
-### The thing that reorders everything
+### Two things reorder this list
 
-**Drills are gated on the roster, and the roster is gated on a person, not on code.**
+**First: drills are gated on the roster, and the roster is gated on a person, not on code.**
 
-A drill run today pages nobody, succeeds at doing nothing, and records `pass`. Worse, that
-`pass` would flip `automated-oncall` into publishable on the strength of a test that
-exercised nothing — verification theatre with a green tick, which is the failure this
-project keeps finding in itself.
+A drill run today pages nobody, succeeds at doing nothing, and records `pass`. That `pass`
+would then flip `automated-oncall` into publishable on the strength of a test that exercised
+nothing. `navcom-escalation --check` exists to prove a channel works before anyone relies on
+it, and it refuses an empty roster rather than reporting success.
 
-So: **a human registers a working channel first.** `navcom-escalation --check` exists to
-prove one works before anyone relies on it, and it refuses an empty roster rather than
-reporting success.
+**Second, and it moves what comes first: without a box, the watch sleeps when people do.**
+
+Native apps are deferred, so there is no background execution on anyone's phone. A
+phone-held watch is up only while somebody has the app open and is looking at it — which is
+exactly what the `console-open` channel means, and why the spec already refuses to count it
+for someone going to bed.
+
+The consequence, stated rather than discovered: **for a squad with no box, `Distress` after
+everyone falls asleep reaches nobody.** The ladder handles that correctly — it says nobody
+is coming — but saying it is not the same as covering it.
+
+So the operator's **own emergency contact moves to the front of the list.** It is the only
+part of the safety net that does not need a box, a roster, a native app or anybody awake.
+
+It cannot be silent, and that limit is real: a web app can open a message composer or a
+dialler, but the operator has to tap send. So it is not cover for being unconscious — the
+case [`declined.md`](declined.md) already says this system does not cover. What it is: a
+lone operator holding Distress, and their own person being one tap away at that moment
+rather than four screens and a memory of a phone number.
 
 ### Operator safety
 
 | | Item | Fate | Owner | Cost of not doing it |
 |---|---|---|---|---|
-| 1 | **One human on-call with a proven channel** | **now** | **human** | The ladder pages nobody, and everything below is theatre. One config entry and one command that works |
-| 2 | **Drills** — weekly, randomised, published | after 1 | agent | `last_drill` stays null, so a watch that *"cannot demonstrate a passing drill is presumed broken"* is permanently presumed broken. Also the Sleeper's main mitigation |
-| 3 | **Device-initiated emergency contact** | do | agent | The `CONTACT` rung is always skipped. Device-initiated stores no number anywhere, which is why the spec prefers it |
+| 1 | **Your own person, one tap away** | **first** | agent | Reordered — see below. Without a box and without a native app, this is the entire safety net once everyone is asleep. It works for a lone operator, needs no watch, no roster and no server |
+| 2 | **One human on-call with a proven channel** | needs a box | **human** | Real paging all night needs something that stays awake. One config entry and one command that works |
+| 3 | **Drills** — weekly, randomised, published | after 2 | agent | `last_drill` stays null, so a watch that *"cannot demonstrate a passing drill is presumed broken"* is permanently presumed broken. Also the Sleeper's main mitigation |
+| 3a | **Web push as a paging channel, sent by the box** | after 2 | agent | The one native-grade capability a web app already has on both platforms — iPhone included, since 16.4. It is how an on-call person gets woken without an app store. The box holds the subscriptions, so no new third party beyond the browser's own push service |
 | 4 | Redundant executors | **defer — blocked on hardware, not code** | human | A single executor dying mid-`Distress`. `LadderRegistry` is already idempotent by event id; there is no second machine |
-| 5 | Lock-screen `Distress`, SMS duress fallback | defer to Mk1 | agent | The two things a PWA categorically cannot do |
+| 5 | **Native apps, both platforms** | **deferred — decided 2026-08-19** | agent | Deprioritised deliberately. Native adds three things: `Distress` from a locked screen, silent SMS, and a phone holding the watch overnight. All real; none blocking. The web app is the surface and it stays complete, which is what this page always said |
 | 5a | **Live position sharing** — off by default, four settings: off / area name / ~500m / exact | do | agent | A `Distress` carries the last known position or nothing. **Live only, never a track** — where somebody *was* is the single most dangerous thing this system could hold, and it is what anyone trying to unmask an operator wants most. It lives with the list of who is out, expires with it, and never reaches the permanent log |
 | 5b | **Buddy pairing** — two solo operators watching each other's check-ins | do | agent | Probably the most common real arrangement after pure solo: two people who patrol alone, on different nights, who agree to watch each other. Not a squad — no shared callsign, no shared anything. Needs almost nothing new |
 | 5c | **Battery state** | do — small | agent | A phone at 8% is a safety fact, not a UI detail. It matters to the operator carrying it, and to everyone else if that phone is holding the watch |
