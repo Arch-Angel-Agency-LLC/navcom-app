@@ -2,6 +2,7 @@
 import { loadEscalationConfig } from "./config.js";
 import { loadOrCreateKeypair } from "../shared/identity.js";
 import { EscalationExecutor } from "./executor.js";
+import { testPage } from "./pager.js";
 
 /**
  * The escalation executor, as its own process.
@@ -23,12 +24,76 @@ process.on("unhandledRejection", (reason: unknown) => {
 });
 
 function configPath(): string {
-  return process.argv[2] || process.env.NAVCOM_ESCALATION_CONFIG || "./escalation.toml";
+  const positional = process.argv.slice(2).find((a) => !a.startsWith("--"));
+  return positional || process.env.NAVCOM_ESCALATION_CONFIG || "./escalation.toml";
+}
+
+/**
+ * Pages everyone on the roster with an obvious test message and reports what happened.
+ *
+ *   navcom-escalation --check /etc/navcom/escalation.toml
+ *
+ * Run it after editing the roster and before relying on it. A configured command that has
+ * never been executed is a command that works right up until the night it matters, and
+ * "dispatched" here still only means the command exited zero -- whether a human actually
+ * woke up is a question only that human can answer.
+ */
+async function check(path: string): Promise<never> {
+  const config = load(path);
+  const roster = config.escalation.oncall.filter((e) => e.declaration.channel !== "console-open");
+
+  if (roster.length === 0) {
+    console.error("[check] Nobody is on-call, so there is nothing to test.");
+    console.error("[check] A Distress today would page nobody and say so. See escalation.example.toml.");
+    process.exit(1);
+  }
+
+  console.log(`[check] paging ${roster.map((e) => e.declaration.author.callsign).join(", ")} with a test message`);
+  const results = await testPage(roster);
+
+  let failed = 0;
+  for (const r of results) {
+    if (r.dispatched) {
+      console.log(`[check]   ${r.callsign} via ${r.channel}: command exited zero`);
+    } else {
+      failed++;
+      console.error(`[check]   ${r.callsign} via ${r.channel}: FAILED -- ${r.error}`);
+    }
+  }
+
+  console.log("");
+  if (failed > 0) {
+    console.error(`[check] ${failed} of ${results.length} could not be paged. They are not on-call.`);
+    process.exit(1);
+  }
+  console.log("[check] every command ran. Now confirm each person actually received it --");
+  console.log("[check] a command exiting zero is not a person waking up.");
+  process.exit(0);
+}
+
+/**
+ * Loads the config, or explains what is wrong and stops.
+ *
+ * A typo in a roster entry is the likeliest failure anyone hits here, and a stack trace
+ * answers a question nobody asked. The config module already writes messages meant to be
+ * read; this is what lets them be read.
+ */
+function load(path: string) {
+  try {
+    return loadEscalationConfig(path);
+  } catch (err: unknown) {
+    console.error(`[executor] ${err instanceof Error ? err.message : String(err)}`);
+    process.exit(1);
+  }
 }
 
 function main(): void {
   const path = configPath();
-  const config = loadEscalationConfig(path);
+  if (process.argv.includes("--check")) {
+    void check(path);
+    return;
+  }
+  const config = load(path);
   const { secretKey, pubkey } = loadOrCreateKeypair(config.identity.privkeyPath);
 
   const roster = config.escalation.oncall;

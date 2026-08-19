@@ -45,3 +45,33 @@ contact_window_seconds = 300
 
 # With no entries at all, a Distress pages nobody, reaches EXHAUSTED immediately, and the
 # operator is told so. That is the ladder working correctly. It is not the ladder helping.
+#
+# ---------------------------------------------------------------------------
+# Getting one person on-call, which is the whole game
+# ---------------------------------------------------------------------------
+#
+# Everything the ladder does is theatre until one entry above works. Prove it:
+#
+#     navcom-escalation --check escalation.toml
+#
+# It pages the whole roster with a message that opens
+# "[NAVCOM TEST -- NOT AN EMERGENCY]", reports which commands exited zero, and exits
+# non-zero if any failed or if the roster is empty.
+#
+# A command exiting zero is NOT a person waking up. Go and confirm the message arrived on
+# the device it was meant for. That second half is the part that cannot be automated, and
+# it is the part that matters.
+#
+# Some commands that need no account and no provider integration:
+#
+#   # Push, via a private ntfy topic. Third party -- disclose it to whoever is on-call,
+#   # because their paging metadata passes through someone else's server.
+#   command = ["curl", "-fsS", "-d", "{{message}}", "https://ntfy.sh/pick-something-unguessable"]
+#
+#   # A local desktop notification. Only wakes somebody sitting at the box, so it is
+#   # closer to console-open than to a real channel -- useful for testing the wiring.
+#   command = ["osascript", "-e", "display notification \"{{message}}\" with title \"NavCom\""]
+#
+#   # Anything you already run. A script, a bot, a gateway you control. Preferred, because
+#   # it puts no third party in the one path that must not depend on anybody else's uptime.
+#   command = ["/usr/local/bin/page-me", "{{message}}"]

@@ -13,6 +13,16 @@ import type { OnCallEntry } from "./config.js";
  * format keeps the spec's channel vocabulary; the node keeps the mechanism.
  */
 
+/**
+ * The prefix on any page that is not a real emergency.
+ *
+ * A drill MUST be distinguishable from a real `Distress` **by the recipient** [C29]. Somebody
+ * woken at 3am has seconds and no context, so the distinction cannot live in a field the
+ * page does not carry, or in a schedule they were never told. It goes first, in capitals,
+ * in the text they actually read.
+ */
+export const TEST_PREFIX = "[NAVCOM TEST -- NOT AN EMERGENCY]";
+
 export interface PageResult {
   callsign: string;
   channel: string;
@@ -46,6 +56,22 @@ function run(argv: string[], timeoutMs: number): Promise<void> {
  * and nothing in this file may ever be treated as an acknowledgement: only an explicit
  * `distress-ack` from a human stops the ladder.
  */
+/**
+ * Pages the roster with an unmistakable test message.
+ *
+ * This is what makes "registering a channel is a condition of the on-call role" checkable
+ * rather than declared. A command that has never been run is a command that works until the
+ * night it matters -- and the only way to find out is to run it, which is also exactly what
+ * a drill is.
+ */
+export function testPage(
+  roster: OnCallEntry[],
+  note = "checking this channel works",
+  timeoutMs = 30_000,
+): Promise<PageResult[]> {
+  return pageAll(roster, `${TEST_PREFIX} ${note}`, timeoutMs);
+}
+
 export async function pageAll(
   roster: OnCallEntry[],
   message: string,

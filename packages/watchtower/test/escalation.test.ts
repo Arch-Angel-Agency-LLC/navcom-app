@@ -250,6 +250,51 @@ describe("acknowledgement", () => {
   });
 });
 
+describe("proving a channel works before relying on it", () => {
+  it("marks a test page unmistakably, in the text the recipient reads", async () => {
+    // A drill MUST be distinguishable from a real Distress BY THE RECIPIENT. Somebody woken
+    // at 3am has seconds and no context, so the distinction cannot live in a field the page
+    // does not carry or a schedule they were never told about.
+    const { testPage, TEST_PREFIX } = await import("../src/escalation/pager.js");
+    const entry = onCallEntry("Wren");
+    entry.command = ["node", "-e", "process.stdout.write(process.argv[1])", "{{message}}"];
+
+    const results = await testPage([entry]);
+    expect(results[0]!.dispatched).toBe(true);
+    expect(TEST_PREFIX).toMatch(/NOT AN EMERGENCY/);
+    expect(TEST_PREFIX.startsWith("[")).toBe(true);
+  });
+
+  it("reports a command that does not exist rather than counting it as reachable", async () => {
+    // An on-call entry whose command has never run is an entry that works until the night it
+    // matters. "dispatched" is the weakest possible claim and it still has to be earned.
+    const { testPage } = await import("../src/escalation/pager.js");
+    const broken = onCallEntry("Ghost");
+    broken.command = ["definitely-not-a-real-command-xyz"];
+
+    const [result] = await testPage([broken], "check", 5_000);
+    expect(result!.dispatched).toBe(false);
+    expect(result!.error).toBeTruthy();
+  });
+
+  it("does not page a console-open entry, which cannot be woken", async () => {
+    const { testPage } = await import("../src/escalation/pager.js");
+    const results = await testPage([onCallEntry("Oracle", undefined, "console-open")]);
+    expect(results).toEqual([]);
+  });
+
+  it("passes the message per-argument, so a payload cannot become a command", async () => {
+    // argv, never a shell string. This asserts the substitution reaches the child process
+    // as one argument rather than being re-parsed by anything.
+    const { pageAll } = await import("../src/escalation/pager.js");
+    const entry = onCallEntry("Wren");
+    entry.command = ["node", "-e", "if(process.argv[1] !== '; rm -rf /') process.exit(3)", "{{message}}"];
+
+    const [result] = await pageAll([entry], "; rm -rf /");
+    expect(result!.dispatched, "the message was altered or re-parsed").toBe(true);
+  });
+});
+
 describe("6 — the agent cannot impair escalation", () => {
   it("has no reference to the agent anywhere in the executor's module graph", async () => {
     // Structural, asserted against the source rather than argued. The daemon owns the agent

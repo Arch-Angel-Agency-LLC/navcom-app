@@ -346,13 +346,86 @@ acknowledgement carries a human author, and it carries the actual human's callsi
 - **No node-side emergency contact.** The spec prefers device-initiated anyway, so
   `CONTACT` is currently always skipped — failure mode 5, which is tested
 
-## Gated, and treated differently
+## What is left, and who has to do it
 
-**Mecha Jono holding the board** is session 2, and it is one function call. Everything in
-[`watch/agents.md`](watch/agents.md) is about what happens *around* that call.
+Four rules govern this table, and they exist because a plan can fail in ways a feature list
+cannot.
 
-**Native Android/iOS** is Mk1, for the two capabilities a PWA cannot provide. Decided,
-deferred.
+1. **Every item has a fate** — do, defer, or [decline](declined.md). A list that only ranks
+   is a list nothing ever leaves
+2. **Sequence comes from [`principles.md`](principles.md)**, not from whoever is writing.
+   *Never the people served → operator safety → accuracy → the field runs standalone →
+   opt-in → no feed → everything else*
+3. **Every item names an owner** — agent, human, or either. Directory data, playbooks and
+   the `type` taxonomy are **not agent work**, and an item with no owner is an item nobody
+   does
+4. **Every item names what *not* doing it costs.** If that cost cannot be stated, the item
+   should be declined rather than deferred. That is the test, not a formality
+
+No dates. A volunteer network's capacity is not knowable in advance, and a plan with dates
+in it is a plan that is wrong.
+
+### The thing that reorders everything
+
+**Drills are gated on the roster, and the roster is gated on a person, not on code.**
+
+A drill run today pages nobody, succeeds at doing nothing, and records `pass`. Worse, that
+`pass` would flip `automated-oncall` into publishable on the strength of a test that
+exercised nothing — verification theatre with a green tick, which is the failure this
+project keeps finding in itself.
+
+So: **a human registers a working channel first.** `navcom-escalation --check` exists to
+prove one works before anyone relies on it, and it refuses an empty roster rather than
+reporting success.
+
+### Operator safety
+
+| | Item | Fate | Owner | Cost of not doing it |
+|---|---|---|---|---|
+| 1 | **One human on-call with a proven channel** | **now** | **human** | The ladder pages nobody, and everything below is theatre. One config entry and one command that works |
+| 2 | **Drills** — weekly, randomised, published | after 1 | agent | `last_drill` stays null, so a watch that *"cannot demonstrate a passing drill is presumed broken"* is permanently presumed broken. Also the Sleeper's main mitigation |
+| 3 | **Device-initiated emergency contact** | do | agent | The `CONTACT` rung is always skipped. Device-initiated stores no number anywhere, which is why the spec prefers it |
+| 4 | Redundant executors | **defer — blocked on hardware, not code** | human | A single executor dying mid-`Distress`. `LadderRegistry` is already idempotent by event id; there is no second machine |
+| 5 | Lock-screen `Distress`, SMS duress fallback | defer to Mk1 | agent | The two things a PWA categorically cannot do |
+
+### Accuracy
+
+| | Item | Fate | Owner | Cost |
+|---|---|---|---|---|
+| 6 | **Console: a declaration must not read as a safety monitor** | with the Console | agent | Stated in [`declined.md`](declined.md). The Team Lead reads "active" as "fine". Wording and layout, not mechanism |
+| 7 | **Never write "anonymous" where "pseudonymous" is true** | do — small | agent | The Convert's highest-stakes overclaim, and the words are not written yet |
+| 8 | Counter-signing | defer — gate holds | agent | Closes omission. Not needed while the circle is people vetted personally |
+
+### The field runs standalone
+
+| | Item | Fate | Owner | Cost |
+|---|---|---|---|---|
+| 9 | **Directory data** | ongoing | **human, local knowledge** | *"What is left before this is a real directory: data."* Everything else works |
+| 10 | **Playbooks** | ongoing | **human, permanently** | Not agent work. Confident wrong guidance is the Medic's kill trigger |
+
+### Everything else
+
+| | Item | Fate |
+|---|---|---|
+| 11 | Console, beyond item 6 | do — the gate is open |
+| 12 | **Mecha Jono holding the board** | defer — session 2, and it is one function call. Everything in [`agents.md`](watch/agents.md) is about what happens *around* it |
+| 13 | Endorsements, funding, propagation, recovery, RelayNode | defer — designed, not scope |
+| 14 | Multi-holder Watchtower | defer on cost, not principle |
+| 15 | **Native Android/iOS** | defer to Mk1 — decided |
+
+### Awaiting a decision
+
+**Proposed for [`declined.md`](declined.md), not yet moved:**
+
+- **Allied interop / the Liaison.** Federation without membership is genuinely hard and
+  there is no allied agency. Decline until one exists and asks; the design survives either way
+- **Node-side emergency contact**, as distinct from item 3. It means storing phone numbers
+  on the box, which is what the threat model hates — but the case it uniquely covers is
+  *the operator cannot act*, which is the actual emergency. **This may not be cheaply
+  declinable**, and saying so beats pretending
+
+**Cannot be given a fate until somebody can describe them:** `presets`, and Mission Package
+ingestion. Naming that is an output of this plan, not a gap in it.
 
 ## Declined, not deferred
 
@@ -361,10 +434,7 @@ Some real problems are not on this page at all, on purpose — see
 waiting. The difference matters, because a page where every gap becomes future work is a
 page that only grows.
 
-## Not started, and not to be started
-
-Endorsements, presets, funding, propagation mechanics, recovery, allied interop, RelayNode,
-Mission Package ingestion.
+## On the multi-holder Watchtower
 
 **A multi-holder Watchtower** — signals sealed to a set of keys rather than one, so several
 nodes hold the same board — is a real option rather than an impossibility, and the earlier
@@ -377,8 +447,9 @@ operational picture, and the threat model here is doxxing — so decentralising 
 widens exposure while narrowing dependence. That trade needs a reason, and one box run by
 one person for a handful of people they trust is not yet it.
 
-Each is designed. None is scope. A spec written before the loop is proven is a guess in a
-more confident format — [`spec/README.md`](spec/README.md) says so about itself.
+Everything deferred above is designed, and none of it is scope. A spec written before the
+loop is proven is a guess in a more confident format — [`spec/README.md`](spec/README.md)
+says so about itself.
 
 ## Open decisions
 
