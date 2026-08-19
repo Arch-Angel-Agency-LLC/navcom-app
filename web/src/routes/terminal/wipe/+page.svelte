@@ -97,8 +97,9 @@
 <section class="act">
   <h2>Panic wipe</h2>
   <p>
-    Destroys <strong>tonight</strong> and keeps your identity and standing. You can carry on
-    working straight afterwards — nobody has to re-provision you.
+    Destroys <strong>tonight</strong> and keeps your identity, your standing and the person
+    you would call. You can carry on working straight afterwards — nobody has to
+    re-provision you, and your safety net is still there the next night.
   </p>
   <button
     class="danger"

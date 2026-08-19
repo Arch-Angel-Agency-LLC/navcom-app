@@ -1,5 +1,6 @@
 <script lang="ts">
   import { ConfigError, loadConfig, saveConfig } from '$lib/terminal/config';
+  import { ContactError, clearContact, loadContact, saveContact } from '$lib/terminal/contact';
   import { createIdentity, loadIdentity } from '$lib/terminal/identity';
   import { onMount } from 'svelte';
 
@@ -7,11 +8,19 @@
   let pubkey = $state('');
   let relays = $state('wss://relay.damus.io\nwss://nos.lol');
   let error = $state<string | null>(null);
+  let contactLabel = $state('');
+  let contactNumber = $state('');
+  let contact = $state<ReturnType<typeof loadContact>>(null);
   let identity = $state<ReturnType<typeof loadIdentity>>(null);
   let configured = $state(false);
 
   onMount(() => {
     identity = loadIdentity();
+    contact = loadContact();
+    if (contact) {
+      contactLabel = contact.label;
+      contactNumber = contact.number;
+    }
     const c = loadConfig();
     configured = c !== null;
     if (c) {
@@ -29,6 +38,23 @@
       return;
     }
     identity = createIdentity(name);
+  }
+
+  function keepContact(event: SubmitEvent) {
+    event.preventDefault();
+    error = null;
+    try {
+      contact = saveContact(contactLabel, contactNumber);
+    } catch (e) {
+      error = e instanceof ContactError ? e.message : 'Could not save that.';
+    }
+  }
+
+  function forgetContact() {
+    clearContact();
+    contact = null;
+    contactLabel = '';
+    contactNumber = '';
   }
 
   function connect(event: SubmitEvent) {
@@ -82,6 +108,39 @@
   {/if}
 </section>
 
+<!--
+  Placed directly after the callsign and before the watch, because for an operator with no
+  watch this IS the safety net rather than a nice extra.
+-->
+<section>
+  <h2>Someone you would call</h2>
+  <p class="note">
+    One tap on the Distress screen opens a message to them, already written. <strong>Nothing
+    is sent automatically and you have to press send</strong> — a web app cannot do it for
+    you, and this app will not pretend it can.
+  </p>
+  <p class="note">
+    Their number stays on this phone. It is never sent to a watch, a relay, or anyone else's
+    machine — there is no list of operators' contacts anywhere for anyone to take.
+    <strong>A burn erases it; a panic wipe does not</strong>, so it is still there the next
+    night.
+  </p>
+  <form onsubmit={keepContact}>
+    <label for="clabel">Who</label>
+    <input id="clabel" bind:value={contactLabel} autocomplete="off" placeholder="Sam" />
+    <label for="cnumber">Number</label>
+    <input id="cnumber" bind:value={contactNumber} type="tel" autocomplete="off" placeholder="+1 555 0100" />
+    <button type="submit">{contact ? 'Update' : 'Save'}</button>
+  </form>
+  {#if contact}
+    <p class="done">
+      <strong>{contact.label}</strong>
+      <span class="key">{contact.number}</span>
+      <button class="forget" type="button" onclick={forgetContact}>Remove</button>
+    </p>
+  {/if}
+</section>
+
 <section class="later">
   <h2>A watch — optional, and only if somebody gave you one</h2>
   <p class="note">
@@ -131,6 +190,10 @@
   button { margin-top: .4rem; }
   /* Visibly secondary, so nobody reads it as a step they are failing to complete. */
   .later { border-top: 1px solid var(--t-line); padding-top: 1.2rem; opacity: .82; }
+  .forget {
+    min-height: 2.2rem; font-size: .8rem; padding: 0 .7rem;
+    border-color: var(--t-line); color: var(--t-faint);
+  }
   .note { font-size: .9rem; color: var(--t-faint); margin: 0 0 .3rem; line-height: 1.5; }
   .note strong, .done strong { color: var(--t-ink); }
   .done { color: var(--t-muted); display: flex; gap: .6rem; align-items: baseline; flex-wrap: wrap; }

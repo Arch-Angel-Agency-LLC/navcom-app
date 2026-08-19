@@ -105,6 +105,7 @@ export const operator = {
   get session(): SignOn | null { return session; },
   /** Whether this device has an identity. The only genuinely required setup step. */
   get hasIdentity(): boolean { return loadIdentity() !== null; },
+  get callsign(): string | null { return loadIdentity()?.callsign ?? null; },
   /**
    * Whether a Watchtower has been added.
    *

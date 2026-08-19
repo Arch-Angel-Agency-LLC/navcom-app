@@ -13,6 +13,13 @@
    */
   import { onDestroy } from 'svelte';
   import { operator } from '$lib/terminal/session.svelte';
+  import {
+    callLink,
+    distressMessage,
+    loadContact,
+    smsLink,
+    type EmergencyContact
+  } from '$lib/terminal/contact';
   import { onMount } from 'svelte';
 
   const HOLD_MS = 1200;
@@ -31,10 +38,22 @@
    * and what actually happened is reported the instant they let go.
    */
   let hasWatch = $state(true);
+  let contact = $state<EmergencyContact | null>(null);
+  let callsign = $state<string | null>(null);
 
   onMount(() => {
     hasWatch = operator.hasWatch;
+    contact = loadContact();
+    callsign = operator.callsign;
   });
+
+  /**
+   * Rebuilt on every render rather than captured once, so the time in the message is the
+   * time they tapped rather than the time the screen opened.
+   */
+  const personalMessage = $derived(
+    distressMessage({ callsign, area: operator.session?.area ?? null, at: new Date() })
+  );
 
   const phases = $derived(operator.distress);
   const acknowledged = $derived(
@@ -106,6 +125,25 @@
   <h1>Distress</h1>
 </header>
 
+{#if contact}
+  <!--
+    First on the screen, always. For an operator with no watch this is the entire safety
+    net, and for one with a watch it is still the fastest thing on the page — a person who
+    already knows them, reachable in one tap, while the ladder does whatever it can.
+  -->
+  <section class="person" data-contact>
+    <h2>Your person</h2>
+    <div class="reach">
+      <a class="action urgent" href={smsLink(contact, personalMessage)}>Text {contact.label}</a>
+      <a class="action urgent" href={callLink(contact)}>Call {contact.label}</a>
+    </div>
+    <p class="cost">
+      Opens your messages with it written. <strong>You have to press send</strong> — a web
+      app cannot do that for you, and pretending otherwise would be the worst lie in here.
+    </p>
+  </section>
+{/if}
+
 {#if !hasWatch}
   <!-- Said before the button as well as after, because reading it first is better than
        finding out by holding it. The button still works: see the note on `hasWatch`. -->
@@ -114,10 +152,13 @@
       <strong>There is nowhere to send this.</strong> Distress goes to a watch and you have
       not added one, so holding the button would raise nobody.
     </p>
-    <p class="cost">
-      Nothing on this phone can reach a person for you yet. If you are going out alone,
-      tell somebody where you are going — that is not a thing an app does better.
-    </p>
+    {#if !contact}
+      <p class="cost">
+        Nothing on this phone can reach anyone for you.
+        <a href="/terminal/setup/">Add someone you would call</a> — it takes a name and a
+        number, stays on this phone, and is the only thing that helps when there is no watch.
+      </p>
+    {/if}
   </section>
 {/if}
 
@@ -237,6 +278,12 @@
   li.unreachable { color: var(--t-dark); }
   li.agent-holding { color: var(--t-oncall); }
   li.nobody-answering { color: var(--t-dark); font-weight: 650; }
+
+  .person { border: 2px solid var(--t-station); background: var(--t-raised); padding: 1rem 1.1rem; }
+  .person h2 { color: var(--t-station); }
+  .reach { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; margin-bottom: .6rem; }
+  .reach :global(.action) { width: 100%; }
+  .urgent { border-color: var(--t-station); color: var(--t-station); }
 
   .nobody { border: 2px solid var(--t-dark); background: var(--t-sunk); padding: 1rem 1.1rem; }
   .nobody h2 { color: var(--t-dark); font-size: 1.1rem; letter-spacing: .02em; }
