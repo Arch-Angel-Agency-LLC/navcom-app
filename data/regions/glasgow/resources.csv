@@ -1,0 +1,7 @@
+id,name,type,address,lat,lon,phone,accepts,pets,sobriety,id_required,referral_required,sex_offender_ok,reports_to,curfew,max_stay,belongings,accessibility,languages,cost,hours,intake_hours,seasonal,capacity_signal,last_verified,verified_by,method,flag,notes
+glasgow-osm-2402d100,Baltic Street Food Hub,meal,,55.8425681,-4.2138067,,,,,,,,,,,,,,,Fr 13:00-16:00,,,,2026-08-19,,website,ok,Source: https://www.openstreetmap.org/node/9275809549
+glasgow-osm-db039ed2,Pop-up Food Pantry,meal,"55 Harcourt Drive, Glasgow, G31 3HG",55.8654139,-4.2126693,,,,,,,,,,,,,,,"Th 12:30-14:00,17:15-18:00",,,,2026-08-19,,website,ok,Source: https://www.openstreetmap.org/node/13067353503
+glasgow-osm-d5a94359,People’s Pantry,meal,"488 Cathcart Road, Glasgow, G42 7BX",55.8372872,-4.2571965,+441414332999,,,,,,,,,,,,,,"Mo,Tu,Th 13:00-16:00; We 14:30-17:30; Fr 10:00-13:00",,,,2026-08-19,,website,ok,Source: https://www.openstreetmap.org/node/13095228091
+glasgow-osm-96cdbfa7,Al-Khair Foundation,meal,"441a Victoria Road, Glasgow, G42 8RW",55.8359548,-4.2648153,,,,,,,,,,,,,,,Mo-Fr 10:00-17:00,,,,2026-08-19,,website,ok,Source: https://www.openstreetmap.org/node/13139138751
+glasgow-osm-8df5307b,Svdp Foodbank,meal,"2 Kirkwood Street, Glasgow, G73 2SL",55.8279966,-4.213981,,,,,,,,,,,,,,,,,,,2026-08-19,,website,ok,Source: https://www.openstreetmap.org/node/13765966269
+glasgow-osm-1f8fed3a,Talbot Association,shelter,Paisley Road,55.8540637,-4.274278,,,,,,,,,,,,,,,,,,,2026-08-19,,website,ok,Source: https://www.openstreetmap.org/way/556071354

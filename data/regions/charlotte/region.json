@@ -1,0 +1,21 @@
+{
+  "slug": "charlotte",
+  "name": "Charlotte metro",
+  "country": "US",
+  "timezone": "America/New_York",
+  "languages": [
+    "en",
+    "es"
+  ],
+  "status": "seeded",
+  "sources": {
+    "osm": {
+      "bbox": [
+        -80.95,
+        35.1,
+        -80.66,
+        35.4
+      ]
+    }
+  }
+}

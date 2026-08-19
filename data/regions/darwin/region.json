@@ -1,0 +1,21 @@
+{
+  "slug": "darwin",
+  "name": "Darwin",
+  "country": "AU",
+  "timezone": "Australia/Darwin",
+  "languages": [
+    "en",
+    "tiw"
+  ],
+  "status": "seeded",
+  "sources": {
+    "osm": {
+      "bbox": [
+        130.79,
+        -12.5,
+        130.95,
+        -12.35
+      ]
+    }
+  }
+}

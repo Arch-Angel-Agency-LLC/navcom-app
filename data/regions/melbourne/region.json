@@ -1,0 +1,23 @@
+{
+  "slug": "melbourne",
+  "name": "Melbourne",
+  "country": "AU",
+  "timezone": "Australia/Melbourne",
+  "languages": [
+    "en",
+    "zh",
+    "el",
+    "vi"
+  ],
+  "status": "seeded",
+  "sources": {
+    "osm": {
+      "bbox": [
+        144.79,
+        -37.95,
+        145.15,
+        -37.68
+      ]
+    }
+  }
+}

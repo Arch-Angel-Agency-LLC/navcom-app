@@ -1,0 +1,5 @@
+id,name,type,address,lat,lon,phone,accepts,pets,sobriety,id_required,referral_required,sex_offender_ok,reports_to,curfew,max_stay,belongings,accessibility,languages,cost,hours,intake_hours,seasonal,capacity_signal,last_verified,verified_by,method,flag,notes
+fort-worth-osm-6569e2c7,The Pantry,meal,"520 West 1st Street, Arlington, TX, 76010",32.7319769,-97.1075501,,,,,,,,,,,,,,,,,,,2026-08-19,,website,ok,Source: https://www.openstreetmap.org/node/9601003017
+fort-worth-osm-6cce9219,Central Storehouse Food Pantry,meal,"8148 John T White Road, 76120",32.7635499,-97.1774461,,,,,,,,,,,,,,,"Mo-Tu, Th 00:00-16:00; Fr 10:00-12:00",,,,2026-08-19,,website,ok,Source: https://www.openstreetmap.org/node/11760127480
+fort-worth-osm-e5cc5568,4Saints Episcopal Food Pantry,meal,,32.7462175,-97.2591106,,,,,,,,,,,,,,,,,,,2026-08-19,,website,ok,Source: https://www.openstreetmap.org/node/12472048137
+fort-worth-osm-c3900e8c,Eastside Ministries of Fort Worth,meal,"5929 East Lancaster Avenue, Fort Worth, TX, 76112",32.7362689,-97.2284662,+18174463278,,,,,,,,,,,,,,Mo-Fr 08:00-12:00,,,,2026-08-19,,website,ok,Source: https://www.openstreetmap.org/node/13232201349

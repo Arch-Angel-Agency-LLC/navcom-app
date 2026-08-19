@@ -1,0 +1,7 @@
+id,name,type,address,lat,lon,phone,accepts,pets,sobriety,id_required,referral_required,sex_offender_ok,reports_to,curfew,max_stay,belongings,accessibility,languages,cost,hours,intake_hours,seasonal,capacity_signal,last_verified,verified_by,method,flag,notes
+kansas-city-osm-83d83f7f,Community Food Pantry,meal,,39.0502187,-94.6027285,,,,,,,,,,,,,,,We 16:00-17:00; Su 10:00-12:00,,,,2026-08-19,,website,ok,Source: https://www.openstreetmap.org/node/11447368349
+kansas-city-osm-94611269,Raytown Emergency Assistance Program,meal,"9300 East 75th Street, 64138",38.9877858,-94.4725948,+18163560054,,,,,,,,,,,,,,,,,,2026-08-19,,website,ok,Source: https://www.openstreetmap.org/node/11554294569
+kansas-city-osm-a13b6dd0,Kansas City Community Kitchen,meal,"750 The Paseo, Kansas City, MO",39.104221,-94.5640786,,,,,,,,,,,,,,,Mo-Fr 12:00-15:00,,,,2026-08-19,,website,ok,Source: https://www.openstreetmap.org/node/13670328114
+kansas-city-osm-cde1497c,City Union Mission,shelter,"1108 East 10th Street, Kansas City, MO, 64106",39.1020998,-94.5694147,,,,,,,,,,,,,,,,,,,2026-08-19,,website,ok,Source: https://www.openstreetmap.org/way/169054281
+kansas-city-osm-72340e47,Cross-Lines Community Kitchen,meal,,39.0862609,-94.6263059,,,,,,,,,,,,,,,,,,,2026-08-19,,website,ok,Source: https://www.openstreetmap.org/way/561097128
+kansas-city-osm-6fc2ae27,Linwood Center Supportive Housing,shelter,"101 West Linwood Boulevard, Kansas City, MO, 64111",39.0674608,-94.5872505,,,,,,,,,,,,,,,,,,,2026-08-19,,website,ok,Source: https://www.openstreetmap.org/way/1527710347

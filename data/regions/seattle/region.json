@@ -1,0 +1,23 @@
+{
+  "slug": "seattle",
+  "name": "Seattle metro",
+  "country": "US",
+  "timezone": "America/Los_Angeles",
+  "languages": [
+    "en",
+    "es",
+    "vi",
+    "so"
+  ],
+  "status": "seeded",
+  "sources": {
+    "osm": {
+      "bbox": [
+        -122.45,
+        47.48,
+        -122.22,
+        47.74
+      ]
+    }
+  }
+}

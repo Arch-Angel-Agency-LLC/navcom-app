@@ -1,0 +1,22 @@
+{
+  "slug": "washington-dc",
+  "name": "Washington DC metro",
+  "country": "US",
+  "timezone": "America/New_York",
+  "languages": [
+    "en",
+    "es",
+    "am"
+  ],
+  "status": "seeded",
+  "sources": {
+    "osm": {
+      "bbox": [
+        -77.12,
+        38.79,
+        -76.9,
+        39.0
+      ]
+    }
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "slug": "manchester",
+  "name": "Manchester",
+  "country": "GB",
+  "timezone": "Europe/London",
+  "languages": [
+    "en",
+    "ur",
+    "pl",
+    "ar"
+  ],
+  "status": "seeded",
+  "sources": {
+    "osm": {
+      "bbox": [
+        -2.33,
+        53.4,
+        -2.13,
+        53.55
+      ]
+    }
+  }
+}

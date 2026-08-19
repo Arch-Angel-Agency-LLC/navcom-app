@@ -1,0 +1,21 @@
+{
+  "slug": "philadelphia",
+  "name": "Philadelphia metro",
+  "country": "US",
+  "timezone": "America/New_York",
+  "languages": [
+    "en",
+    "es"
+  ],
+  "status": "seeded",
+  "sources": {
+    "osm": {
+      "bbox": [
+        -75.28,
+        39.87,
+        -74.96,
+        40.14
+      ]
+    }
+  }
+}

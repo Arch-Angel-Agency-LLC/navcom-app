@@ -1,0 +1,22 @@
+{
+  "slug": "milwaukee",
+  "name": "Milwaukee metro",
+  "country": "US",
+  "timezone": "America/Chicago",
+  "languages": [
+    "en",
+    "es",
+    "hmn"
+  ],
+  "status": "seeded",
+  "sources": {
+    "osm": {
+      "bbox": [
+        -88.07,
+        42.92,
+        -87.86,
+        43.19
+      ]
+    }
+  }
+}

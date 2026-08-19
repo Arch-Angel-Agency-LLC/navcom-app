@@ -1,0 +1,11 @@
+id,name,type,address,lat,lon,phone,accepts,pets,sobriety,id_required,referral_required,sex_offender_ok,reports_to,curfew,max_stay,belongings,accessibility,languages,cost,hours,intake_hours,seasonal,capacity_signal,last_verified,verified_by,method,flag,notes
+cleveland-osm-8bf99e7d,Brookside Food Center,meal,"3764 Pearl Road, Cleveland, 44109",41.4525477,-81.701683,,,,,,,,,,,,,,,,,,,2026-08-19,,website,ok,Source: https://www.openstreetmap.org/node/2575931766
+cleveland-osm-c8c46c4a,Teen Health Center,medical,15644 Madison Avenue,41.4772236,-81.8070943,,,,,,,,,,,,,,,,,,,2026-08-19,,website,ok,Source: https://www.openstreetmap.org/node/2611715930
+cleveland-osm-708909e4,Community Corner Food Center,meal,"8302 Detroit Avenue, 44102",41.4811846,-81.7417343,,,,,,,,,,,,,,,,,,,2026-08-19,,website,ok,Source: https://www.openstreetmap.org/node/2689184502
+cleveland-osm-d8892881,The Langston Hughes Center,medical,,41.4937038,-81.6337147,,,,,,,,,,,,,,,,,,,2026-08-19,,website,ok,Source: https://www.openstreetmap.org/node/2699928086
+cleveland-osm-aba77f39,PJPII Ozanam Center,meal,,41.449693,-81.6301202,,,,,,,,,,,,,,,,,,,2026-08-19,,website,ok,Source: https://www.openstreetmap.org/node/2781758505
+cleveland-osm-fb94f536,2100,shelter,"2100 Lakeside Avenue East, Cleveland, OH",41.5110708,-81.6797137,,,,,,,,,,,,,,,,,,,2026-08-19,,website,ok,Source: https://www.openstreetmap.org/node/3037399047
+cleveland-osm-5b4b4f5f,Southwest Ozanam Center,meal,"2145 Broadview Road, 44109",41.4377401,-81.6993832,,,,,,,,,,,,,,,,,,,2026-08-19,,website,ok,Source: https://www.openstreetmap.org/way/100764383
+cleveland-osm-111b53f9,Harbor Lights,shelter,,41.4992559,-81.6788593,,,,,,,,,,,,,,,,,,,2026-08-19,,website,ok,Source: https://www.openstreetmap.org/way/133048103
+cleveland-osm-17a2ff58,Maple Heights Community Food Pantry,meal,,41.4079423,-81.5604533,,,,,,,,,,,,,,,,,,,2026-08-19,,website,ok,Source: https://www.openstreetmap.org/way/1052839459
+cleveland-osm-68aa89c6,Sisters Haven,shelter,"1986 West 99th Street, Cleveland",41.4775059,-81.7521936,,,,,,,,,,,,,,,,,,,2026-08-19,,website,ok,Source: https://www.openstreetmap.org/way/1453489484

@@ -1,0 +1,22 @@
+{
+  "slug": "orlando",
+  "name": "Orlando metro",
+  "country": "US",
+  "timezone": "America/New_York",
+  "languages": [
+    "en",
+    "es",
+    "pt"
+  ],
+  "status": "seeded",
+  "sources": {
+    "osm": {
+      "bbox": [
+        -81.47,
+        28.42,
+        -81.22,
+        28.62
+      ]
+    }
+  }
+}

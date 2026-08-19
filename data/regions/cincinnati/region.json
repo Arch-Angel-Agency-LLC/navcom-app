@@ -1,0 +1,21 @@
+{
+  "slug": "cincinnati",
+  "name": "Cincinnati metro",
+  "country": "US",
+  "timezone": "America/New_York",
+  "languages": [
+    "en",
+    "es"
+  ],
+  "status": "seeded",
+  "sources": {
+    "osm": {
+      "bbox": [
+        -84.65,
+        39.05,
+        -84.38,
+        39.25
+      ]
+    }
+  }
+}

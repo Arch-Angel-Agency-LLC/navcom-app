@@ -1,0 +1,23 @@
+{
+  "slug": "boston",
+  "name": "Boston metro",
+  "country": "US",
+  "timezone": "America/New_York",
+  "languages": [
+    "en",
+    "es",
+    "pt",
+    "ht"
+  ],
+  "status": "seeded",
+  "sources": {
+    "osm": {
+      "bbox": [
+        -71.19,
+        42.23,
+        -70.99,
+        42.4
+      ]
+    }
+  }
+}

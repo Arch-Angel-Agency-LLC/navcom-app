@@ -1,0 +1,21 @@
+{
+  "slug": "kansas-city",
+  "name": "Kansas City metro",
+  "country": "US",
+  "timezone": "America/Chicago",
+  "languages": [
+    "en",
+    "es"
+  ],
+  "status": "seeded",
+  "sources": {
+    "osm": {
+      "bbox": [
+        -94.72,
+        38.93,
+        -94.44,
+        39.2
+      ]
+    }
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "slug": "sheffield",
+  "name": "Sheffield",
+  "country": "GB",
+  "timezone": "Europe/London",
+  "languages": [
+    "en",
+    "ar",
+    "so"
+  ],
+  "status": "seeded",
+  "sources": {
+    "osm": {
+      "bbox": [
+        -1.55,
+        53.33,
+        -1.39,
+        53.44
+      ]
+    }
+  }
+}

@@ -1,0 +1,9 @@
+id,name,type,address,lat,lon,phone,accepts,pets,sobriety,id_required,referral_required,sex_offender_ok,reports_to,curfew,max_stay,belongings,accessibility,languages,cost,hours,intake_hours,seasonal,capacity_signal,last_verified,verified_by,method,flag,notes
+columbus-osm-c23399ec,The Open Shelter,shelter,"61 East Mound Street, Columbus, OH, 43215",39.9545545,-82.9974429,,,,,,,,,,,,,,,24/7,,,,2026-08-19,,website,ok,Source: https://www.openstreetmap.org/node/5789054676
+columbus-osm-c29f2917,Community Fridge,meal,"1761 Parsons Avenue, Columbus, OH, 43207",39.927282,-82.9844142,,,,,,,,,,,,,,,,,,,2026-08-19,,website,ok,Source: https://www.openstreetmap.org/node/8079641927
+columbus-osm-601218f8,nsi Food Pantry,meal,,40.0029357,-82.9980875,,,,,,,,,,,,,,,,,,,2026-08-19,,website,ok,Source: https://www.openstreetmap.org/node/11392722260
+columbus-osm-593502e0,Buckeye Food Alliance,meal,,39.9947406,-83.0143387,,,,,,,,,,,,,,,,,,,2026-08-19,,website,ok,Source: https://www.openstreetmap.org/node/13463216053
+columbus-osm-c04337d2,YWCA Family Center,shelter,"900 Harvey Court, Columbus, OH, 43219",39.9872595,-82.9482936,,,,,,,,,,,,,,,,,,,2026-08-19,,website,ok,Source: https://www.openstreetmap.org/way/579044337
+columbus-osm-24889936,Star House,shelter,"1220 Corrugated Way, Columbus, OH, 43201",39.9889108,-82.9897821,,,,,,,,,,,,,,,,,,,2026-08-19,,website,ok,Source: https://www.openstreetmap.org/way/778495452
+columbus-osm-f3217799,Faith Mission,shelter,"599 East Eighth Avenue, Columbus, OH, 43201",39.9902627,-82.9900733,,,,,,,,,,,,,,,,,,,2026-08-19,,website,ok,Source: https://www.openstreetmap.org/way/778742558
+columbus-osm-6c329287,Clintonville-Beechwold Community Resources Center - Family Services and Choice Food Pantry,meal,"14 West Lakeview Avenue, Columbus, OH, 43202",40.0276465,-83.0153489,,,,,,,,,,,,,,,Mo-Fr 12:00-16:00,,,,2026-08-19,,website,ok,Source: https://www.openstreetmap.org/way/1396257110

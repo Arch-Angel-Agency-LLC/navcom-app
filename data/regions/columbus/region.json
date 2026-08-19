@@ -1,0 +1,21 @@
+{
+  "slug": "columbus",
+  "name": "Columbus metro",
+  "country": "US",
+  "timezone": "America/New_York",
+  "languages": [
+    "en",
+    "so"
+  ],
+  "status": "seeded",
+  "sources": {
+    "osm": {
+      "bbox": [
+        -83.2,
+        39.87,
+        -82.83,
+        40.13
+      ]
+    }
+  }
+}

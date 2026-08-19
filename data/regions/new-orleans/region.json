@@ -1,0 +1,22 @@
+{
+  "slug": "new-orleans",
+  "name": "New Orleans metro",
+  "country": "US",
+  "timezone": "America/Chicago",
+  "languages": [
+    "en",
+    "es",
+    "vi"
+  ],
+  "status": "seeded",
+  "sources": {
+    "osm": {
+      "bbox": [
+        -90.14,
+        29.87,
+        -89.85,
+        30.07
+      ]
+    }
+  }
+}

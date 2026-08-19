@@ -1,0 +1,21 @@
+{
+  "slug": "baltimore",
+  "name": "Baltimore metro",
+  "country": "US",
+  "timezone": "America/New_York",
+  "languages": [
+    "en",
+    "es"
+  ],
+  "status": "seeded",
+  "sources": {
+    "osm": {
+      "bbox": [
+        -76.71,
+        39.2,
+        -76.53,
+        39.37
+      ]
+    }
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "slug": "london",
+  "name": "London",
+  "country": "GB",
+  "timezone": "Europe/London",
+  "languages": [
+    "en",
+    "bn",
+    "pl",
+    "ur",
+    "ar"
+  ],
+  "status": "seeded",
+  "sources": {
+    "osm": {
+      "bbox": [
+        -0.51,
+        51.29,
+        0.33,
+        51.69
+      ]
+    }
+  }
+}

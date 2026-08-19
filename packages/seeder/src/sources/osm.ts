@@ -128,13 +128,50 @@ export function fromOverpass(json: { elements?: OverpassElement[] }): RawRecord[
   return out;
 }
 
-/** The only function here that touches a network. Everything above it is pure and tested. */
-export async function fetchOsm(config: OsmConfig, userAgent: string): Promise<RawRecord[]> {
-  const response = await fetch(ENDPOINT, {
-    method: "POST",
-    headers: { "content-type": "application/x-www-form-urlencoded", "user-agent": userAgent },
-    body: "data=" + encodeURIComponent(overpassQuery(config.bbox)),
-  });
-  if (!response.ok) throw new Error("Overpass returned " + response.status);
-  return fromOverpass((await response.json()) as { elements?: OverpassElement[] });
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+/**
+ * The only function here that touches a network. Everything above it is pure and tested.
+ *
+ * Overpass is free infrastructure with a small number of shared slots, and it sheds load by
+ * dropping connections rather than politely queueing. A first run over sixty-seven metros
+ * with no retry lost thirty-one of them to exactly that -- so this backs off and tries
+ * again, which is both what gets the data and what a good neighbour does.
+ */
+export async function fetchOsm(
+  config: OsmConfig,
+  userAgent: string,
+  attempts = 4,
+): Promise<RawRecord[]> {
+  let wait = 4_000;
+  let last = "";
+
+  for (let attempt = 1; attempt <= attempts; attempt++) {
+    try {
+      const response = await fetch(ENDPOINT, {
+        method: "POST",
+        headers: { "content-type": "application/x-www-form-urlencoded", "user-agent": userAgent },
+        body: "data=" + encodeURIComponent(overpassQuery(config.bbox)),
+      });
+      // 429 is "too many", 504 is "gateway gave up on me". Both mean wait, not stop.
+      if (response.status === 429 || response.status === 504) {
+        last = "Overpass returned " + response.status;
+      } else if (!response.ok) {
+        // Anything else is our fault -- a malformed query does not improve with waiting.
+        throw new Error("Overpass returned " + response.status);
+      } else {
+        return fromOverpass((await response.json()) as { elements?: OverpassElement[] });
+      }
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      if (message.startsWith("Overpass returned")) throw err;
+      last = message;
+    }
+
+    if (attempt < attempts) {
+      await sleep(wait);
+      wait *= 2;
+    }
+  }
+  throw new Error("gave up after " + attempts + " attempts: " + last);
 }

@@ -1,0 +1,5 @@
+id,name,type,address,lat,lon,phone,accepts,pets,sobriety,id_required,referral_required,sex_offender_ok,reports_to,curfew,max_stay,belongings,accessibility,languages,cost,hours,intake_hours,seasonal,capacity_signal,last_verified,verified_by,method,flag,notes
+las-vegas-osm-1cdfc71e,Threesquare,meal,,36.2368702,-115.0965364,,,,,,,,,,,,,,,,,,,2026-08-19,,website,ok,Source: https://www.openstreetmap.org/way/704711919
+las-vegas-osm-11229144,Child Haven,shelter,"701 North Pecos Road, Las Vegas, NV, 89101",36.1766554,-115.1009614,,,,,,,,,,,,,,,,,,,2026-08-19,,website,ok,Source: https://www.openstreetmap.org/way/847021124
+las-vegas-osm-411fac54,Nevada Partnership for Homeless Youth,shelter,"4981 Shirley Street, Las Vegas, NV, 89119",36.099525,-115.1428165,+17023831332,,,,,,,,,,,,,,,,,,2026-08-19,,website,ok,Source: https://www.openstreetmap.org/way/1001518453
+las-vegas-osm-dcf8d80a,SafeNest,shelter,"3900 Meadows Lane, Las Vegas, NV, 89107",36.1705988,-115.1946937,+17028770133,,,,,,,,,,,,,,Mo-Fr 08:00-17:00,,,,2026-08-19,,website,ok,Source: https://www.openstreetmap.org/way/1236678758

@@ -1,0 +1,20 @@
+{
+  "slug": "hobart",
+  "name": "Hobart",
+  "country": "AU",
+  "timezone": "Australia/Hobart",
+  "languages": [
+    "en"
+  ],
+  "status": "seeded",
+  "sources": {
+    "osm": {
+      "bbox": [
+        147.22,
+        -42.95,
+        147.4,
+        -42.8
+      ]
+    }
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "slug": "austin",
+  "name": "Austin metro",
+  "country": "US",
+  "timezone": "America/Chicago",
+  "languages": [
+    "en",
+    "es"
+  ],
+  "status": "seeded",
+  "sources": {
+    "osm": {
+      "bbox": [
+        -97.94,
+        30.1,
+        -97.56,
+        30.52
+      ]
+    }
+  }
+}

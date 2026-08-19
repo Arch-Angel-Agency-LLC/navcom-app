@@ -1,0 +1,21 @@
+{
+  "slug": "san-diego",
+  "name": "San Diego metro",
+  "country": "US",
+  "timezone": "America/Los_Angeles",
+  "languages": [
+    "en",
+    "es"
+  ],
+  "status": "seeded",
+  "sources": {
+    "osm": {
+      "bbox": [
+        -117.29,
+        32.53,
+        -116.9,
+        33.05
+      ]
+    }
+  }
+}

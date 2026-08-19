@@ -1,0 +1,21 @@
+{
+  "slug": "atlanta",
+  "name": "Atlanta metro",
+  "country": "US",
+  "timezone": "America/New_York",
+  "languages": [
+    "en",
+    "es"
+  ],
+  "status": "seeded",
+  "sources": {
+    "osm": {
+      "bbox": [
+        -84.55,
+        33.65,
+        -84.29,
+        33.89
+      ]
+    }
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "slug": "chicago",
+  "name": "Chicago metro",
+  "country": "US",
+  "timezone": "America/Chicago",
+  "languages": [
+    "en",
+    "es",
+    "pl"
+  ],
+  "status": "seeded",
+  "sources": {
+    "osm": {
+      "bbox": [
+        -87.94,
+        41.64,
+        -87.52,
+        42.02
+      ]
+    }
+  }
+}

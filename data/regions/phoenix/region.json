@@ -1,0 +1,21 @@
+{
+  "slug": "phoenix",
+  "name": "Phoenix metro",
+  "country": "US",
+  "timezone": "America/Phoenix",
+  "languages": [
+    "en",
+    "es"
+  ],
+  "status": "seeded",
+  "sources": {
+    "osm": {
+      "bbox": [
+        -112.32,
+        33.29,
+        -111.92,
+        33.75
+      ]
+    }
+  }
+}

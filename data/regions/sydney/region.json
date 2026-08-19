@@ -1,0 +1,23 @@
+{
+  "slug": "sydney",
+  "name": "Sydney",
+  "country": "AU",
+  "timezone": "Australia/Sydney",
+  "languages": [
+    "en",
+    "zh",
+    "ar",
+    "vi"
+  ],
+  "status": "seeded",
+  "sources": {
+    "osm": {
+      "bbox": [
+        150.9,
+        -34.05,
+        151.35,
+        -33.72
+      ]
+    }
+  }
+}

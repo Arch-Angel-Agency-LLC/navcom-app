@@ -1,0 +1,22 @@
+{
+  "slug": "liverpool",
+  "name": "Liverpool",
+  "country": "GB",
+  "timezone": "Europe/London",
+  "languages": [
+    "en",
+    "ar",
+    "pl"
+  ],
+  "status": "seeded",
+  "sources": {
+    "osm": {
+      "bbox": [
+        -3.03,
+        53.34,
+        -2.87,
+        53.47
+      ]
+    }
+  }
+}

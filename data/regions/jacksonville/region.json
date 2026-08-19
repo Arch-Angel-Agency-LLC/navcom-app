@@ -1,0 +1,21 @@
+{
+  "slug": "jacksonville",
+  "name": "Jacksonville metro",
+  "country": "US",
+  "timezone": "America/New_York",
+  "languages": [
+    "en",
+    "es"
+  ],
+  "status": "seeded",
+  "sources": {
+    "osm": {
+      "bbox": [
+        -81.87,
+        30.13,
+        -81.39,
+        30.51
+      ]
+    }
+  }
+}

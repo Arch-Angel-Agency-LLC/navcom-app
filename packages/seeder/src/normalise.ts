@@ -70,24 +70,65 @@ export function mapType(category: string | undefined): ResourceType | undefined 
 }
 
 /**
+ * Country dialling rules, for turning a locally-written number into one a phone can dial.
+ *
+ * `trunk` is the digit a country puts in front of a domestic number and drops when dialling
+ * internationally -- 0 across most of Europe and Oceania, absent in the US and Japan.
+ * `national` is how many digits a complete domestic number has, without that prefix.
+ *
+ * Only countries this directory actually covers. **An unlisted country is not a failure
+ * mode, it is a country where only explicitly international numbers are accepted** -- which
+ * is correct, because guessing a dialling plan produces a number that rings somewhere else.
+ */
+const DIALLING: Record<string, { cc: string; trunk?: string; national: number[] }> = {
+  US: { cc: "1", national: [10] },
+  CA: { cc: "1", national: [10] },
+  GB: { cc: "44", trunk: "0", national: [10, 9] },
+  AU: { cc: "61", trunk: "0", national: [9] },
+  NZ: { cc: "64", trunk: "0", national: [8, 9] },
+  IE: { cc: "353", trunk: "0", national: [9, 8] },
+  JP: { cc: "81", trunk: "0", national: [10, 9] },
+  IN: { cc: "91", trunk: "0", national: [10] },
+};
+
+/**
  * Phone numbers, normalised so a `tel:` link works on the first tap.
  *
  * The most-used field on the whole surface at 11pm, and the one where a stray character
  * costs somebody a call. Returns undefined rather than guessing at anything it cannot
- * confidently read -- an absent phone renders as unknown, which is true.
+ * confidently read -- an absent phone renders as unknown, which is true, and a wrong one is
+ * a failed call that nothing on the surface would show as wrong.
  */
 export function normalisePhone(raw: string | undefined, country = "US"): string | undefined {
   if (!raw) return undefined;
+
   // Drop extensions before counting digits: "555-0100 x23" is a 7-digit number, not 9.
   const trunk = raw.split(/\s(?:x|ext\.?|extension)\s*/i)[0] ?? raw;
   const digits = trunk.replace(/\D/g, "");
   if (digits.length === 0) return undefined;
 
+  // Already international, whoever wrote it. Nothing to infer.
   if (raw.trim().startsWith("+")) return "+" + digits;
-  if (country === "US") {
-    if (digits.length === 10) return "+1" + digits;
-    if (digits.length === 11 && digits.startsWith("1")) return "+" + digits;
+  if (digits.startsWith("00")) return "+" + digits.slice(2);
+
+  const plan = DIALLING[country];
+  if (!plan) return undefined;
+
+  // Written with the country code but no plus: "1 314 802 0700", "44 20 7946 0958".
+  if (digits.startsWith(plan.cc)) {
+    const rest = digits.slice(plan.cc.length);
+    if (plan.national.includes(rest.length)) return "+" + digits;
   }
+
+  // Written domestically, with the trunk prefix: "020 7946 0958", "(02) 9374 4000".
+  if (plan.trunk && digits.startsWith(plan.trunk)) {
+    const rest = digits.slice(plan.trunk.length);
+    if (plan.national.includes(rest.length)) return "+" + plan.cc + rest;
+  }
+
+  // Written domestically with no prefix at all, which is how the US is always written.
+  if (plan.national.includes(digits.length)) return "+" + plan.cc + digits;
+
   return undefined;
 }
 

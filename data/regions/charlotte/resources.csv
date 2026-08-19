@@ -1,0 +1,5 @@
+id,name,type,address,lat,lon,phone,accepts,pets,sobriety,id_required,referral_required,sex_offender_ok,reports_to,curfew,max_stay,belongings,accessibility,languages,cost,hours,intake_hours,seasonal,capacity_signal,last_verified,verified_by,method,flag,notes
+charlotte-osm-e9f40001,Men's Shelter of Charlotte,shelter,"1210 North Tryon Street, Charlotte, NC, 28206",35.2361082,-80.8298424,,,,,,,,,,,,,,,,,,,2026-08-19,,website,ok,Source: https://www.openstreetmap.org/way/324608209
+charlotte-osm-afc02ce6,Urban Ministry Center,shelter,"935 North College Street, Charlotte, NC, 28206",35.2338903,-80.8331251,,,,,,,,,,,,,,,,,,,2026-08-19,,website,ok,Source: https://www.openstreetmap.org/way/324608511
+charlotte-osm-3c651c66,New Beginnings Treatment Center,shelter,"1508 Cleveland Avenue, Charlotte, NC, 28203",35.213535,-80.8539135,,,,,,,,,,,,,,,,,,,2026-08-19,,website,ok,Source: https://www.openstreetmap.org/way/837278805
+charlotte-osm-e50f63e0,Jamil Niner Student Pantry,meal,,35.3099508,-80.7239962,,,,,,,,,,,,,,,,,,,2026-08-19,,website,ok,Source: https://www.openstreetmap.org/way/848165475

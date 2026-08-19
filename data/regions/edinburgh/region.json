@@ -1,0 +1,22 @@
+{
+  "slug": "edinburgh",
+  "name": "Edinburgh",
+  "country": "GB",
+  "timezone": "Europe/London",
+  "languages": [
+    "en",
+    "gd",
+    "pl"
+  ],
+  "status": "seeded",
+  "sources": {
+    "osm": {
+      "bbox": [
+        -3.33,
+        55.9,
+        -3.1,
+        55.99
+      ]
+    }
+  }
+}

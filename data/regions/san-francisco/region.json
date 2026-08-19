@@ -1,0 +1,22 @@
+{
+  "slug": "san-francisco",
+  "name": "San Francisco metro",
+  "country": "US",
+  "timezone": "America/Los_Angeles",
+  "languages": [
+    "en",
+    "es",
+    "zh"
+  ],
+  "status": "seeded",
+  "sources": {
+    "osm": {
+      "bbox": [
+        -122.55,
+        37.7,
+        -122.34,
+        37.84
+      ]
+    }
+  }
+}

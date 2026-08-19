@@ -96,6 +96,28 @@ describe("phone numbers dial on the first tap", () => {
 
   it("keeps an explicit international number as given", () => {
     expect(normalisePhone("+44 20 7946 0958")).toBe("+442079460958");
+    expect(normalisePhone("0044 20 7946 0958")).toBe("+442079460958");
+  });
+
+  it("reads a domestic number in the country it was written in", () => {
+    // The US is the odd one out: no trunk prefix. Most of the world writes a leading 0 and
+    // drops it when dialling in, and a US-only rule silently dropped every one of them.
+    expect(normalisePhone("020 7946 0958", "GB")).toBe("+442079460958");
+    expect(normalisePhone("(02) 9374 4000", "AU")).toBe("+61293744000");
+    expect(normalisePhone("03-1234-5678", "JP")).toBe("+81312345678");
+    expect(normalisePhone("011 2345 6789", "IN")).toBe("+911123456789");
+  });
+
+  it("reads a number written with its country code but no plus", () => {
+    expect(normalisePhone("44 20 7946 0958", "GB")).toBe("+442079460958");
+    expect(normalisePhone("1 314 802 0700", "US")).toBe("+13148020700");
+  });
+
+  it("refuses to guess a dialling plan it does not have", () => {
+    // An unlisted country is not a failure, it is one where only explicitly international
+    // numbers are taken. Guessing produces a number that rings somewhere else entirely.
+    expect(normalisePhone("0912 345 678", "PG")).toBeUndefined();
+    expect(normalisePhone("+675 321 1234", "PG")).toBe("+6753211234");
   });
 });
 

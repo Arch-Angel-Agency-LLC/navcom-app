@@ -1,0 +1,10 @@
+id,name,type,address,lat,lon,phone,accepts,pets,sobriety,id_required,referral_required,sex_offender_ok,reports_to,curfew,max_stay,belongings,accessibility,languages,cost,hours,intake_hours,seasonal,capacity_signal,last_verified,verified_by,method,flag,notes
+bristol-osm-8617b8df,Keynsham Food Bank,meal,"Bristol, BS31 2QN",51.4084162,-2.5059951,,,,,,,,,,,,,,,,,,,2026-08-19,,website,ok,Source: https://www.openstreetmap.org/node/5056824641
+bristol-osm-3e8efebe,Keynsham Food Bank,meal,"Bristol, BS31 2DY",51.4164471,-2.5090396,,,,,,,,,,,,,,,,,,,2026-08-19,,website,ok,Source: https://www.openstreetmap.org/node/5056833281
+bristol-osm-6f1c0676,Keynsham Childrens Centre,meal,"65 West View Road, Bristol, BS31 2UE",51.4133862,-2.5019485,,,,,,,,,,,,,,,,,,,2026-08-19,,website,ok,Source: https://www.openstreetmap.org/node/8710474667
+bristol-osm-55ef5358,Ronald McDonald House,shelter,"Royal Fort Road, Bristol, BS2 8DH",51.458392,-2.6004585,,,,,,,,,,,,,,,,,,,2026-08-19,,website,ok,Source: https://www.openstreetmap.org/way/295167547
+bristol-osm-57e3d9cf,Ignite Life,meal,"41 High Street, Bristol, BS16 5HD",51.4815413,-2.5130131,,,,,,,,,,,,,,,,,,,2026-08-19,,website,ok,Source: https://www.openstreetmap.org/way/553649140
+bristol-osm-7c9ade0c,The Salvation Army Logos House,shelter,"Wade Street, Bristol, BS2 9EL",51.4595544,-2.5802191,,,,,,,,,,,,,,,,,,,2026-08-19,,website,ok,Source: https://www.openstreetmap.org/way/562901664
+bristol-osm-d9514127,Julian Trust Night Shelter,shelter,"16 Little Bishop Street, Bristol, BS2 9JF",51.4622523,-2.5849,+441179244604,,,,,,,,,,,,,,Mo-Sa 20:00-22:30,,,,2026-08-19,,website,ok,Source: https://www.openstreetmap.org/way/625141146
+bristol-osm-1f70dd5a,Sam's House,shelter,"Royal Fort Road, Bristol, BS2 8DH",51.4583145,-2.6009117,,,,,,,,,,,,,,,,,,,2026-08-19,,website,ok,Source: https://www.openstreetmap.org/way/1160692337
+bristol-osm-ded51c02,St Nicholas Bread,meal,,51.4592016,-2.5774495,,,,,,,,,,,,,,,,,,,2026-08-19,,website,ok,Source: https://www.openstreetmap.org/way/1428975363

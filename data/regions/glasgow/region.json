@@ -1,0 +1,23 @@
+{
+  "slug": "glasgow",
+  "name": "Glasgow",
+  "country": "GB",
+  "timezone": "Europe/London",
+  "languages": [
+    "en",
+    "gd",
+    "pl",
+    "ur"
+  ],
+  "status": "seeded",
+  "sources": {
+    "osm": {
+      "bbox": [
+        -4.36,
+        55.79,
+        -4.14,
+        55.92
+      ]
+    }
+  }
+}

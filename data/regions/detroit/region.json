@@ -1,0 +1,22 @@
+{
+  "slug": "detroit",
+  "name": "Detroit metro",
+  "country": "US",
+  "timezone": "America/New_York",
+  "languages": [
+    "en",
+    "es",
+    "ar"
+  ],
+  "status": "seeded",
+  "sources": {
+    "osm": {
+      "bbox": [
+        -83.29,
+        42.25,
+        -82.91,
+        42.45
+      ]
+    }
+  }
+}

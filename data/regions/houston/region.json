@@ -1,0 +1,22 @@
+{
+  "slug": "houston",
+  "name": "Houston metro",
+  "country": "US",
+  "timezone": "America/Chicago",
+  "languages": [
+    "en",
+    "es",
+    "vi"
+  ],
+  "status": "seeded",
+  "sources": {
+    "osm": {
+      "bbox": [
+        -95.79,
+        29.52,
+        -95.06,
+        30.11
+      ]
+    }
+  }
+}

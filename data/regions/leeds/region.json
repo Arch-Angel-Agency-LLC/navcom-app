@@ -1,0 +1,22 @@
+{
+  "slug": "leeds",
+  "name": "Leeds",
+  "country": "GB",
+  "timezone": "Europe/London",
+  "languages": [
+    "en",
+    "ur",
+    "pl"
+  ],
+  "status": "seeded",
+  "sources": {
+    "osm": {
+      "bbox": [
+        -1.65,
+        53.73,
+        -1.44,
+        53.86
+      ]
+    }
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "slug": "san-jose",
+  "name": "San Jose metro",
+  "country": "US",
+  "timezone": "America/Los_Angeles",
+  "languages": [
+    "en",
+    "es",
+    "vi"
+  ],
+  "status": "seeded",
+  "sources": {
+    "osm": {
+      "bbox": [
+        -122.05,
+        37.2,
+        -121.75,
+        37.47
+      ]
+    }
+  }
+}

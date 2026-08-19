@@ -1,0 +1,11 @@
+id,name,type,address,lat,lon,phone,accepts,pets,sobriety,id_required,referral_required,sex_offender_ok,reports_to,curfew,max_stay,belongings,accessibility,languages,cost,hours,intake_hours,seasonal,capacity_signal,last_verified,verified_by,method,flag,notes
+leeds-osm-5d8e761c,South Leeds Food Bank,meal,"Church Street, Leeds, LS27 7AF",53.7592822,-1.6334116,,,,,,,,,,,,,,,,,,,2026-08-19,,website,ok,Source: https://www.openstreetmap.org/node/5550688285
+leeds-osm-d854e464,Happy Holidays (Hunger Scheme),meal,"322 Harehills Lane, Leeds, LS9 7BG",53.8089096,-1.509684,,,,,,,,,,,,,,,,,,,2026-08-19,,website,ok,Source: https://www.openstreetmap.org/node/6708038051
+leeds-osm-1ae6ad12,Happy Holidays (Hunger Scheme),meal,"Stocks Hill, Leeds, LS12 1UQ",53.7971229,-1.5879214,,,,,,,,,,,,,,,,,,,2026-08-19,,website,ok,Source: https://www.openstreetmap.org/node/6724415565
+leeds-osm-8b398a77,Leeds North And West Foodbank,meal,"Town Street, Leeds, LS13 2EP",53.8127231,-1.6285113,,,,,,,,,,,,,,,,,,,2026-08-19,,website,ok,Source: https://www.openstreetmap.org/node/6900095789
+leeds-osm-0a70ee76,Leeds North And West Food Bank,meal,"Branch Road, Leeds, LS12 4RN",53.7833362,-1.6032368,,,,,,,,,,,,,,,,,,,2026-08-19,,website,ok,Source: https://www.openstreetmap.org/node/6990078531
+leeds-osm-9af3c5cd,Leeds North And West Foodbank,meal,"1 Brownberrie Avenue, Leeds, LS18 5PW",53.8467166,-1.6345596,,,,,,,,,,,,,,,,,,,2026-08-19,,website,ok,Source: https://www.openstreetmap.org/node/7518646549
+leeds-osm-ea158c50,Leeds South & East Food Bank,meal,,53.7710857,-1.5422926,,,,,,,,,,,,,,,,,,,2026-08-19,,website,ok,Source: https://www.openstreetmap.org/node/9063321049
+leeds-osm-2f976bea,Surplus To Purpose,meal,"Torre Road, Leeds, LS9 7DN",53.8052798,-1.5105677,,,,,,,,,,,,,,,,,,,2026-08-19,,website,ok,Source: https://www.openstreetmap.org/node/9839237698
+leeds-osm-7a415730,Community Cafe,meal,,53.8274324,-1.4697325,,,,,,,,,,,,,,,"Tu 09:30-11:30,12:30-14:30; We-Mo closed",,,,2026-08-19,,website,ok,Source: https://www.openstreetmap.org/way/976375569
+leeds-osm-d3312d3c,The Pennington Centre,daytime,"Woodhouse Street, Leeds, LS6 2JP",53.8145014,-1.5557732,,,,,,,,,,,,,,,,,,,2026-08-19,,website,ok,Source: https://www.openstreetmap.org/way/1408779780

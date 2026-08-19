@@ -1,0 +1,9 @@
+id,name,type,address,lat,lon,phone,accepts,pets,sobriety,id_required,referral_required,sex_offender_ok,reports_to,curfew,max_stay,belongings,accessibility,languages,cost,hours,intake_hours,seasonal,capacity_signal,last_verified,verified_by,method,flag,notes
+dallas-osm-de88162f,Safe Haven Homes,shelter,"2816 East Illinois Avenue, Dallas, TX, 75216",32.716289,-96.779541,+19723757179,,,,,,,,,,,,,,,,,,2026-08-19,,website,ok,Source: https://www.openstreetmap.org/node/368161343
+dallas-osm-c3bed141,Jewish Family Services of Greater Dallas,meal,"5402, Dallas",32.9592478,-96.8191123,,,,,,,,,,,,,,,,,,,2026-08-19,,website,ok,Source: https://www.openstreetmap.org/node/8200141065
+dallas-osm-190111e3,Wilkinson Center,meal,3402 North Buckner Boulevard,32.8048849,-96.680769,,,,,,,,,,,,,,,,,,,2026-08-19,,website,ok,Source: https://www.openstreetmap.org/node/13793614190
+dallas-osm-2e4750f6,Austin Street Shelter,shelter,"2929 Hickory Street, Dallas, TX, 75226",32.7790518,-96.775726,,,,,,,,,,,,,,,,,,,2026-08-19,,website,ok,Source: https://www.openstreetmap.org/way/234930652
+dallas-osm-ffb299a4,Carr P. Collins Center,meal,"5320;5302 Harry Hines Boulevard, Dallas, TX, 75235",32.81365,-96.8379867,,,,,,,,,,,,,,,,,,,2026-08-19,,website,ok,Source: https://www.openstreetmap.org/way/471538439
+dallas-osm-a2cf4359,Life Message,meal,"4501 Rowlett Road, Rowlett, TX, 75088",32.9016111,-96.5701647,+19724759800,,,,,,,,,,,,,,,,,,2026-08-19,,website,ok,Source: https://www.openstreetmap.org/way/660750477
+dallas-osm-2adb60e6,North Texas Food Bank,meal,"3677 Mapleshade Lane, Plano, TX",33.0040041,-96.7593007,,,,,,,,,,,,,,,,,,,2026-08-19,,website,ok,Source: https://www.openstreetmap.org/way/705249280
+dallas-osm-62d7e717,Metrocrest Services,meal,"1145 North Josey Lane, Carrollton, TX, 75006",32.9554158,-96.8911173,+19724462100,,,,,,,,,,,,,,,,,,2026-08-19,,website,ok,Source: https://www.openstreetmap.org/way/1257082093

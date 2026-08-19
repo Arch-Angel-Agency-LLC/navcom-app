@@ -1,0 +1,22 @@
+{
+  "slug": "adelaide",
+  "name": "Adelaide",
+  "country": "AU",
+  "timezone": "Australia/Adelaide",
+  "languages": [
+    "en",
+    "zh",
+    "it"
+  ],
+  "status": "seeded",
+  "sources": {
+    "osm": {
+      "bbox": [
+        138.5,
+        -35.0,
+        138.72,
+        -34.8
+      ]
+    }
+  }
+}

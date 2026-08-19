@@ -1,0 +1,22 @@
+{
+  "slug": "newcastle-uk",
+  "name": "Newcastle upon Tyne",
+  "country": "GB",
+  "timezone": "Europe/London",
+  "languages": [
+    "en",
+    "ar",
+    "pl"
+  ],
+  "status": "seeded",
+  "sources": {
+    "osm": {
+      "bbox": [
+        -1.71,
+        54.94,
+        -1.51,
+        55.04
+      ]
+    }
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "slug": "albuquerque",
+  "name": "Albuquerque metro",
+  "country": "US",
+  "timezone": "America/Denver",
+  "languages": [
+    "en",
+    "es",
+    "nv"
+  ],
+  "status": "seeded",
+  "sources": {
+    "osm": {
+      "bbox": [
+        -106.79,
+        34.99,
+        -106.47,
+        35.24
+      ]
+    }
+  }
+}

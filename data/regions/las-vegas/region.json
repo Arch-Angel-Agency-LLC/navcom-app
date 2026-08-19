@@ -1,0 +1,22 @@
+{
+  "slug": "las-vegas",
+  "name": "Las Vegas metro",
+  "country": "US",
+  "timezone": "America/Los_Angeles",
+  "languages": [
+    "en",
+    "es",
+    "tl"
+  ],
+  "status": "seeded",
+  "sources": {
+    "osm": {
+      "bbox": [
+        -115.35,
+        36.02,
+        -115.0,
+        36.33
+      ]
+    }
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "slug": "canberra",
+  "name": "Canberra",
+  "country": "AU",
+  "timezone": "Australia/Sydney",
+  "languages": [
+    "en",
+    "zh"
+  ],
+  "status": "seeded",
+  "sources": {
+    "osm": {
+      "bbox": [
+        149.02,
+        -35.42,
+        149.2,
+        -35.2
+      ]
+    }
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "slug": "birmingham-uk",
+  "name": "Birmingham",
+  "country": "GB",
+  "timezone": "Europe/London",
+  "languages": [
+    "en",
+    "ur",
+    "pa",
+    "bn"
+  ],
+  "status": "seeded",
+  "sources": {
+    "osm": {
+      "bbox": [
+        -2.03,
+        52.39,
+        -1.79,
+        52.55
+      ]
+    }
+  }
+}

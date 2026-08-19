@@ -1,0 +1,21 @@
+{
+  "slug": "salt-lake-city",
+  "name": "Salt Lake City metro",
+  "country": "US",
+  "timezone": "America/Denver",
+  "languages": [
+    "en",
+    "es"
+  ],
+  "status": "seeded",
+  "sources": {
+    "osm": {
+      "bbox": [
+        -112.1,
+        40.68,
+        -111.78,
+        40.85
+      ]
+    }
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "slug": "nottingham",
+  "name": "Nottingham",
+  "country": "GB",
+  "timezone": "Europe/London",
+  "languages": [
+    "en",
+    "pl",
+    "ur"
+  ],
+  "status": "seeded",
+  "sources": {
+    "osm": {
+      "bbox": [
+        -1.25,
+        52.9,
+        -1.09,
+        53.01
+      ]
+    }
+  }
+}

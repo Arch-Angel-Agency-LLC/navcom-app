@@ -1,0 +1,22 @@
+{
+  "slug": "brisbane",
+  "name": "Brisbane",
+  "country": "AU",
+  "timezone": "Australia/Brisbane",
+  "languages": [
+    "en",
+    "zh",
+    "vi"
+  ],
+  "status": "seeded",
+  "sources": {
+    "osm": {
+      "bbox": [
+        152.9,
+        -27.62,
+        153.15,
+        -27.36
+      ]
+    }
+  }
+}

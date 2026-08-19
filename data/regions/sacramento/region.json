@@ -1,0 +1,22 @@
+{
+  "slug": "sacramento",
+  "name": "Sacramento metro",
+  "country": "US",
+  "timezone": "America/Los_Angeles",
+  "languages": [
+    "en",
+    "es",
+    "ru"
+  ],
+  "status": "seeded",
+  "sources": {
+    "osm": {
+      "bbox": [
+        -121.58,
+        38.44,
+        -121.35,
+        38.68
+      ]
+    }
+  }
+}

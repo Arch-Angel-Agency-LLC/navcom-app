@@ -1,0 +1,22 @@
+{
+  "slug": "perth",
+  "name": "Perth",
+  "country": "AU",
+  "timezone": "Australia/Perth",
+  "languages": [
+    "en",
+    "zh",
+    "it"
+  ],
+  "status": "seeded",
+  "sources": {
+    "osm": {
+      "bbox": [
+        115.72,
+        -32.1,
+        116.02,
+        -31.83
+      ]
+    }
+  }
+}

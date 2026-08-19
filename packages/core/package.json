@@ -12,6 +12,10 @@
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     },
+    "./directory": {
+      "types": "./dist/directory/index.d.ts",
+      "default": "./dist/directory/index.js"
+    },
     "./src/*": "./src/*"
   },
   "scripts": {

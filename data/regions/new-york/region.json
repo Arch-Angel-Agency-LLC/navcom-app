@@ -1,0 +1,22 @@
+{
+  "slug": "new-york",
+  "name": "New York metro",
+  "country": "US",
+  "timezone": "America/New_York",
+  "languages": [
+    "en",
+    "es",
+    "zh"
+  ],
+  "status": "seeded",
+  "sources": {
+    "osm": {
+      "bbox": [
+        -74.3,
+        40.49,
+        -73.7,
+        40.92
+      ]
+    }
+  }
+}

@@ -1,0 +1,6 @@
+id,name,type,address,lat,lon,phone,accepts,pets,sobriety,id_required,referral_required,sex_offender_ok,reports_to,curfew,max_stay,belongings,accessibility,languages,cost,hours,intake_hours,seasonal,capacity_signal,last_verified,verified_by,method,flag,notes
+jacksonville-osm-b0a41be0,Trinity Rescue Mission,shelter,,30.3335536,-81.6596399,,,,,,,,,,,,,,,,,,,2026-08-19,,website,ok,Source: https://www.openstreetmap.org/way/326836858
+jacksonville-osm-76943ac7,Mission House,shelter,,30.2869378,-81.3974548,,,,,,,,,,,,,,,,,,,2026-08-19,,website,ok,Source: https://www.openstreetmap.org/way/435132006
+jacksonville-osm-364a95e4,Daily Manna Serving Center,meal,,30.3227586,-81.6969792,,,,,,,,,,,,,,,,,,,2026-08-19,,website,ok,Source: https://www.openstreetmap.org/way/497666441
+jacksonville-osm-d6472160,UCOM Emergency Service Center,meal,,30.2921375,-81.6437689,,,,,,,,,,,,,,,,,,,2026-08-19,,website,ok,Source: https://www.openstreetmap.org/way/519082789
+jacksonville-osm-aab30deb,Mandarin Food Bank,meal,,30.1581355,-81.599238,,,,,,,,,,,,,,,,,,,2026-08-19,,website,ok,Source: https://www.openstreetmap.org/way/675081891

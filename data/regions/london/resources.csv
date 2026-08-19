@@ -1,0 +1,41 @@
+id,name,type,address,lat,lon,phone,accepts,pets,sobriety,id_required,referral_required,sex_offender_ok,reports_to,curfew,max_stay,belongings,accessibility,languages,cost,hours,intake_hours,seasonal,capacity_signal,last_verified,verified_by,method,flag,notes
+london-osm-d0e91846,Food Bank Aid,meal,"Chaplin Square, London, N12 0GL",51.6047565,-0.1733719,,,,,,,,,,,,,,,,,,,2026-08-19,,website,ok,Source: https://www.openstreetmap.org/node/1409601925
+london-osm-4face8dc,Feed The Hill,meal,"367 New Cross Road, London, SE14 6AT",51.4759941,-0.0349361,,,,,,,,,,,,,,,,,,,2026-08-19,,website,ok,Source: https://www.openstreetmap.org/node/1675125331
+london-osm-e8c510ab,North Enfield Food Bank,meal,,51.6451601,-0.0579481,,,,,,,,,,,,,,,,,,,2026-08-19,,website,ok,Source: https://www.openstreetmap.org/node/3378721101
+london-osm-9bf92f63,Homeless Shelter,shelter,"121-131 East India Dock Road, London, E14 6DF",51.5111679,-0.0186722,+442079875466,,,,,,,,,,,,,,24/7,,,,2026-08-19,,website,ok,Source: https://www.openstreetmap.org/node/4642341078
+london-osm-f3ec0e1d,Leytonstone United Free Church Night Shelter,shelter,"55 Wallwood Road, London, E11 1AY",51.5703398,0.0024274,,,,,,,,,,,,,,,,,,,2026-08-19,,website,ok,Source: https://www.openstreetmap.org/node/5901363647
+london-osm-456c2133,Banstead Pantry,meal,"48 High Street, Banstead, SM7 2LX",51.3222857,-0.2022509,,,,,,,,,,,,,,,,,,,2026-08-19,,website,ok,Source: https://www.openstreetmap.org/node/5996591274
+london-osm-9dd6a4a1,FoodBank North Paddington,meal,"57 Goldney Road, London",51.5247647,-0.1967223,,,,,,,,,,,,,,,,,,,2026-08-19,,website,ok,Source: https://www.openstreetmap.org/node/6742376234
+london-osm-a6bc18f2,Humdingers Soup Kitchen,meal,"238 Hoxton Street, London",51.5347098,-0.080676,,,,,,,,,,,,,,,Mo-Fr 17:00-19:00,,,,2026-08-19,,website,ok,Source: https://www.openstreetmap.org/node/6813239311
+london-osm-e53b71fd,House The Homeless,shelter,"237 Knight's Hill, London, SE27 0QT",51.4228617,-0.1052454,+448710500890,,,,,,,,,,,,,,,,,,2026-08-19,,website,ok,Source: https://www.openstreetmap.org/node/7257703002
+london-osm-600706f9,The Hive Food Bank,meal,,51.571259,-0.1231088,,,,,,,,,,,,,,,,,,,2026-08-19,,website,ok,Source: https://www.openstreetmap.org/node/7888478130
+london-osm-e2b2a755,Mini Food Bank,meal,,51.5894152,0.0002328,,,,,,,,,,,,,,,,,,,2026-08-19,,website,ok,Source: https://www.openstreetmap.org/node/8592077468
+london-osm-ff370355,Foodbank Centre,meal,"345 Chipperfield Road, Orpington, BR5 2LJ",51.3962081,0.1077095,,,,,,,,,,,,,,,,,,,2026-08-19,,website,ok,Source: https://www.openstreetmap.org/node/9670655284
+london-osm-fcc52dab,The Real Junk Food Project Twickenham,meal,"13 Rosslyn Road, Twickenham, TW1 2AR",51.4551902,-0.313153,,,,,,,,,,,,,,,,,,,2026-08-19,,website,ok,Source: https://www.openstreetmap.org/node/9786564077
+london-osm-180d9eab,Bromley Foodbank,meal,"20 Widmore Road, Bromley, BR1 1RY",51.4059545,0.016868,+448009202324,,,,,,,,,,,,,,Tu 11:00-13:30; Th 12:30-14:30; PH off,,,,2026-08-19,,website,ok,Source: https://www.openstreetmap.org/node/11068119074
+london-osm-1b60dd6f,Lewisham Donation Hub,meal,"261 Lewisham High Street, London, SE13 6AY",51.4563669,-0.0140106,,,,,,,,,,,,,,,,,,,2026-08-19,,website,ok,Source: https://www.openstreetmap.org/node/11121352975
+london-osm-c2e380f6,The Larder Ministries,meal,132 Hither Green Lane,51.4532397,-0.0079993,+442035511927,,,,,,,,,,,,,,,,,,2026-08-19,,website,ok,Source: https://www.openstreetmap.org/node/11121391874
+london-osm-1c5c82c5,North London Action for the Homeless,meal,,51.557016,-0.0738435,,,,,,,,,,,,,,,,,,,2026-08-19,,website,ok,Source: https://www.openstreetmap.org/node/11160869420
+london-osm-a4f36c65,Holy Trinity Stroud Green Food Bank,meal,"Stroud Green Road, London",51.5747326,-0.1110671,,,,,,,,,,,,,,,,,,,2026-08-19,,website,ok,Source: https://www.openstreetmap.org/node/12003279927
+london-osm-11495bea,Swanley & District Food Bank,meal,"50 High Street, Swanley, BR8 8BQ",51.3945207,0.1792416,+447798872573,,,,,,,,,,,,,,"Tu,Fr 10:30-15:00",,,,2026-08-19,,website,ok,Source: https://www.openstreetmap.org/node/12292088988
+london-osm-b77ac91c,Southgate Mosque Food Bank,meal,"High Street, London, N14 6BN",51.6296529,-0.1266148,,,,,,,,,,,,,,,,,,,2026-08-19,,website,ok,Source: https://www.openstreetmap.org/node/12297589864
+london-osm-654e4167,The Pantry,meal,"62 Camberwell Church Street, London, SE5 8QZ",51.473552,-0.0886219,,,,,,,,,,,,,,,"Tu,Th 11:00-14:00; We 11:00-14:30",,,,2026-08-19,,website,ok,Source: https://www.openstreetmap.org/node/12572476253
+london-osm-0e58787f,999 Club,shelter,"21 Deptford Broadway, London, SE8 4PA",51.4749378,-0.0243997,+442086945797,,,,,,,,,,,,,,,,,,2026-08-19,,website,ok,Source: https://www.openstreetmap.org/node/12876936676
+london-osm-6f496ba7,The Felix Project,meal,,51.4844954,-0.0393842,,,,,,,,,,,,,,,,,,,2026-08-19,,website,ok,Source: https://www.openstreetmap.org/node/13645681101
+london-osm-27e08901,mammakind,meal,,51.47836,-0.0157949,,,,,,,,,,,,,,,,,,,2026-08-19,,website,ok,Source: https://www.openstreetmap.org/node/13675268326
+london-osm-20319e81,Purfleet Community pantry,meal,,51.4856943,0.2292939,,,,,,,,,,,,,,,,,,,2026-08-19,,website,ok,Source: https://www.openstreetmap.org/node/13714452778
+london-osm-279ee745,Camden Road Hostel,shelter,"248-250 Camden Road, London, NW1 9HE",51.5471918,-0.1308855,,,,,,,,,,,,,,,,,,,2026-08-19,,website,ok,Source: https://www.openstreetmap.org/way/104244603
+london-osm-3931e6e6,Centrepoint,shelter,"25 Berwick Street, London, W1F 8RF",51.5141121,-0.1350993,,,,,,,,,,,,,,,,,,,2026-08-19,,website,ok,Source: https://www.openstreetmap.org/way/156620022
+london-osm-3809cf56,Centrepoint Camberwell Foyer,shelter,"90 Denmark Hill, London, SE5 8RX",51.4715197,-0.0933637,+442075019661,,,,,,,,,,,,,,,,,,2026-08-19,,website,ok,Source: https://www.openstreetmap.org/way/171300312
+london-osm-e2f8b15f,St. Mungo's Broadway,shelter,"53 Chichester Road, London, NW6 5QW",51.5346436,-0.1947122,,,,,,,,,,,,,,,,,,,2026-08-19,,website,ok,Source: https://www.openstreetmap.org/way/172932545
+london-osm-df3f650d,Branches,shelter,"740 Forest Road, London, E17 3HR",51.5911434,-0.0066064,,,,,,,,,,,,,,,,,,,2026-08-19,,website,ok,Source: https://www.openstreetmap.org/way/197777838
+london-osm-261c1a5d,Fairholme House,shelter,"40 Kenbury Street, London, SE5 9DD",51.47082,-0.098304,,,,,,,,,,,,,,,,,,,2026-08-19,,website,ok,Source: https://www.openstreetmap.org/way/318977041
+london-osm-c3009526,Tresham Early Childhood Centre,daytime,"Lilestone Street, London, NW8 8SU",51.524931,-0.1674948,,,,,,,,,,,,,,,,,,,2026-08-19,,website,ok,Source: https://www.openstreetmap.org/way/399127542
+london-osm-b71cdc9c,St Mungo's,shelter,"217-221 Harrow Road, London",51.520066,-0.1912918,,,,,,,,,,,,,,,,,,,2026-08-19,,website,ok,Source: https://www.openstreetmap.org/way/639048084
+london-osm-519258e0,Bethany House,shelter,"13 Lloyd Square, London, WC1X 9AR",51.5290325,-0.1109521,,,,,,,,,,,,,,,,,,,2026-08-19,,website,ok,Source: https://www.openstreetmap.org/way/665447805
+london-osm-72f3d08e,St Mungo's,shelter,"96 Great Guildford Street, London, SE1 0ES",51.5033094,-0.0969821,,,,,,,,,,,,,,,,,,,2026-08-19,,website,ok,Source: https://www.openstreetmap.org/way/753792449
+london-osm-40d0ad1c,St Mungo's Hostel,shelter,"2-8 Argyle Walk, London, WC1H 8HA",51.5283625,-0.1237949,+442072787690,,,,,,,,,,,,,,,,,,2026-08-19,,website,ok,Source: https://www.openstreetmap.org/way/803089804
+london-osm-bf5479cf,St Mungo's,shelter,"10-12 Edith Road, London, W14 9BA",51.4931299,-0.2138031,,,,,,,,,,,,,,,,,,,2026-08-19,,website,ok,Source: https://www.openstreetmap.org/way/934343274
+london-osm-68849228,Damien Centre,meal,"3-5 Church Road, London, W3 8PU",51.5070086,-0.2711619,,,,,,,,,,,,,,,,,,,2026-08-19,,website,ok,Source: https://www.openstreetmap.org/way/1067695536
+london-osm-d6f5c2b7,Divine Love Soup Kitchen,meal,,51.4287648,-0.1318228,,,,,,,,,,,,,,,,,,,2026-08-19,,website,ok,Source: https://www.openstreetmap.org/way/1155426156
+london-osm-5aa84b25,The White House,shelter,,51.4256727,-0.4741247,,,,,,,,,,,,,,,,,,,2026-08-19,,website,ok,Source: https://www.openstreetmap.org/way/1352311712

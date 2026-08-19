@@ -1,0 +1,10 @@
+id,name,type,address,lat,lon,phone,accepts,pets,sobriety,id_required,referral_required,sex_offender_ok,reports_to,curfew,max_stay,belongings,accessibility,languages,cost,hours,intake_hours,seasonal,capacity_signal,last_verified,verified_by,method,flag,notes
+houston-osm-1bc90658,Saint Andrews Methodist Church Food Bank,meal,,29.8537789,-95.4189916,,,,,,,,,,,,,,,"Tu 11:00-12:00+ ""end time not posted, best guess",,,,2026-08-19,,website,ok,Source: https://www.openstreetmap.org/node/7929519967
+houston-osm-d4b84661,Food Pantry - ICNA Relief Houston,meal,"5645 Hillcroft Avenue, Houston, TX, 77074",29.7210126,-95.4998932,+18889054262,,,,,,,,,,,,,,Tu-Fr 16:15-18:30; Sa 12:15-14:15,,,,2026-08-19,,website,ok,Source: https://www.openstreetmap.org/node/8857472542
+houston-osm-0165fe46,Star of Hope,shelter,,29.7537295,-95.349171,,,,,,,,,,,,,,,,,,,2026-08-19,,website,ok,Source: https://www.openstreetmap.org/way/437018374
+houston-osm-09839f05,Harmony House,shelter,"702 Girard Street, Houston, 77007",29.7677853,-95.364503,+17132216200,,,,,,,,,,,,,,,,,,2026-08-19,,website,ok,Source: https://www.openstreetmap.org/way/437400453
+houston-osm-4eec21b0,Quick Weight Loss,medical,"2730 Smith Ranch Road, Pearland, TX, 77584",29.5576058,-95.3854353,,,,,,,,,,,,,,,,,,,2026-08-19,,website,ok,Source: https://www.openstreetmap.org/way/628730333
+houston-osm-833af84e,Heights Interfaith Ministries Food Pantry,meal,"3523 Beauchamp Street, Houston, TX, 77009",29.7897123,-95.3745887,,,,,,,,,,,,,,,,,,,2026-08-19,,website,ok,Source: https://www.openstreetmap.org/way/671869917
+houston-osm-77bee516,Saint Rose of Lima Food Pantry,meal,"3737 Brinkman Street, Houston, TX",29.8209601,-95.416522,,,,,,,,,,,,,,,"We,Sa 09:00-11:00",,,,2026-08-19,,website,ok,Source: https://www.openstreetmap.org/way/910119445
+houston-osm-2a02b0fe,All Saints Food Pantry,meal,,29.7901472,-95.3955434,,,,,,,,,,,,,,,,,,,2026-08-19,,website,ok,Source: https://www.openstreetmap.org/way/1102248021
+houston-osm-ddbc447b,Pearland Neighborhood Center,meal,,29.5643526,-95.2881099,,,,,,,,,,,,,,,,,,,2026-08-19,,website,ok,Source: https://www.openstreetmap.org/way/1125703404

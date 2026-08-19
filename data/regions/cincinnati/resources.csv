@@ -1,0 +1,15 @@
+id,name,type,address,lat,lon,phone,accepts,pets,sobriety,id_required,referral_required,sex_offender_ok,reports_to,curfew,max_stay,belongings,accessibility,languages,cost,hours,intake_hours,seasonal,capacity_signal,last_verified,verified_by,method,flag,notes
+cincinnati-osm-5425166d,Saint George Food Pantry,meal,,39.1286756,-84.5135589,,,,,,,,,,,,,,,,,,,2026-08-19,,website,ok,Source: https://www.openstreetmap.org/node/6630350010
+cincinnati-osm-a4d63249,Liberty Street Market,meal,"112 East Liberty Street, Cincinnati, OH",39.112888,-84.513673,,,,,,,,,,,,,,,,,,,2026-08-19,,website,ok,Source: https://www.openstreetmap.org/node/6744909157
+cincinnati-osm-7671fd90,Kids Cafe at Camp Washington,meal,,39.136391,-84.5348881,,,,,,,,,,,,,,,,,,,2026-08-19,,website,ok,Source: https://www.openstreetmap.org/node/9956013940
+cincinnati-osm-ca5a53ec,Bond Hill Food Pantry,meal,"1626 Anita Place, Cincinnati, OH, 45237",39.1752934,-84.4694647,,,,,,,,,,,,,,,,,,,2026-08-19,,website,ok,Source: https://www.openstreetmap.org/node/13039697835
+cincinnati-osm-811cd554,821 Flats,shelter,"821 Ezzard Charles Drive, Cincinnati, OH, 45203",39.1090302,-84.5287265,,,,,,,,,,,,,,,,,,,2026-08-19,,website,ok,Source: https://www.openstreetmap.org/way/46695014
+cincinnati-osm-c7e2266f,Our Daily Bread,meal,"1730 Race Street, Cincinnati, OH, 45202",39.1152917,-84.5178843,,,,,,,,,,,,,,,,,,,2026-08-19,,website,ok,Source: https://www.openstreetmap.org/way/53260794
+cincinnati-osm-ed36fc3f,BrightView,medical,"446 Morgan Street, Cincinnati, OH, 45206",39.1253458,-84.4996287,,,,,,,,,,,,,,,,,,,2026-08-19,,website,ok,Source: https://www.openstreetmap.org/way/56224100
+cincinnati-osm-f5b4fe95,Lincoln Heights Health Center,medical,,39.2388382,-84.4524963,,,,,,,,,,,,,,,,,,,2026-08-19,,website,ok,Source: https://www.openstreetmap.org/way/56395729
+cincinnati-osm-8a66f3e8,Ronald McDonald House Greater Cincinnati,shelter,,39.1423708,-84.5008313,,,,,,,,,,,,,,,,,,,2026-08-19,,website,ok,Source: https://www.openstreetmap.org/way/69701541
+cincinnati-osm-6a69d6d2,Be Concerned Food Bank,meal,,39.0756115,-84.5232957,,,,,,,,,,,,,,,,,,,2026-08-19,,website,ok,Source: https://www.openstreetmap.org/way/141726311
+cincinnati-osm-a7cc13e9,Harkavy Hall,shelter,"24 West 12th Street, Cincinnati, OH, 45202",39.1083474,-84.5157688,,,,,,,,,,,,,,,,,,,2026-08-19,,website,ok,Source: https://www.openstreetmap.org/way/212395168
+cincinnati-osm-68afbc59,Jimmy Heath House,shelter,"219 Odeon Street, Cincinnati, OH, 45202",39.1117605,-84.5197519,,,,,,,,,,,,,,,,,,,2026-08-19,,website,ok,Source: https://www.openstreetmap.org/way/1315796332
+cincinnati-osm-085e7f25,Freestore Foodbank,meal,"3401 Rosenthal Way, Cincinnati, OH, 45204",39.0841166,-84.5794942,,,,,,,,,,,,,,,,,,,2026-08-19,,website,ok,Source: https://www.openstreetmap.org/way/1349020997
+cincinnati-osm-386612cb,Over-The-Rhine Kitchen,meal,"1620 Vine Street, Cincinnati, OH, 45202",39.1136862,-84.5157995,,,,,,,,,,,,,,,"Sa,Su unknown; Mo-Fr closed",,,,2026-08-19,,website,ok,Source: https://www.openstreetmap.org/way/1481241557

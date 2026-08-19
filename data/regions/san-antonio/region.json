@@ -1,0 +1,21 @@
+{
+  "slug": "san-antonio",
+  "name": "San Antonio metro",
+  "country": "US",
+  "timezone": "America/Chicago",
+  "languages": [
+    "en",
+    "es"
+  ],
+  "status": "seeded",
+  "sources": {
+    "osm": {
+      "bbox": [
+        -98.7,
+        29.3,
+        -98.35,
+        29.65
+      ]
+    }
+  }
+}

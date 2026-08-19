@@ -1,0 +1,21 @@
+{
+  "slug": "los-angeles",
+  "name": "Los Angeles metro",
+  "country": "US",
+  "timezone": "America/Los_Angeles",
+  "languages": [
+    "en",
+    "es"
+  ],
+  "status": "seeded",
+  "sources": {
+    "osm": {
+      "bbox": [
+        -118.67,
+        33.7,
+        -118.14,
+        34.34
+      ]
+    }
+  }
+}

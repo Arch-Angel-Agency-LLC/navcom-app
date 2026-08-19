@@ -1,0 +1,21 @@
+{
+  "slug": "cleveland",
+  "name": "Cleveland metro",
+  "country": "US",
+  "timezone": "America/New_York",
+  "languages": [
+    "en",
+    "es"
+  ],
+  "status": "seeded",
+  "sources": {
+    "osm": {
+      "bbox": [
+        -81.88,
+        41.39,
+        -81.53,
+        41.6
+      ]
+    }
+  }
+}

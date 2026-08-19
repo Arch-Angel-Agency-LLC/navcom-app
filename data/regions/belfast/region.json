@@ -1,0 +1,22 @@
+{
+  "slug": "belfast",
+  "name": "Belfast",
+  "country": "GB",
+  "timezone": "Europe/London",
+  "languages": [
+    "en",
+    "ga",
+    "pl"
+  ],
+  "status": "seeded",
+  "sources": {
+    "osm": {
+      "bbox": [
+        -6.03,
+        54.53,
+        -5.8,
+        54.68
+      ]
+    }
+  }
+}

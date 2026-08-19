@@ -1,0 +1,22 @@
+{
+  "slug": "nashville",
+  "name": "Nashville metro",
+  "country": "US",
+  "timezone": "America/Chicago",
+  "languages": [
+    "en",
+    "es",
+    "ar"
+  ],
+  "status": "seeded",
+  "sources": {
+    "osm": {
+      "bbox": [
+        -87.05,
+        36.02,
+        -86.6,
+        36.4
+      ]
+    }
+  }
+}

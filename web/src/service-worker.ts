@@ -33,6 +33,15 @@ const SHELL = [
   )
 ];
 
+/**
+ * Individual area pages are NOT precached.
+ *
+ * There are dozens and an operator works in one. Precaching them all would fill a cheap
+ * phone with cities somebody will never visit, so opening an area is what saves it — which
+ * is why that page says so in those words rather than offering a download button.
+ */
+const isAreaPage = (pathname: string) => /\/terminal\/directory\/[^/]+\/?$/.test(pathname);
+
 const sw = self as unknown as ServiceWorkerGlobalScope;
 
 /** No network and nothing cached. Fail visibly — degrade visibly, never fail silently. */
@@ -68,7 +77,7 @@ sw.addEventListener('fetch', (event) => {
   // The directory page is the one worth refreshing when there IS a network: a cached copy
   // that silently never updates is how a phone ends up confidently reciting a shelter that
   // closed in March. Cache remains the fallback, so being offline changes nothing.
-  if (url.pathname.endsWith('/terminal/directory/')) {
+  if (url.pathname.endsWith('/terminal/directory/') || isAreaPage(url.pathname)) {
     event.respondWith(
       fetch(request)
         .then((response) => {

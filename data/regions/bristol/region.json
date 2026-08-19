@@ -1,0 +1,22 @@
+{
+  "slug": "bristol",
+  "name": "Bristol",
+  "country": "GB",
+  "timezone": "Europe/London",
+  "languages": [
+    "en",
+    "so",
+    "pl"
+  ],
+  "status": "seeded",
+  "sources": {
+    "osm": {
+      "bbox": [
+        -2.72,
+        51.4,
+        -2.5,
+        51.51
+      ]
+    }
+  }
+}

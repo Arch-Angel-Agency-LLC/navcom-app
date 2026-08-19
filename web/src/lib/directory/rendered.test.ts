@@ -489,6 +489,21 @@ describe('the field terminal', () => {
     expect(log.bodyText).toMatch(/nothing signs yet/i);
   });
 
+  it('keeps the relay stack off the offline directory page', () => {
+    // The one page an operator opens with no signal was shipping nostr-tools and NIP-44,
+    // because it imported the watch store to ask whether a watch was up. It does not need
+    // to know: "if a watch is up, ask it instead" is true either way. 107.4 kB -> 82.1 kB.
+    const dir = screens().find((p) => /\/terminal\/directory\/[^/]+\//.test(p.path))!;
+    const modules = dir.doc
+      .querySelectorAll('link[rel="modulepreload"]')
+      .map((l) => l.getAttribute('href') ?? '');
+    const inline = dir.doc.querySelectorAll('script').map((s) => s.structuredText).join(' ');
+    const all = [...modules, inline].join(' ');
+    for (const name of ['nostr', 'relay']) {
+      expect(all.toLowerCase(), `offline directory pulls in ${name}`).not.toContain(name);
+    }
+  });
+
   it('renders its cached records into the built page, where the display rules are checked', () => {
     // The rules in the first describe block scan every [data-record] on every page. That
     // only covers the terminal if the terminal actually prerenders its records -- which is

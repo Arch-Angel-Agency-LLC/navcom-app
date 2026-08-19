@@ -1,0 +1,23 @@
+{
+  "slug": "honolulu",
+  "name": "Honolulu metro",
+  "country": "US",
+  "timezone": "Pacific/Honolulu",
+  "languages": [
+    "en",
+    "haw",
+    "tl",
+    "ja"
+  ],
+  "status": "seeded",
+  "sources": {
+    "osm": {
+      "bbox": [
+        -158.0,
+        21.24,
+        -157.7,
+        21.4
+      ]
+    }
+  }
+}

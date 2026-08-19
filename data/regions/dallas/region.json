@@ -1,0 +1,21 @@
+{
+  "slug": "dallas",
+  "name": "Dallas metro",
+  "country": "US",
+  "timezone": "America/Chicago",
+  "languages": [
+    "en",
+    "es"
+  ],
+  "status": "seeded",
+  "sources": {
+    "osm": {
+      "bbox": [
+        -97.0,
+        32.62,
+        -96.55,
+        33.02
+      ]
+    }
+  }
+}

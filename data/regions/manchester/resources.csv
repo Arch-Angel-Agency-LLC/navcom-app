@@ -1,0 +1,6 @@
+id,name,type,address,lat,lon,phone,accepts,pets,sobriety,id_required,referral_required,sex_offender_ok,reports_to,curfew,max_stay,belongings,accessibility,languages,cost,hours,intake_hours,seasonal,capacity_signal,last_verified,verified_by,method,flag,notes
+manchester-osm-6d50adf4,The Wellspring Stockport,shelter,"Harvey Street, Stockport, SK1 1YD",53.4103506,-2.1548482,,,,,,,,,,,,,,,,,,,2026-08-19,,website,ok,Source: https://www.openstreetmap.org/node/9067373694
+manchester-osm-4c67bb7c,Salford Loaves and Fishes,meal,"1 Paddington Close, Salford, M6 5PL",53.4867838,-2.2841593,+441617378775,,,,,,,,,,,,,,,,,,2026-08-19,,website,ok,Source: https://www.openstreetmap.org/node/9084535127
+manchester-osm-1bdc2946,Penny Lane Pantry,meal,"Lancashire Hill, Stockport, SK5 7RJ",53.4159114,-2.1590761,,,,,,,,,,,,,,,,,,,2026-08-19,,website,ok,Source: https://www.openstreetmap.org/node/13253036740
+manchester-osm-cdbf67d1,Abbott Lodge,shelter,"4 Brindle Heath Road, Salford, M6 6NR",53.4927505,-2.2880428,+441617433340,,,,,,,,,,,,,,,,,,2026-08-19,,website,ok,Source: https://www.openstreetmap.org/way/642121557
+manchester-osm-ff01fa50,Salford Foyer,shelter,"1 Lower Seedley Road, Salford, M6 5WX",53.4887733,-2.2919206,+441617377778,,,,,,,,,,,,,,,,,,2026-08-19,,website,ok,Source: https://www.openstreetmap.org/way/979361293

@@ -1,0 +1,22 @@
+{
+  "slug": "miami",
+  "name": "Miami metro",
+  "country": "US",
+  "timezone": "America/New_York",
+  "languages": [
+    "en",
+    "es",
+    "ht"
+  ],
+  "status": "seeded",
+  "sources": {
+    "osm": {
+      "bbox": [
+        -80.32,
+        25.7,
+        -80.13,
+        25.86
+      ]
+    }
+  }
+}

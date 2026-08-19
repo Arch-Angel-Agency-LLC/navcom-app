@@ -1,0 +1,10 @@
+id,name,type,address,lat,lon,phone,accepts,pets,sobriety,id_required,referral_required,sex_offender_ok,reports_to,curfew,max_stay,belongings,accessibility,languages,cost,hours,intake_hours,seasonal,capacity_signal,last_verified,verified_by,method,flag,notes
+atlanta-osm-c4690d02,Gateway Center,shelter,"275 Pryor Street Southwest, Atlanta, GA, 30303",33.7476109,-84.3945527,+14042156600,,,,,,,,,,,,,,24/7,,,,2026-08-19,,website,ok,Source: https://www.openstreetmap.org/node/4237695952
+atlanta-osm-7141b01a,Atlanta Children's Day Shelter,shelter,"607 Peachtree Street Northeast, Atlanta, GA, 30308",33.7710386,-84.3838526,+14048923713,,,,,,,,,,,,,,,,,,2026-08-19,,website,ok,Source: https://www.openstreetmap.org/node/12136141359
+atlanta-osm-227b73eb,Atlanta Mission - Fuqua Hall,shelter,144 Mills Street Northwest,33.7651508,-84.3922719,+14043672492,,,,,,,,,,,,,,,,,,2026-08-19,,website,ok,Source: https://www.openstreetmap.org/node/12619410960
+atlanta-osm-569c9fde,Our House,shelter,,33.7590648,-84.3717272,,,,,,,,,,,,,,,,,,,2026-08-19,,website,ok,Source: https://www.openstreetmap.org/way/219331009
+atlanta-osm-b50394cf,Community Friendship Incorporated,shelter,"85 Renaissance Parkway Northeast, Atlanta, 30308",33.7684022,-84.3845982,+14048750381,,,,,,,,,,,,,,,,,,2026-08-19,,website,ok,Source: https://www.openstreetmap.org/way/269999028
+atlanta-osm-57acfbfa,Atlanta Mission - The Sheperd's Inn,shelter,165 Ivan Allen Junior Boulevard,33.7649813,-84.3926493,+14043672493,,,,,,,,,,,,,,,,,,2026-08-19,,website,ok,Source: https://www.openstreetmap.org/way/270358285
+atlanta-osm-b532912a,Odyssey III,shelter,,33.7499558,-84.3808045,,,,,,,,,,,,,,,,,,,2026-08-19,,website,ok,Source: https://www.openstreetmap.org/way/270880929
+atlanta-osm-1e9de214,The Atlanta Mission,shelter,,33.7648727,-84.3922372,,,,,,,,,,,,,,,,,,,2026-08-19,,website,ok,Source: https://www.openstreetmap.org/way/886340463
+atlanta-osm-58a405da,Atlanta City Baptist Rescue Mission,shelter,"316 Peters Street Southwest, Atlanta, 30313",33.7459368,-84.4030061,,,,,,,,,,,,,,,,,,,2026-08-19,,website,ok,Source: https://www.openstreetmap.org/way/1263059302

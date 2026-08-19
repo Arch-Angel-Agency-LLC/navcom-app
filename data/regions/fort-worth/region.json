@@ -1,0 +1,21 @@
+{
+  "slug": "fort-worth",
+  "name": "Fort Worth metro",
+  "country": "US",
+  "timezone": "America/Chicago",
+  "languages": [
+    "en",
+    "es"
+  ],
+  "status": "seeded",
+  "sources": {
+    "osm": {
+      "bbox": [
+        -97.5,
+        32.6,
+        -97.1,
+        32.92
+      ]
+    }
+  }
+}

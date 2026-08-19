@@ -1,0 +1,21 @@
+{
+  "slug": "gold-coast",
+  "name": "Gold Coast",
+  "country": "AU",
+  "timezone": "Australia/Brisbane",
+  "languages": [
+    "en",
+    "zh"
+  ],
+  "status": "seeded",
+  "sources": {
+    "osm": {
+      "bbox": [
+        153.32,
+        -28.15,
+        153.55,
+        -27.9
+      ]
+    }
+  }
+}
