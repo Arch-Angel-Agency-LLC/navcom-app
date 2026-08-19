@@ -472,4 +472,24 @@ describe('the field terminal', () => {
   it('carries a manifest so it can be installed', () => {
     expect(terminal()!.raw).toContain('manifest.webmanifest');
   });
+
+  it('is actually installable — a manifest with no icons is not', () => {
+    // Android refuses to offer installation for a manifest with an empty icons array, and
+    // iOS falls back to a screenshot of the page. The manifest existed for weeks in that
+    // state, which reads as "installable" in every summary and is not.
+    const manifest = JSON.parse(
+      readFileSync(join(BUILD, 'manifest.webmanifest'), 'utf8')
+    ) as { icons: { src: string; sizes: string }[] };
+
+    const sizes = manifest.icons.map((i) => i.sizes);
+    expect(sizes, 'Android needs 192 and 512').toEqual(
+      expect.arrayContaining(['192x192', '512x512'])
+    );
+    for (const icon of manifest.icons) {
+      expect(existsSync(join(BUILD, icon.src.replace(/^\//, ''))), `${icon.src} missing`).toBe(true);
+    }
+    // iOS ignores the manifest entirely for Add to Home Screen.
+    expect(terminal()!.raw).toContain('apple-touch-icon');
+    expect(existsSync(join(BUILD, 'apple-touch-icon.png'))).toBe(true);
+  });
 });

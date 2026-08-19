@@ -15,6 +15,9 @@
 <svelte:head>
   <meta name="theme-color" content="#0B0E12" />
   <link rel="manifest" href="/manifest.webmanifest" />
+  <!-- iOS ignores the manifest's icons for Add to Home Screen and uses this instead.
+       Without it the home screen gets a screenshot of the page. -->
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
 </svelte:head>
 
 <div class="terminal">
