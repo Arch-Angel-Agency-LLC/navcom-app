@@ -444,7 +444,8 @@ rather than four screens and a memory of a phone number.
 
 | | Item | Fate | Owner | Cost |
 |---|---|---|---|---|
-| 9 | **Directory data** | ongoing | **human, local knowledge** | *"What is left before this is a real directory: data."* Everything else works |
+| 9 | **Directory data — the scraper** | do | agent | Twelve invented records means the one thing that always works is the one thing that is useless. Public half only: names, addresses, phones, hours. Brief in [`product/seeding.md`](product/seeding.md) |
+| 9a | **Directory data — the intake rules** | ongoing | **human, local knowledge** | The half no scraper produces, and the half the directory exists for. *"What is left before this is a real directory: data."* |
 | 10 | **Playbooks** | ongoing | **human, permanently** | Not agent work. Confident wrong guidance is the Medic's kill trigger |
 | 10a | **Your own patrol record, and a safe way to publish it** | do | agent | See below — it is already a requirement, and the argument for it is that withholding it does not stop anyone sharing |
 | 10b | **Coming home** — stand-down confirmed by name | do — nearly free | agent | *"Wren, 02:14, home."* The close of the night. Ranked the single best value-for-cost item in [`what-fiction-skips.md`](research/what-fiction-skips.md) and still not built |
