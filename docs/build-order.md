@@ -440,6 +440,8 @@ ships** — the status page states what is built.
 | 5.5 | Battery state | agent |
 | 5.6 | Supplies | either |
 | 5.7 | Never write "anonymous" where "pseudonymous" is true | agent |
+| 5.8 | **Logical CSS properties** so right-to-left scripts are not broken | agent |
+| 5.9 | **Message catalogue**, one locale shipped, English fallback | agent |
 
 ## Deferred, with reasons
 
@@ -451,7 +453,8 @@ ships** — the status page states what is built.
 | — | Mecha Jono holding the board | Session 2, one function call |
 | — | Endorsements, funding, propagation, recovery, RelayNode | Designed, not scope |
 | — | Off-grid / LoRa bridge | Waiting on hardware — the cyberdeck |
-| — | Playbooks | **Human, permanently.** Not agent work |
+| — | Playbooks | **Human, permanently.** Not agent work, and now per locale — see [`product/languages.md`](product/languages.md) |
+| — | A second interface language | When somebody is waiting for one, not to prove the mechanism |
 
 ### The seven ways people actually work, and who is served
 
