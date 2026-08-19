@@ -28,19 +28,43 @@ Peer presence (`20913`) is sealed to the operator's paired peers. Public presenc
 is not sealed at all, and carries nothing worth sealing. Everything else is sealed to the
 **Watchtower**, not to whoever happens to be holding watch.
 
-### On post-quantum encryption
+### Post-quantum, and exactly what it covers
 
-Asked and answered, recorded so it is not re-argued: **it would not address the concerns
-that prompted it.** Public presence is unencrypted by design, and no cipher protects data
-published in the clear. The other worry is metadata — a relay sees which key published,
-when, and to whom — and stronger encryption does not hide an envelope.
+**Sealed payloads use a hybrid construction: ML-KEM-768 alongside the classical
+elliptic-curve exchange, both shared secrets mixed into one key.** If either primitive
+survives, the message stays private. This is the same shape TLS 1.3 ships as
+`X25519MLKEM768` — the boring, standard answer rather than anything invented here.
 
-Where it would genuinely help is harvest-now-decrypt-later, and that threat is weak here: a
-`Distress` from last Tuesday is worth little in 2040. Against that: nostr has no
-post-quantum standard, event signatures would remain quantum-vulnerable even if the
-encryption did not, and a custom scheme would leave every relay and client that exists.
+Nostr itself is untouched. The event, its tags and its signature are unchanged; only the
+content of the envelope differs, and relays never read that anyway.
 
-Revisit if nostr standardises one. Do not build one.
+**What it covers:** harvest-now-decrypt-later. Traffic captured today cannot be read by a
+future quantum computer.
+
+**What it does not cover, and both MUST be stated wherever the first is claimed:**
+
+- **Signatures remain classical.** Nostr requires secp256k1 to sign events, so authorship is
+  not quantum-safe. Changing that means leaving nostr entirely
+- **Metadata is untouched.** A relay still sees which key published, when, and to whom. That
+  is an envelope problem and no cipher solves it
+
+So the honest phrase is **"post-quantum message confidentiality"**, never *"quantum-safe"*.
+The first is defensible indefinitely; the second is the claim that gets a project dismissed
+by the people whose scepticism it most needs to survive.
+
+> **This section reverses a note written earlier the same day** that said not to build one.
+> That note dismissed post-quantum work on a cost estimate — and the cost turned out to be
+> much lower than assumed, because `@noble/post-quantum` provides ML-KEM in pure JavaScript
+> from the same author as the elliptic-curve library already in use. Same ecosystem, no new
+> supply chain. The reasoning about public data and metadata was correct and still stands;
+> the conclusion drawn from it was too broad.
+
+**Costs, so nobody is surprised:** roughly 1 KB per recipient per message, and about 15 KB
+of client bundle. A four-person squad's presence heartbeat goes from a few hundred bytes to
+about 5 KB every interval.
+
+**Nothing may claim this publicly until it ships.** The status page states what is built, not
+what is planned.
 
 ## Invites, and pairing at a distance
 The event `p`-tags the Watchtower pubkey. See [`README.md`](./README.md) for why, and what
