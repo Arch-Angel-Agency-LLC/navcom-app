@@ -15,7 +15,20 @@ or route through it. A degraded, hung, or hostile agent MUST NOT impair escalati
 way — this is what makes the safety guarantee structural rather than a promise from an
 entity whose alignment is unverifiable.
 
-**And it MUST get its trigger from the relays, not from the daemon.** A design where the
+### A pager does not need the key
+
+A `20911` is addressed to the Watchtower, so **anyone watching the relays can see that a
+Distress arrived without being able to read a byte of it.**
+
+That means the *wake somebody up* half of escalation can be run by a process that holds no
+key at all — a cheap always-on machine anywhere, run by anyone, learning nothing about any
+operator, any position or any question. Several MAY run at once; duplicate pages are a
+nuisance and a missed page is not.
+
+A keyless pager is a **supplement, never a replacement.** It cannot tell the operator
+anything, and invariant 2 requires that they be told. Reporting stays with a keyed executor.
+
+**And the keyed executor MUST get its trigger from the relays, not from the daemon.** A design where the
 daemon receives the `20911` and hands it to the executor satisfies "separate process" on
 paper while leaving a hung daemon able to take escalation down with it — the requirement
 failing in exactly the way it was written to prevent. The executor subscribes on its own.

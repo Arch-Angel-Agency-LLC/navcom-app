@@ -4,8 +4,25 @@ NavCom is **the Watchtower**: someone is on watch while operators are out. **One
 application, two modes** — you take up the watch, or you go out. The same person does both
 on different nights, so it is one app you learn once.
 
-A box can hold the watch all night. A squad without one holds it on a phone, passed to
-whoever is awake. Both are supported; neither is the degraded version.
+## Four layers, each optional, each useful alone
+
+An operator who has none of the ones below still has a working tool. Nothing is withheld to
+push anyone up a layer.
+
+| | | Needs |
+|---|---|---|
+| **Alone** | Cached directory, your own patrol record, your own person one tap away | Nothing. Open the site |
+| **Paired** | Scan a peer's code; you see each other's patrols | Two phones, no watch, no server, no leader |
+| **Watched** | Someone answers questions and tells you what is happening | A person or an agent holding watch |
+| **Off-grid** | The critical signals move with no cell network | Hardware. Deferred — see [`delivery.md`](docs/delivery.md) |
+
+**The default is Alone, and it is not a degraded state.** An operator who knows nobody is
+the common case, not the edge one, and the app must never present having no watch as
+incomplete setup.
+
+**Peer-to-peer here means trust, not radio.** Everything travels over ordinary relays on
+ordinary internet. What makes it peer-to-peer is that nothing readable ever reaches a server
+and nobody holds your board — each device draws its own picture from what it can decrypt.
 
 It is **infrastructure for acting without authority while remaining accountable**. Everyone
 here works without an institution behind them, so the only thing that can carry belief is

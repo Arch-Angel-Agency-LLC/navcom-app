@@ -46,6 +46,34 @@ This requires signals to be readable by more than one key, which is specified in
   `navcom.app` serves code, never keys, so there is nothing at the host to subpoena in
   either arrangement
 
+## Starting with no watch at all
+
+**A client MUST be fully usable before any Watchtower is configured**, and MUST NOT present
+that state as an error or an incomplete setup.
+
+An operator who knows nobody is the common case, not the edge one. With no Watchtower they
+still get the cached directory, their own patrol record, their own emergency contact, and
+the ability to pair with peers. A watch is something they **add** when they find one.
+
+Setup therefore asks for a callsign and nothing else. Watchtower pubkey and relays are a
+later, optional step.
+
+## Pairing with a peer
+
+Two operators exchange public keys so each can read the other's presence [`signals.spec.md`](signals.spec.md).
+No watch, no server and no third party is involved.
+
+- **In person, by QR code**, as the primary path. One shows a code, the other scans it, and
+  the scanner's client sends a sealed hello carrying its own key back. The first operator
+  accepts. **One scan, and an explicit acceptance** — pairing is mutual and deliberate rather
+  than something that happens to somebody
+- A link or 64 hex characters are fallbacks. Both are weaker: they travel through whatever
+  channel carried them
+- Unpairing is unilateral, immediate, and needs no notification. It stops *future* presence
+  being readable and cannot recall what was already sent
+- A client MUST NOT suggest, rank, or discover peers. There is no directory of operators and
+  nothing may imply one [C23]
+
 ## Operator keypairs
 
 Generated on the operator's device. Never transmitted, never escrowed, never registered.

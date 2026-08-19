@@ -365,6 +365,22 @@ cannot.
 No dates. A volunteer network's capacity is not knowable in advance, and a plan with dates
 in it is a plan that is wrong.
 
+### The seven ways people actually work, and who is served
+
+| | Today |
+|---|---|
+| Solo on patrol | **Nothing.** Cannot get past setup. Item 0 |
+| Team on patrol, no leader | **Nothing.** No way to see each other. Item 0a |
+| Team on patrol with a leader | **Nothing**, and there is no concept of a team anywhere in the product |
+| Solo on watch | **Well served.** This is what got built first |
+| Team on patrol, watcher at home | Served — but the watcher sees a flat list with no grouping |
+| **Agent on watch** | Holds the board, answers questions, and **cannot close a `Distress`** — an agent is never the sole responder [invariant 5]. A 24/7 agent watch is a query desk, not a safety net, and anyone setting one up should be told that in those words |
+| Team on watch | Handover is specified and unimplemented, and a phone-held watch makes it nightly |
+
+Four of seven are unserved or barely served, and three of those four are the ones that need
+no watch at all. That is what items 0 and 0a exist to fix, and it is why they come before
+work on the watch itself.
+
 ### Two things reorder this list
 
 **First: drills are gated on the roster, and the roster is gated on a person, not on code.**
@@ -398,9 +414,12 @@ rather than four screens and a memory of a phone number.
 
 | | Item | Fate | Owner | Cost of not doing it |
 |---|---|---|---|---|
+| 0 | **The app works with no Watchtower at all** | **before everything** | agent | **A solo operator currently cannot use NavCom.** Setup demands a pubkey "handed to you in person", so anyone who knows nobody is stuck on "Not configured" forever and Sign-on, Query, Assist and Distress all refuse. The most common user is the one the product turns away at the door |
+| 0a | **Peer pairing and presence** — QR, sealed to peers, heartbeat | **before the watch work** | agent | Two of the seven ways people actually work get *nothing* today: a team out with nobody home, and a team whose leader is also on the street. Both need to see each other, and neither needs a watch, a server or a leader to do it |
 | 1 | **Your own person, one tap away** | **first** | agent | Reordered — see below. Without a box and without a native app, this is the entire safety net once everyone is asleep. It works for a lone operator, needs no watch, no roster and no server |
 | 2 | **One human on-call with a proven channel** | needs a box | **human** | Real paging all night needs something that stays awake. One config entry and one command that works |
 | 3 | **Drills** — weekly, randomised, published | after 2 | agent | `last_drill` stays null, so a watch that *"cannot demonstrate a passing drill is presumed broken"* is permanently presumed broken. Also the Sleeper's main mitigation |
+| 2a | **Keyless pagers** — several, run anywhere, holding no key | with 2 | either | A `20911` is visible on relays without being readable, so waking people up needs no trust. This is redundant executors, made cheap: run three, learn nothing, and a missed page stops being one machine's fault |
 | 3a | **Web push as a paging channel, sent by the box** | after 2 | agent | The one native-grade capability a web app already has on both platforms — iPhone included, since 16.4. It is how an on-call person gets woken without an app store. The box holds the subscriptions, so no new third party beyond the browser's own push service |
 | 4 | Redundant executors | **defer — blocked on hardware, not code** | human | A single executor dying mid-`Distress`. `LadderRegistry` is already idempotent by event id; there is no second machine |
 | 5 | **Native apps, both platforms** | **deferred — decided 2026-08-19** | agent | Deprioritised deliberately. Native adds three things: `Distress` from a locked screen, silent SMS, and a phone holding the watch overnight. All real; none blocking. The web app is the surface and it stays complete, which is what this page always said |

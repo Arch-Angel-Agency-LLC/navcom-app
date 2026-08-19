@@ -73,6 +73,25 @@ entry can carry a discreet name and icon, and browsers may evict a non-installed
 cached storage under pressure. On a phone with 400MB free, that second one is the
 difference between the directory being there at 2am and not.
 
+## What a box is actually for
+
+Three jobs used to justify one. Two of them have moved:
+
+| Job | Needs a box? |
+|---|---|
+| Hold the list of who is out | **No.** Peers derive their own view from presence events; the watch keeps a board only for the operators signed on to *it*, for overdue detection |
+| Wake somebody up on a `Distress` | **No.** A `20911` is visible on the relays without being readable, so a **keyless pager** can do it — several, run by anyone, learning nothing |
+| **Answer questions, and tell the operator what is happening** | **Yes.** Both need the key, and one needs a person |
+
+So the box is not infrastructure somebody has to run before anyone can be watched. **It is
+the support-class operator's station** — what "the guy in the chair" physically is. The
+Oracle in [the roster](research/ecosystem-roster.md) has wanted exactly this from the start:
+board time that counts as service, from someone who cannot be in the field.
+
+Off-grid is where hardware earns its place again: a LoRa mesh needs a bridge, a web app
+cannot talk to a radio, and a station that already exists is the natural place to put one.
+Deferred until there is hardware to put it in.
+
 ## Holding watch is a mode of the app, not a second application
 
 **Reversed on 2026-08-19.** This page previously said the Console must be served from the

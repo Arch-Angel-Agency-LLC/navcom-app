@@ -13,13 +13,18 @@ retrievable by a client that just connected.
 | `20910` | ephemeral | **Signal** | `on-station`, `routine`, `query`, `assist`, `stood-down` |
 | `20911` | ephemeral | **Distress** | Separate kind so clients and relays can prioritise it independently of routine traffic |
 | `20912` | ephemeral | **Response** | Acknowledgements, query answers, escalation status |
+| `20913` | ephemeral | **Peer presence** | Who is out, sent operator-to-operator with no watch involved |
 
 Ephemeral kinds (20000–29999) are not expected to be stored by relays — required by
 [C27], since the board MUST NOT become a queryable history.
 
 ## Encryption
 
-All payloads encrypted to the **Watchtower**, not to whoever happens to be holding watch.
+Every payload here is sealed. Nothing readable crosses a relay, and a relay operator sees
+routing metadata only [C36].
+
+Peer presence (`20913`) is sealed to the operator's paired peers; everything else is sealed
+to the **Watchtower**, not to whoever happens to be holding watch.
 The event `p`-tags the Watchtower pubkey. See [`README.md`](./README.md) for why, and what
 it costs.
 
@@ -115,6 +120,58 @@ record is not something the payload can express.
 - An agent MUST NOT acknowledge [invariant 5]
 
 **`stood-down`** — `{}`.
+
+## `20913` — Peer presence
+
+**The one kind that involves no watch at all.** An operator publishes it to the peers they
+have paired with, and each peer's device draws its own picture of who is out.
+
+```json
+{
+  "kind": 20913,
+  "tags": [["p", "<peer-pubkey>"], ["p", "<another-peer>"]],
+  "content": "<sealed( payload )>"
+}
+```
+
+```json
+{
+  "callsign": "Wren",
+  "status": "out | stood-down",
+  "area": "string, coarse — or null",
+  "until": 1755310000,
+  "position": { "lat": 0, "lon": 0, "precision_m": 500 }
+}
+```
+
+### Why a kind of its own rather than another `20910`
+
+A `20910` is addressed to a Watchtower and a watch subscribes to all of them. Peer presence
+is addressed to several operators and no watch. Overloading the signal kind would put peer
+traffic in front of a watch that cannot decrypt it and has no business seeing that it
+exists — so the separation is about who *receives* it, not about tidiness.
+
+### Rules
+
+- **Nobody holds this.** There is no server-side list. Each device keeps what it can decrypt
+  and computes its own view, which expires on its own. It MUST NOT be persisted [C27]
+- **Republished on a heartbeat**, at the same interval as `10910`. Relays do not store
+  ephemeral events, so a peer whose app was closed has missed everything sent meanwhile —
+  a heartbeat means they see the truth within one interval of opening, and nothing is left
+  on a relay to correlate later
+- **Absence is never evidence of safety.** A peer who stops publishing reads as **unknown**,
+  never as *home* and never as *in trouble*. Same rule as a stale `10910` reading Dark, and
+  the same reason: silence is a gap in knowledge, not a fact [invariant 3]
+- Standing down MUST publish `status: stood-down` rather than simply stopping. Stopping is
+  what a flat battery looks like
+- `position` is present only where the operator chose to share it, at the precision they
+  chose. **Live only, never a track** — a peer keeps the latest and nothing before it
+
+### What this deliberately is not
+
+Not a feed. A peer view is **current state**: who is out, roughly where, until when. A
+history of where anyone has been is the thing the rules forbid outright, and the difference
+between the two is one careless `push` in a client.
 
 ## `20911` — Distress
 
