@@ -50,7 +50,8 @@ the Console's hardest design problem.
 ### Whether the accountability log is complete
 
 Tampering is closed by chaining. Selective disclosure is closed by inclusion proofs against
-a published root. **Omission is not closed, and will not be.** A watch that never writes an
+a published root. Backdating is closed by anchoring that root to Bitcoin. **Omission is not
+closed, and will not be.** A watch that never writes an
 entry publishes a commitment to a log that never contained it, and every proof still
 verifies. Counter-signing narrows this to entries the subject saw; it cannot cover an entry
 shown to nobody.

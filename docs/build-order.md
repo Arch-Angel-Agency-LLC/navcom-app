@@ -436,6 +436,7 @@ rather than four screens and a memory of a phone number.
 | 6 | **Console: a declaration must not read as a safety monitor** | with the Console | agent | Stated in [`declined.md`](declined.md). The Team Lead reads "active" as "fine". Wording and layout, not mechanism |
 | 6a | **Post-quantum hybrid sealing** — ML-KEM-768 beside the classical exchange | do | agent | Self-contained: one module in core, nothing else changes. Costs ~1 KB per recipient per message and ~15 KB of bundle. **The claim ships when the code does, not before** |
 | 7 | **Never write "anonymous" where "pseudonymous" is true** | do — small | agent | The Convert's highest-stakes overclaim, and the words are not written yet |
+| 7a | **Anchor the log root to Bitcoin** — OpenTimestamps, daily | do | agent | Closes the one gap in the accountability story that clients cannot close for themselves: a stretch of time nobody was watching. Free, no wallet, no token, a few hundred bytes. Also lets an operator verify a root they never saw, which is every new and every offline operator |
 | 8 | Counter-signing | defer — gate holds | agent | Closes omission. Not needed while the circle is people vetted personally |
 | 8a | **Saying no to an `Assist`** | do — small | agent | Right now the only ways not to help are silence and guilt. "Not tonight" should be a real answer that closes the request. **Never counted, never tallied** — a tally of declines is a compliance metric and the rules kill it |
 

@@ -206,6 +206,56 @@ view, and the two library functions written to make it possible could not compos
 - It is a **checkpoint**, not a live value. An entry written since the last heartbeat is
   genuinely not covered, and `size` is what makes that legible rather than confusing
 
+### Anchoring a root to Bitcoin
+
+A published root proves a log has not changed **since somebody saw that root**. It does
+nothing about a stretch of time when nobody was watching — a hostile watch can rewrite that
+window and republish, and no client holds anything to contradict it.
+
+**OpenTimestamps closes that.** The root is submitted to public calendar servers, aggregated
+with thousands of unrelated hashes into a single Bitcoin transaction, and the node receives
+a proof that this exact value existed before a given block.
+
+- Free, no wallet, no token, no transaction fee, no account
+- Only a **hash** is submitted. A calendar learns nothing about the log's contents
+- The proof is a few hundred bytes and is verifiable by anyone, forever, without trusting
+  the node or the calendar
+
+```json
+"log_root": {
+  "root": "<hex>", "size": 128, "at": 1755300000,
+  "anchor": { "state": "pending | confirmed", "at": 1755300400, "height": 912345 }
+}
+```
+
+- **Anchored on a schedule — default daily, configurable.** The interval *is* the promise:
+  a daily anchor means at most the last 24 hours of history is rewritable, and the node
+  should say which
+- **`pending` MUST NOT be shown as `confirmed`.** A fresh stamp is held by a calendar and
+  not yet in a block. Same discipline as a drill that has not run
+- The full proof travels with a `log-review` response, so an operator verifies their entries
+  and the anchor together
+- **A failed anchor MUST NOT stop the watch.** Calendars are run by volunteers and go down.
+  An unanchored root is a weaker root, not an emergency — the same rule that says a broken
+  chain does not stop the watch
+
+**It lets a client verify a root it never saw.** Until now, `checkReview` could only trust a
+root the device had itself observed — so an operator who was offline, or new, could check
+nothing. An anchored root carries its own evidence of when it existed, which removes that
+gap entirely.
+
+**What it still does not prove**, and this belongs beside every mention of it:
+
+| | |
+|---|---|
+| These entries existed at this time, unchanged since | **Proved** |
+| These entries are all of them | **Not proved.** Omission needs counter-signing |
+| These entries are true | **Not proved.** A false entry written at the time anchors just as well as an honest one |
+
+**The one thing it costs:** a calendar server sees an IP address submitting a hash on a
+schedule. Nothing about content, but it is one more place a timing pattern exists. Submit to
+several calendars, or run one, or accept it — but do not describe it as leaking nothing.
+
 ### Clients MUST keep the roots they have seen
 
 `10910` is replaceable, so a relay serves only the newest. **A node that is the sole

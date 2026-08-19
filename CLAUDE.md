@@ -16,6 +16,11 @@ push anyone up a layer.
 | **Watched** | Someone answers questions and tells you what is happening | A person or an agent holding watch |
 | **Off-grid** | The critical signals move with no cell network | Hardware. Deferred — see [`delivery.md`](docs/delivery.md) |
 
+Two properties cut across all four, and both ship only when the code does, never before:
+**post-quantum message confidentiality** (ML-KEM-768 beside the classical exchange), and an
+**accountability log anchored to Bitcoin** so a watch cannot quietly rewrite a stretch of
+history nobody was watching.
+
 **The default is Alone, and it is not a degraded state.** An operator who knows nobody is
 the common case, not the edge one, and the app must never present having no watch as
 incomplete setup.
