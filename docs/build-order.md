@@ -380,12 +380,14 @@ Milestones rather than a ranked list, because each has a state you can be in or 
 **Done when:** somebody patrolling alone in one metro can look up a real shelter with no
 signal, and has a record of their own night.
 
+**Everything here is built except the intake rules**, which are human work and always were.
+
 | | Item | Owner | Cost of not doing it |
 |---|---|---|---|
 | 1.1 | **The scraper** — `packages/seeder`, five commands, public half only | agent | The unlock for everything else. Architecture and the agent contract: [`product/seeding.md`](product/seeding.md) |
 | 1.2 | **Intake rules for places you know** | **human, local** | The half no scraper produces, and the half the directory exists for. Ten records done properly beats a thousand skeletons |
-| 1.3 | **Your own patrol record** | agent | What a lone operator gets every night. Already specced, including the safe export |
-| 1.4 | **Coming home** — stand-down confirmed by name | agent | Nearly free, and the close of the night |
+| 1.3 | ~~Your own patrol record~~ | **done** | Local by default and by design — nothing in it reaches a watch, a relay or a peer. Export carries no coordinates and nobody but the operator |
+| 1.4 | ~~Coming home~~ | **done** | Confirmed by name where somebody was watching, and confirmed anyway where nobody was |
 
 Nothing here needs a watch, a box, a peer or a network.
 

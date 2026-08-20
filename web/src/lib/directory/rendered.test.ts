@@ -316,7 +316,7 @@ describe('the field terminal', () => {
 
   it('has built every screen the loop needs', () => {
     const built = screens().map((p) => p.path);
-    for (const screen of ['sign-on', 'query', 'assist', 'distress', 'setup', 'wipe', 'log', 'directory']) {
+    for (const screen of ['sign-on', 'query', 'assist', 'distress', 'setup', 'wipe', 'log', 'directory', 'patrols']) {
       expect(
         built.some((p) => p.includes(`/terminal/${screen}/`)),
         `${screen} screen is not built`
@@ -530,6 +530,26 @@ describe('the field terminal', () => {
     // offline for three weeks has stale data twice over.
     const dir = screens().find((p) => p.path.includes('/terminal/directory/'))!;
     expect(dir.doc.querySelector('[data-snapshot-age]'), 'no snapshot age rendered').not.toBeNull();
+  });
+
+  it('says the patrol record stays on the phone, before offering to share it', () => {
+    // The operator's own logbook. Nothing in it is transmitted to a watch, a relay or a
+    // peer, and somebody deciding whether to post it should read that first.
+    const p = screens().find((s) => s.path.includes('/terminal/patrols/'))!;
+    expect(p.bodyText).toMatch(/stays on this phone/i);
+  });
+
+  it('distinguishes the operator\'s own record from the watch\'s record of them', () => {
+    // Two different things that both sound like "your record", and conflating them would
+    // let somebody think the watch can see their notes. Asserted on the pages themselves:
+    // the Status nav that links both is behind an identity the prerendered page lacks.
+    const mine = screens().find((s) => s.path.includes('/terminal/patrols/'))!;
+    const theirs = screens().find((s) => s.path.includes('/terminal/log/'))!;
+
+    expect(mine.doc.querySelector('h1')?.structuredText).toMatch(/your patrols/i);
+    expect(theirs.doc.querySelector('h1')?.structuredText).toMatch(/your record/i);
+    // And the one that belongs to the watch says whose account it is.
+    expect(theirs.bodyText).toMatch(/the watch writes down what it does/i);
   });
 
   it('carries a manifest so it can be installed', () => {

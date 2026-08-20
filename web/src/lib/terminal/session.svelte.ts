@@ -25,6 +25,7 @@ import { loadIdentity } from './identity';
 import { get, set, clearField } from './storage';
 import { watch } from './watch.svelte';
 import { seenRoots } from './roots';
+import { recordPatrol } from './patrol';
 
 export interface SignOn {
   at: number;
@@ -120,23 +121,40 @@ export const operator = {
   /** True while the retry loop is alive. It ends on a human, or on the operator. */
   get distressRunning(): boolean { return distressRunning; },
 
+  /**
+   * Going out.
+   *
+   * **A local fact first, and a message to a watch second.** An operator with no watch is
+   * still going out, and an app that refused to record that until somebody was listening
+   * would be telling the commonest user their night does not count.
+   *
+   * So the session is set either way. If there is a watch, it is told, and what it said it
+   * could do is kept with the entry.
+   */
   async signOn(area: string, hours: number, routineMinutes: number | null) {
+    const now = Math.floor(Date.now() / 1000);
     const state: WatchStatePayload = watch.state;
-    const payload: OnStationPayload = {
-      callsign: loadIdentity()?.callsign ?? undefined,
-      area,
-      expected_duration: Math.round(hours * 3600),
-      routine_interval: routineMinutes === null ? null : routineMinutes * 60,
-      share_position: false,
-      position: null
-    };
-    const response = await run(() => send('on-station', payload));
-    if (!response) return;
-    lastResponse = response;
+
+    if (operator.hasWatch) {
+      const payload: OnStationPayload = {
+        callsign: loadIdentity()?.callsign ?? undefined,
+        area,
+        expected_duration: Math.round(hours * 3600),
+        routine_interval: routineMinutes === null ? null : routineMinutes * 60,
+        share_position: false,
+        position: null
+      };
+      const response = await run(() => send('on-station', payload));
+      // A watch that did not answer does not stop the patrol. It is reported, and the
+      // operator decides what that means -- the alternative is an app that refuses to let
+      // somebody go out because a relay was slow.
+      if (response) lastResponse = response;
+    }
+
     session = {
-      at: Math.floor(Date.now() / 1000),
+      at: now,
       area,
-      expectedUntil: Math.floor(Date.now() / 1000) + Math.round(hours * 3600),
+      expectedUntil: now + Math.round(hours * 3600),
       toldAtSignOn: capabilitySentence(state)
     };
     // Wipeable: tonight's data. Panic wipe removes it; identity survives.
@@ -176,12 +194,38 @@ export const operator = {
     return checkReview(response.review, seenRoots(), identity.pubkey);
   },
 
-  async standDown() {
-    const r = await run(() => send('stood-down', {}));
-    if (!r) return;
-    lastResponse = r;
+  /**
+   * Coming home.
+   *
+   * The close of the night, and it is written down whether or not anybody was watching. A
+   * watch that confirms it by name is the better version -- *"Wren, 02:14, home"* -- and its
+   * absence must not mean the patrol never happened.
+   */
+  async standDown(note?: string) {
+    const current = session;
+    let closedBy: string | undefined;
+
+    if (operator.hasWatch) {
+      const r = await run(() => send('stood-down', {}));
+      if (r) {
+        lastResponse = r;
+        if (r.responder?.kind === 'human') closedBy = r.responder.callsign;
+      }
+    }
+
+    if (current) {
+      recordPatrol({
+        started: current.at,
+        ended: Math.floor(Date.now() / 1000),
+        area: current.area,
+        ...(note?.trim() ? { note: note.trim() } : {}),
+        ...(closedBy ? { closedBy } : {})
+      });
+    }
+
     session = null;
     clearField('wipeable', 'signon');
+    return closedBy;
   },
 
   /**

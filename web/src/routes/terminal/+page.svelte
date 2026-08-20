@@ -18,6 +18,16 @@
   });
 
   const session = $derived(operator.session);
+  let closing = $state(false);
+  let note = $state('');
+  let cameHome = $state<{ at: number; by: string | null } | null>(null);
+
+  async function home() {
+    const by = await operator.standDown(note);
+    cameHome = { at: Date.now(), by: by ?? null };
+    closing = false;
+    note = '';
+  }
 
   /** Whole minutes remaining. Negative reads as over, not as a smaller number. */
   const remaining = $derived.by(() => {
@@ -117,8 +127,30 @@
     <button onclick={() => operator.routine()} disabled={operator.busy}>
       {operator.busy ? '…' : 'Check in'}
     </button>
-    <button onclick={() => operator.standDown()} disabled={operator.busy}>Stand down</button>
+    <button onclick={() => (closing = true)} disabled={operator.busy}>Stand down</button>
   </nav>
+
+  {#if closing}
+    <!--
+      Coming home. The close of the night, and the only place the operator gets to say
+      anything in their own words about it -- everything else in this app is a fixed shape.
+    -->
+    <section class="closing">
+      <h2>Coming home</h2>
+      <label for="note">Anything worth remembering <span class="opt">optional</span></label>
+      <textarea id="note" bind:value={note} placeholder="quiet night, two handouts at the underpass"></textarea>
+      <p class="cost">
+        Goes in your own patrol record and nowhere else. <strong>Nothing about anybody you
+        helped</strong> — that is the one thing this app never keeps.
+      </p>
+      <nav class="actions">
+        <button onclick={() => (closing = false)}>Not yet</button>
+        <button class="primary" onclick={home} disabled={operator.busy}>
+          {operator.busy ? 'Standing down…' : "I'm home"}
+        </button>
+      </nav>
+    </section>
+  {/if}
   <a class="action distress" href="/terminal/distress/">Distress</a>
 {:else if configured && identity}
   <nav class="actions single">
@@ -135,6 +167,26 @@
   <nav class="actions single">
     <a class="action primary" href="/terminal/directory/">Cached directory</a>
   </nav>
+{/if}
+
+{#if cameHome}
+  <!--
+    Confirmed by name where somebody was watching, and confirmed anyway where nobody was.
+    The close of the night is not conditional on an audience.
+  -->
+  <section class="home" data-came-home>
+    <h2>Home</h2>
+    <p>
+      {#if cameHome.by}
+        <strong>{cameHome.by}</strong> has you home at
+        {new Date(cameHome.at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}.
+      {:else}
+        Back at
+        {new Date(cameHome.at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })},
+        and it is in <a href="/terminal/patrols/">your record</a>.
+      {/if}
+    </p>
+  </section>
 {/if}
 
 {#if operator.error}
@@ -210,7 +262,8 @@
        hit while putting the phone in a pocket. -->
   <nav class="quiet">
     <a href="/terminal/directory/">Directory</a>
-    <a href="/terminal/log/">Your record</a>
+    <a href="/terminal/patrols/">Your patrols</a>
+    <a href="/terminal/log/">What the watch wrote</a>
     <a href="/terminal/wipe/">Wipe this device</a>
     <a href="/terminal/setup/">Setup</a>
   </nav>
@@ -280,7 +333,14 @@
   .alarm h2 { color: var(--t-dark); }
   .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
 
-  .quiet { display: flex; gap: 1.2rem; }
+  .closing { border: 2px solid var(--t-line-strong); padding: 1rem 1.1rem; gap: .5rem; }
+  .closing textarea { margin-bottom: .2rem; }
+  .opt { color: var(--t-faint); font-size: .8rem; }
+  .home { border: 2px solid var(--t-station); background: var(--t-raised); padding: 1rem 1.1rem; }
+  .home h2 { color: var(--t-station); }
+  .home p { color: var(--t-ink); font-size: 1.05rem; margin: 0; }
+
+  .quiet { display: flex; gap: 1.2rem; flex-wrap: wrap; }
   .quiet a { color: var(--t-faint); font-size: .9rem; text-decoration: none; border-bottom: 1px solid var(--t-line); }
 
   /* Always its own row, always last, never adjacent to an ordinary action. */

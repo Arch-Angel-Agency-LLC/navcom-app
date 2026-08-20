@@ -36,6 +36,18 @@ forever and never be a lesser user of the app.
 is no setting that publishes it, and there is no combination of settings that adds up to
 one.**
 
+The distinction is **where it goes, not whether it exists**:
+
+| | |
+|---|---|
+| **Transmitted** | Live position only, never a history, and only to the watch and paired peers |
+| **Local** | Whatever the operator chooses to keep. It is their own logbook on their own phone, and it goes nowhere |
+| **Exported** | No coordinates at all, at any precision |
+
+An operator keeping their own movements on their own device is a GPS watch, not a
+surveillance surface, and it is theirs. What must never happen is that history being
+transmitted or published.
+
 This is not caution, it is a failure mode chosen deliberately. Operators forget things.
 Somebody will leave position sharing on and broadcast from their kitchen.
 

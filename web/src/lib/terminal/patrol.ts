@@ -1,0 +1,131 @@
+/**
+ * Your own record of your own nights.
+ *
+ * Not the watch's record of you — that is `/terminal/log/`, and it belongs to the watch.
+ * **This one is yours**, it works with no watch and no signal, and publishing it is your
+ * decision to make.
+ *
+ * **Stored entirely on this device, by default and by design.** Nothing here is transmitted
+ * to a watch, a relay, a peer or a server. It is for the operator first: their own logbook,
+ * their own proof of what they have done, on their own phone.
+ *
+ * That is also what makes a *track* permissible here when it is forbidden on the wire.
+ * Position sharing transmits **live only, never a history** — where somebody was is the most
+ * dangerous thing this system could publish. But an operator keeping their own movements on
+ * their own device is a GPS watch, not a surveillance surface, and it is theirs. The
+ * distinction is where it goes, not whether it exists:
+ *
+ *   transmitted -> live position only, to the watch and paired peers
+ *   local       -> whatever the operator chooses to keep, going nowhere
+ *   exported    -> no coordinates at all, at any precision
+ *
+ * Lots of RLSH stream their patrols and post the footage. Their own activity is not a
+ * secret, and withholding a safe export does not stop anybody sharing — it only guarantees
+ * the sharing is done badly. So there is an export, and it is built so that using it cannot
+ * expose somebody who did not agree to anything.
+ *
+ * Three lines it does not cross:
+ *
+ *  - **Nobody but you is in it.** Your movements are yours to publish. Raven's are not
+ *  - **Nothing about anyone served.** No query text — *"bed tonight, fleeing partner"* is a
+ *    person's situation, and it is never recorded anywhere [invariant 1]
+ *  - **No coordinates, ever.** The area you typed at sign-on is coarse by construction; a
+ *    position is not, and a stream that showed a street corner should not become an export
+ *    carrying a GPS fix
+ */
+
+import { get, set } from './storage';
+import type { Tier } from './storage';
+
+export interface Patrol {
+  /** Unix seconds. */
+  started: number;
+  ended: number;
+  /** Coarse — whatever the operator typed at sign-on. */
+  area: string;
+  /** Their own words. Nothing else writes here. */
+  note?: string;
+  /** Who confirmed the stand-down, when there was a watch to confirm it. */
+  closedBy?: string;
+}
+
+const FIELD = 'patrols';
+const KEEP = 'keep_patrol_history';
+
+/**
+ * Whether the history survives a panic wipe.
+ *
+ * **Off by default**, and the trade is priced where the operator makes it: kept, a year of
+ * patrols survives a bad night — and a seized phone shows a year of patrols. The Protest
+ * Medic wants it off; the Public Face wants it on; both are right about their own situation.
+ *
+ * The setting itself lives in the accruing tier, so answering the question once is enough.
+ */
+export function keepsHistory(): boolean {
+  return get<boolean>('accruing', KEEP) === true;
+}
+
+const tier = (): Tier => (keepsHistory() ? 'accruing' : 'wipeable');
+
+export function patrols(): Patrol[] {
+  return get<Patrol[]>(tier(), FIELD) ?? [];
+}
+
+/** Moves what already exists, so changing the answer is not a way to lose a year by accident. */
+export function setKeepHistory(keep: boolean): void {
+  const existing = patrols();
+  set('accruing', KEEP, keep);
+  set(tier(), FIELD, existing);
+  set(keep ? 'wipeable' : 'accruing', FIELD, []);
+}
+
+export function recordPatrol(patrol: Patrol): void {
+  set(tier(), FIELD, [...patrols(), patrol]);
+}
+
+export function formatDuration(seconds: number): string {
+  const total = Math.max(0, Math.round(seconds / 60));
+  const h = Math.floor(total / 60);
+  const m = total % 60;
+  return h > 0 ? `${h}h ${m}m` : `${m}m`;
+}
+
+export interface ExportOptions {
+  callsign: string | null;
+  /** Areas are coarse already, and some operators would still rather not publish them. */
+  includeAreas?: boolean;
+  includeNotes?: boolean;
+}
+
+/**
+ * The thing designed to leave the app.
+ *
+ * Plain text, because it has to survive being pasted anywhere — a post, a message, a
+ * grant application. Nothing in here came from anybody but the operator.
+ */
+export function exportPatrols(list: Patrol[], opts: ExportOptions): string {
+  const lines: string[] = [];
+  lines.push(opts.callsign ? `Patrol log — ${opts.callsign}` : 'Patrol log');
+  lines.push('');
+
+  let total = 0;
+  for (const p of [...list].sort((a, b) => a.started - b.started)) {
+    const start = new Date(p.started * 1000);
+    const end = new Date(p.ended * 1000);
+    total += p.ended - p.started;
+
+    const time = (d: Date) => d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const parts = [
+      start.toLocaleDateString([], { day: 'numeric', month: 'short', year: 'numeric' }),
+      ...(opts.includeAreas !== false && p.area ? [p.area] : []),
+      `${time(start)}–${time(end)}`,
+      formatDuration(p.ended - p.started)
+    ];
+    lines.push(parts.join(' · '));
+    if (opts.includeNotes !== false && p.note) lines.push(`  ${p.note}`);
+  }
+
+  lines.push('');
+  lines.push(`${list.length} patrol${list.length === 1 ? '' : 's'} · ${formatDuration(total)}`);
+  return lines.join('\n');
+}

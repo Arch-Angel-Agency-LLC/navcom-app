@@ -23,7 +23,7 @@
 const ACCRUING = 'navcom.accruing';
 const WIPEABLE = 'navcom.wipeable';
 
-type Tier = 'accruing' | 'wipeable';
+export type Tier = 'accruing' | 'wipeable';
 const keyFor = (tier: Tier) => (tier === 'accruing' ? ACCRUING : WIPEABLE);
 
 function read(tier: Tier): Record<string, unknown> {
