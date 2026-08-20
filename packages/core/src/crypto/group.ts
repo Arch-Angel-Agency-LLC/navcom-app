@@ -2,6 +2,7 @@ import { nip44 } from 'nostr-tools';
 import { generateSecretKey, getPublicKey } from 'nostr-tools/pure';
 import { bytesToHex, hexToBytes } from '@noble/hashes/utils';
 import type { SecretKey } from './keys.js';
+import { hybridOpen, hybridSeal, kemPublicFromHex, type Cover } from './pq.js';
 
 /**
  * Sealing one payload so several people can read it.
@@ -65,6 +66,13 @@ export interface WatchtowerAddress {
   pubkey: string;
   /** Whose keys the payload is sealed to. Never empty. */
   holders: readonly string[];
+  /**
+   * Published ML-KEM public keys, by holder pubkey, where this device has fetched one.
+   *
+   * A holder absent from this map gets classical cover, and the sender is told
+   * [`crypto/pq.ts`]. Optional so that nothing breaks for a caller that has fetched none.
+   */
+  kem?: Readonly<Record<string, string>>;
 }
 
 /**
@@ -73,8 +81,12 @@ export interface WatchtowerAddress {
  * With no holders given, the address is its own holder — the box case, where the node holds
  * the Watchtower key itself. A squad passes the member list.
  */
-export function watchtowerAt(pubkey: string, holders?: readonly string[]): WatchtowerAddress {
-  return { pubkey, holders: holders?.length ? holders : [pubkey] };
+export function watchtowerAt(
+  pubkey: string,
+  holders?: readonly string[],
+  kem?: Readonly<Record<string, string>>
+): WatchtowerAddress {
+  return { pubkey, holders: holders?.length ? holders : [pubkey], ...(kem ? { kem } : {}) };
 }
 
 /** Version tag, so a future format change is a refusal rather than a misparse. */
@@ -84,7 +96,20 @@ interface Envelope {
   v: number;
   /** The payload, encrypted once under the content key. */
   c: string;
-  /** The content key, wrapped for each holder. Unlabelled, and in no meaningful order. */
+  /**
+   * The content key, wrapped for each holder. Unlabelled, and in no meaningful order.
+   *
+   * Each wrap is **self-describing**, so one message can carry hybrid wraps for the holders
+   * whose KEM keys this device has and classical wraps for the rest. A squad where one
+   * member has not opened the app since the key bundle shipped still receives everything.
+   *
+   * - `q:<kem ciphertext hex>.<nip44>` — hybrid
+   * - `c:<nip44>` — classical
+   *
+   * A relay can therefore count how many holders have post-quantum cover, on top of the
+   * wrap count it could already see. Stated rather than hidden: it is the same class of
+   * leak, it names nobody, and the alternative is padding every message forever.
+   */
   k: string[];
 }
 
@@ -111,7 +136,16 @@ const contentKeyFor = (secret: SecretKey): Uint8Array =>
 export function sealToGroup(
   secret: SecretKey,
   recipients: readonly string[],
-  payload: unknown
+  payload: unknown,
+  /**
+   * Published ML-KEM keys, by recipient pubkey.
+   *
+   * A recipient missing from this map is sealed to classically. That is a real, supported
+   * outcome rather than an error — **the alternative is refusing to send, and the message
+   * that would fail to send is a `Distress`.** `coverOf` reports what actually happened so
+   * the operator can be told.
+   */
+  kem: Readonly<Record<string, string>> = {}
 ): string {
   if (recipients.length === 0) {
     throw new GroupSealError('Nobody to seal to — a message no one can read is not a message.');
@@ -121,11 +155,30 @@ export function sealToGroup(
   const envelope: Envelope = {
     v: V,
     c: nip44.encrypt(JSON.stringify(payload), contentKeyFor(contentSecret)),
-    k: recipients.map((to) =>
-      nip44.encrypt(bytesToHex(contentSecret), nip44.getConversationKey(secret, to))
-    )
+    k: recipients.map((to) => {
+      const theirKem = kem[to];
+      if (!theirKem) {
+        return `c:${nip44.encrypt(bytesToHex(contentSecret), nip44.getConversationKey(secret, to))}`;
+      }
+      const wrap = hybridSeal(secret, to, kemPublicFromHex(theirKem));
+      return `q:${wrap.kem}.${nip44.encrypt(bytesToHex(contentSecret), wrap.key)}`;
+    })
   };
   return JSON.stringify(envelope);
+}
+
+/**
+ * What cover a set of recipients actually got — `hybrid` only if **every** one did.
+ *
+ * Deliberately the weakest link rather than an average or a count. One holder without a
+ * published key means the content key is sitting in a classical wrap on a public relay, and
+ * an operator told "mostly covered" has been told nothing they can use.
+ */
+export function coverOf(
+  recipients: readonly string[],
+  kem: Readonly<Record<string, string>> = {}
+): Cover {
+  return recipients.every((r) => typeof kem[r] === 'string') ? 'hybrid' : 'classical';
 }
 
 /**
@@ -150,13 +203,25 @@ export function openFromGroup<T = unknown>(
     throw new GroupSealError('Not a sealed envelope this version understands.');
   }
 
-  const conversation = nip44.getConversationKey(secret, senderPubkey);
+  let classical: Uint8Array | null = null;
   for (const wrapped of envelope.k) {
     let contentSecret: SecretKey;
     try {
-      contentSecret = hexToBytes(nip44.decrypt(wrapped, conversation));
+      if (wrapped.startsWith('q:')) {
+        const dot = wrapped.indexOf('.');
+        if (dot < 0) continue;
+        const key = hybridOpen(secret, senderPubkey, wrapped.slice(2, dot));
+        contentSecret = hexToBytes(nip44.decrypt(wrapped.slice(dot + 1), key));
+      } else if (wrapped.startsWith('c:')) {
+        classical ??= nip44.getConversationKey(secret, senderPubkey);
+        contentSecret = hexToBytes(nip44.decrypt(wrapped.slice(2), classical));
+      } else {
+        continue;
+      }
     } catch {
-      // Not our wrap. Expected for every holder but one, on every message.
+      // Not our wrap. Expected for every holder but one, on every message -- and for a
+      // hybrid wrap, decapsulation succeeds with a garbage secret by design, so the failure
+      // surfaces at the NIP-44 authentication step rather than in the KEM.
       continue;
     }
     return JSON.parse(nip44.decrypt(envelope.c, contentKeyFor(contentSecret))) as T;

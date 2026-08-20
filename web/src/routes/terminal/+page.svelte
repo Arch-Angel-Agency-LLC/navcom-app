@@ -6,6 +6,7 @@
   import { presence } from '$lib/terminal/presence.svelte';
   import { position } from '$lib/terminal/position.svelte';
   import { battery } from '$lib/terminal/battery.svelte';
+  import { pq } from '$lib/terminal/pq.svelte';
   import { loadConfig } from '$lib/terminal/config';
   import { loadIdentity } from '$lib/terminal/identity';
 
@@ -19,7 +20,9 @@
     watch.start();
     presence.start();
     void battery.start();
+    pq.start();
     return () => {
+      pq.stop();
       watch.stop();
       presence.stop();
     };
@@ -222,6 +225,24 @@
       {/if}
     </p>
   </section>
+{/if}
+
+{#if identity && pq.uncovered().length > 0}
+  <!--
+    Deliberately a note, not a warning. The colour is the same muted one used for every
+    other cost on this screen -- an orange bar saying "insecure" would be alarming AND
+    wrong, because the message is encrypted and nobody can read it today.
+
+    What is missing is cover against somebody storing tonight's traffic to open in fifteen
+    years, and that is a sentence, not a label. It also says what would change it, because a
+    notice you cannot act on is just worry.
+  -->
+  <p class="cover">
+    Standard encryption tonight. Unreadable by anyone now — but not covered against being
+    stored today and opened by a future quantum computer. That needs
+    {pq.uncovered().length === 1 ? 'one person you send to' : `${pq.uncovered().length} people you send to`}
+    to open the app once, and it happens on its own after that.
+  </p>
 {/if}
 
 {#if operator.error}

@@ -81,7 +81,16 @@ export function buildPresence(
    * to several people at once, which is a worse failure than the one it replaced.
    */
   payloadFor: PresencePayload | ((peer: string) => PresencePayload),
-  createdAt: number
+  createdAt: number,
+  /**
+   * Published ML-KEM keys, by peer pubkey.
+   *
+   * A peer missing from this map gets classical cover. Presence is the highest-volume thing
+   * on this wire, and hybrid adds 1088 bytes per peer per beat — the cost is real and was
+   * costed in the spec, because a heartbeat says who was out, where, and until when, and
+   * none of that stops being sensitive when it stops being current.
+   */
+  kem: Readonly<Record<string, string>> = {}
 ): Event[] {
   const forPeer = typeof payloadFor === 'function' ? payloadFor : () => payloadFor;
 
@@ -106,7 +115,7 @@ export function buildPresence(
         kind: KIND_PEER_PRESENCE,
         created_at: createdAt,
         tags: [tagRecipient(peer)],
-        content: seal(ephemeral, peer, inner)
+        content: seal(ephemeral, peer, inner, kem[peer])
       },
       ephemeral
     );

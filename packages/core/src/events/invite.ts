@@ -70,7 +70,9 @@ export function buildInvite(
   secret: SecretKey,
   to: string,
   payload: InvitePayload,
-  createdAt: number
+  createdAt: number,
+  /** Their published ML-KEM key, where we have it. Classical cover without. */
+  recipientKem?: string
 ): Event {
   const callsign = payload.callsign.trim();
   if (!callsign) throw new InviteError('An invite needs a callsign.');
@@ -99,7 +101,7 @@ export function buildInvite(
       kind: KIND_INVITE,
       created_at: createdAt,
       tags: [tagRecipient(to)],
-      content: seal(ephemeral, to, inner)
+      content: seal(ephemeral, to, inner, recipientKem)
     },
     ephemeral
   );

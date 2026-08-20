@@ -22,6 +22,7 @@ import {
 import { loadIdentity } from './identity';
 import { buddies, peerPubkeys, peers } from './peers';
 import { relays } from './relays';
+import { kemKeys } from './pq.svelte';
 
 /** How often presence is republished, and therefore how quickly a peer appears. */
 export const HEARTBEAT_SECONDS = 60;
@@ -150,7 +151,8 @@ export const presence = {
       identity.secretKey,
       to,
       (peer) => ({ ...payload, watching: watched.has(peer) }),
-      Math.floor(Date.now() / 1000)
+      Math.floor(Date.now() / 1000),
+      kemKeys()
     );
     // Settled, not raced: one peer's relay failing must not stop the others being told.
     await Promise.allSettled(events.flatMap((e) => pool.publish(urls, e)));

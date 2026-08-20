@@ -16,6 +16,7 @@ retrievable by a client that just connected.
 | `20913` | ephemeral | **Peer presence** | Who is out, sent operator-to-operator with no watch involved |
 | `20914` | ephemeral | **Public presence** | *"Raven is out tonight."* Unencrypted, and structurally cannot carry a position |
 | `10911` | replaceable | **Card** | The one artifact an operator may publish about themselves. Signed by a contact key, never the operational one |
+| `10912` | replaceable | **Key bundle** | An operator's ML-KEM-768 public key. Published because it is 1184 bytes and a pairing code is 32 |
 | `1910` | regular | **Invite** | *"Here is my key. I would like to pair."* **Stored**, because an invite has to wait for somebody who is asleep |
 
 Ephemeral kinds (20000–29999) are not expected to be stored by relays — required by
@@ -61,9 +62,45 @@ by the people whose scepticism it most needs to survive.
 > supply chain. The reasoning about public data and metadata was correct and still stands;
 > the conclusion drawn from it was too broad.
 
-**Costs, so nobody is surprised:** roughly 1 KB per recipient per message, and about 15 KB
-of client bundle. A four-person squad's presence heartbeat goes from a few hundred bytes to
-about 5 KB every interval.
+**Costs, measured rather than estimated.** The KEM ciphertext is **1088 bytes per recipient
+per message** and the public key is 1184 bytes. `@noble/post-quantum`'s ML-KEM-768 is **7.2 KB**
+minified and gzipped — the earlier ~15 KB figure was a guess and was wrong by half. A
+four-person squad's presence heartbeat goes from a few hundred bytes to about 5 KB every
+interval, which is the real cost and the reason it is stated here.
+
+### The KEM key is published, not exchanged in person
+
+An ML-KEM public key is 1184 bytes; a pairing code is 32. Putting it in the pairing QR would
+turn a code somebody can scan in the dark on a cheap phone — or read aloud — into a dense
+block needing good light and a good camera, and it would do the same to a Watchtower address
+handed over on paper. **The part of this system that least deserves a casual change is how
+people exchange identity in person.**
+
+So the pairing code is unchanged, and the KEM key is looked up afterwards by pubkey as a
+`10912` bundle. It is signed by the operator's own key and a reader MUST check that signature
+against the pubkey they already hold, so a relay cannot substitute a key it generated.
+
+### Falling back is allowed, and MUST be reported
+
+A sender whose recipient has published no KEM key **MUST still send**, sealed classically.
+Refusing would mean the message that fails to send is a `Distress`.
+
+The worst a hostile relay can do is therefore **withhold** a bundle and force this path. That
+is why it is reported rather than silent:
+
+- The operator MUST be told, on a screen they already read, that cover was standard rather
+  than hybrid
+- It MUST be told **as a note, not a warning**. The message *is* encrypted and nobody can
+  read it today; what is missing is cover against it being stored now and opened later. A
+  red or amber alert saying "insecure" would be alarming and also false
+- It MUST say what would change it. A notice nobody can act on is worry with a colour
+- **Silence when cover is hybrid.** A line that is always present is furniture, and furniture
+  is not read
+
+Each wrap is self-describing, so one message carries hybrid wraps for the recipients whose
+keys the sender has and classical ones for the rest. A squad where one member has not opened
+the app still receives everything, and the members who can be covered still are. A relay can
+count how many wraps are hybrid — the same class of leak as the wrap count, naming nobody.
 
 **Nothing may claim this publicly until it ships.** The status page states what is built, not
 what is planned.

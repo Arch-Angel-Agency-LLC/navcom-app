@@ -392,6 +392,42 @@ test.describe('saying no to an assist', () => {
   });
 });
 
+test.describe('post-quantum cover', () => {
+  test('says so, calmly, when a message goes without it', async ({ page }) => {
+    // State-dependent on purpose: showing this while cover IS hybrid would be a lie. A peer
+    // with no cached key is exactly the fallback the policy allows.
+    await seedDevice(page, { ...OUT, peers: [{ pubkey: 'f'.repeat(64), callsign: 'Raven', since: 0 }] });
+    await open(page, '/terminal/');
+
+    const notice = page.getByText(/standard encryption tonight/i);
+    await expect(notice).toBeVisible();
+    // What is missing, and what is not.
+    await expect(page.getByText(/unreadable by anyone now/i)).toBeVisible();
+    await expect(page.getByText(/open the app once/i)).toBeVisible();
+  });
+
+  test('is a note, not an alarm', async ({ page }) => {
+    // The whole point of the wording decision. An orange bar saying "insecure" would be
+    // alarming and also wrong -- the message is encrypted and nobody can read it today.
+    await seedDevice(page, { ...OUT, peers: [{ pubkey: 'f'.repeat(64), callsign: 'Raven', since: 0 }] });
+    await open(page, '/terminal/');
+
+    const body = (await page.locator('body').innerText()).toLowerCase();
+    for (const word of ['insecure', 'unsafe', 'danger', 'vulnerable', 'at risk']) {
+      expect(body, word).not.toContain(word);
+    }
+
+    // Rendered in the same muted colour as every other cost on the screen, not an alert one.
+    const colour = await page
+      .getByText(/standard encryption tonight/i)
+      .evaluate((el) => getComputedStyle(el).color);
+    const alarm = await page.evaluate(() =>
+      getComputedStyle(document.documentElement).getPropertyValue('--t-alarm').trim()
+    );
+    expect(colour).not.toBe(alarm);
+  });
+});
+
 test.describe('patrols', () => {
   test('whether the history survives a wipe is a control, not a setting somebody has to find', async ({ page }) => {
     await seedDevice(page, OUT);

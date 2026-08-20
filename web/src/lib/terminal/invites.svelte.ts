@@ -34,6 +34,7 @@ import { contactKey, contactPubkey } from './card';
 import { loadIdentity } from './identity';
 import { pair, peerPubkeys } from './peers';
 import { relays } from './relays';
+import { kemKeys } from './pq.svelte';
 
 export interface Waiting extends Invite {
   /** The event id, so accepting the same invite twice is not possible. */
@@ -102,7 +103,8 @@ export const invites = {
       identity.secretKey,
       invite.from,
       { callsign: identity.callsign },
-      Math.floor(Date.now() / 1000)
+      Math.floor(Date.now() / 1000),
+      kemKeys()[invite.from]
     );
     await Promise.allSettled(pool.publish(urls, back));
   },
@@ -139,7 +141,8 @@ export async function invite(contact: string, note: string): Promise<void> {
     identity.secretKey,
     contact,
     { callsign: identity.callsign, note },
-    Math.floor(Date.now() / 1000)
+    Math.floor(Date.now() / 1000),
+    kemKeys()[contact]
   );
   await Promise.allSettled(pool.publish(urls, event));
 }

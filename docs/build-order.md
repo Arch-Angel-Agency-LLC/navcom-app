@@ -471,7 +471,7 @@ ships** — the status page states what is built.
 
 | | Item | Owner |
 |---|---|---|
-| 5.1 | **Post-quantum hybrid sealing** — ML-KEM-768 beside the classical exchange | agent | **Not blocked by bundle size.** See below — the blocker is key distribution |
+| 5.1 | ~~Post-quantum hybrid sealing~~ — ML-KEM-768 beside the classical exchange | **done** | Key distribution solved by a published `10912` bundle, so the pairing QR is unchanged. Fallback allowed and reported as a note rather than a warning. **Bundle now at 99% of budget** |
 | 5.2 | **Anchor the log root to Bitcoin** — OpenTimestamps, daily | **deferred** | Blocked on a trustworthy implementation. See below |
 | 5.3 | ~~Saying no to an `Assist`~~ | **done** | A `declined` response — *"nobody is coming"*. Refused for `Distress` in core, so no client can offer a button that ends one with a tap [invariant 2] |
 | 5.4 | Weather-activated warming and cooling centres | agent |
@@ -482,27 +482,25 @@ ships** — the status page states what is built.
 | 5.9 | ~~Message catalogue~~, one locale shipped, English fallback | **deferred** | See below. It contradicted a decision already recorded in [`product/languages.md`](product/languages.md) |
 | 5.10 | ~~Drop `overdue_count` from `10910`~~ — v4 | **done** | The first subtractive version bump. A v3 reader defaulted the missing field to 0 and would render "nobody overdue" for a watch that had stopped saying |
 
-### 5.1 — the blocker is not the one that was written down
+### 5.1 shipped, and the budget is now the thing to watch
 
-Measured rather than estimated: **ML-KEM-768 from `@noble/post-quantum` is 7.2 kB minified
-and gzipped**, not the ~15 kB `signals.spec.md` guessed. Against 10.9 kB of remaining
-JavaScript budget, it fits. The library is by the same author as the curve and hash libraries
-already here, its only dependencies are already in the tree, and it was updated this month.
-Sizes confirmed: public key 1184 bytes, ciphertext 1088 bytes — so "roughly 1 KB per
-recipient per message" was right.
+Both stated blockers turned out to be wrong, and the real ones were solvable:
 
-**The real blocker is key distribution.** A KEM public key cannot be derived from a nostr
-public key, so every operator needs a second key, 1184 bytes of it, and every place that
-carries an identity has to carry it too: the pairing QR, the watch address handed over on
-paper, the holder list, the card. That is a change to how people exchange identity in person,
-which is the part of this system that most deserves not to be changed casually.
+- **Key distribution** — solved by publishing the KEM key as a `10912` bundle instead of
+  putting 1184 bytes into a pairing QR. The pairing code is byte-for-byte what it was
+- **The downgrade policy** — decided, not discovered: a sender whose recipient has published
+  no key still sends, and the operator is told. See `signals.spec.md` for the wording rules,
+  which are as normative as the mechanism
 
-It also needs a **downgrade policy** written before any code: what a sender does when a
-recipient publishes no KEM key. "Fall back to classical" is the obvious answer and is exactly
-the attack — and *"refuse to send"* is worse, because the message that fails to send is a
-`Distress`. This must be decided deliberately, not discovered.
+**JavaScript is now at 139.1 kB of a 140.0 kB budget — 99%.** That is a real constraint doing
+its job rather than a problem to route around, and the next addition of any size breaks it.
+There is no cheap split available: the crypto sits in the shared chunk and nearly every
+terminal screen seals something, so splitting does not move the *worst* page, which is what
+the budget measures.
 
-Nothing here may be claimed publicly until it ships. The status page states what is built.
+**This needs a decision before the next feature**, and the options are honest ones: re-derive
+the number from what a prepaid Android 8 on a slow network can actually afford, or keep 140 kB
+as a hard stop that forces something to come out before anything goes in.
 
 ### 5.2 — deferred, because an anchor nobody can verify is worse than none
 

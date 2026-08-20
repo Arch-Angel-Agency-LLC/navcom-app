@@ -26,8 +26,9 @@ import { get, set, clearField } from './storage';
 import { watch, whenWatchChangesHands } from './watch.svelte';
 import { seenRoots } from './roots';
 import { recordPatrol } from './patrol';
-import { watchtowerAt, type WatchtowerAddress } from '@navcom/core';
+import { coverOf, watchtowerAt, type Cover, type WatchtowerAddress } from '@navcom/core';
 import { presence } from './presence.svelte';
+import { kemKeys } from './pq.svelte';
 import { announceListed, beatListed, stopListed } from './public.svelte';
 import { position } from './position.svelte';
 
@@ -134,7 +135,21 @@ function onStationPayload(): OnStationPayload {
 }
 
 function watchAddress(config: { pubkey: string; holders: string[] }): WatchtowerAddress {
-  return watchtowerAt(config.pubkey, config.holders);
+  return watchtowerAt(config.pubkey, config.holders, kemKeys());
+}
+
+/**
+ * What cover this terminal's signals to the watch are actually getting, right now.
+ *
+ * Derived rather than remembered, so it can never say something that was true an hour ago.
+ * `classical` is a supported outcome, not an error — it means somebody we send to has not
+ * published a key, and the operator is told in one calm sentence rather than warned.
+ */
+export function watchCover(): Cover | null {
+  const config = loadConfig();
+  if (!config) return null;
+  const address = watchAddress(config);
+  return coverOf(address.holders, address.kem ?? {});
 }
 
 export const operator = {

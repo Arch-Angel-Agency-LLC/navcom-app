@@ -22,6 +22,14 @@ export const KIND_PEER_PRESENCE = 20913;
 export const KIND_CARD = 10911;
 
 /**
+ * Replaceable. An operator's ML-KEM-768 public key.
+ *
+ * Published rather than exchanged in person because it is 1184 bytes and a pairing code is
+ * 32 — see `events/key-bundle.ts` for why that difference decides it.
+ */
+export const KIND_KEY_BUNDLE = 10912;
+
+/**
  * Ephemeral. *"Raven is out tonight."* A name and a region, and nothing else ever.
  *
  * Also signed by the contact key, so it is verifiably the same Raven whose card is up

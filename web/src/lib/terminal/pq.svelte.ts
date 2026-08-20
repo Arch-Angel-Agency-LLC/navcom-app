@@ -1,0 +1,114 @@
+/**
+ * Post-quantum keys: publishing your own, and collecting the ones you can use.
+ *
+ * ## Publishing
+ *
+ * Your ML-KEM public key is derived from your identity secret, so there is nothing to
+ * generate or back up — but nobody can send you covered messages until they have it, and
+ * they get it from a relay. Publishing is therefore something this device does quietly
+ * whenever it is running, not something an operator has to know about.
+ *
+ * ## Collecting
+ *
+ * For every pubkey this device might send to: peers, and whoever holds the watch. Cached in
+ * the accruing tier, because a bundle is derived from an identity and does not change —
+ * refetching it nightly would be traffic for nothing.
+ *
+ * A cached key is only ever accepted if it was signed by the pubkey it claims to be for
+ * [`readKeyBundle`], so a hostile relay cannot substitute one. What it **can** do is serve
+ * nothing, and let the sender fall back to classical. That is why the fallback is reported.
+ */
+
+import { SimplePool } from 'nostr-tools/pool';
+import type { Event } from 'nostr-tools/core';
+import { buildKeyBundle, KIND_KEY_BUNDLE, readKeyBundle } from '@navcom/core';
+import { loadIdentity } from './identity';
+import { loadConfig } from './config';
+import { peerPubkeys } from './peers';
+import { relays } from './relays';
+import { get, set } from './storage';
+
+const FIELD = 'kem_keys';
+
+let known = $state<Record<string, string>>({});
+let closer: { close(): void } | null = null;
+const pool = new SimplePool();
+
+/** Published keys this device has collected, by pubkey. */
+export function kemKeys(): Record<string, string> {
+  return known;
+}
+
+export const pq = {
+  get known(): Record<string, string> {
+    return known;
+  },
+
+  /**
+   * Whether everybody we would send to has published a key.
+   *
+   * The honest summary for a screen: false the moment one recipient is missing, because a
+   * message sealed for a group is only as covered as its weakest wrap.
+   */
+  covered(recipients: readonly string[]): boolean {
+    return recipients.length > 0 && recipients.every((r) => typeof known[r] === 'string');
+  },
+
+  /**
+   * Everybody this device would send to who has not published a key.
+   *
+   * Returned as a list rather than a boolean so a screen can say *how many*, and as pubkeys
+   * rather than callsigns so this module needs to know nothing about naming.
+   */
+  uncovered(): string[] {
+    const config = loadConfig();
+    const all = [
+      ...peerPubkeys(),
+      ...(config ? config.holders.length ? config.holders : [config.pubkey] : [])
+    ].filter((k, i, list) => list.indexOf(k) === i);
+    return all.filter((k) => typeof known[k] !== 'string');
+  },
+
+  /** Publishes ours and fetches theirs. Safe to call repeatedly. */
+  start(): void {
+    known = get<Record<string, string>>('accruing', FIELD) ?? {};
+
+    const identity = loadIdentity();
+    const urls = relays();
+    if (!identity || urls.length === 0) return;
+
+    // Ours, so anybody who pairs with us can cover their messages from the first one.
+    void Promise.allSettled(
+      pool.publish(urls, buildKeyBundle(identity.secretKey, Math.floor(Date.now() / 1000)))
+    );
+
+    const config = loadConfig();
+    const wanted = [
+      ...peerPubkeys(),
+      ...(config ? [config.pubkey, ...config.holders] : [])
+    ].filter((k, i, all) => all.indexOf(k) === i);
+    if (wanted.length === 0) return;
+
+    closer?.close();
+    closer = pool.subscribeMany(
+      urls,
+      { kinds: [KIND_KEY_BUNDLE], authors: wanted },
+      {
+        onevent: (event: Event) => {
+          // Checked against the pubkey we already hold, so a relay answering with a key it
+          // generated is refused rather than cached.
+          const bundle = readKeyBundle(event, event.pubkey);
+          if (!bundle || !wanted.includes(bundle.pubkey)) return;
+          if (known[bundle.pubkey] === bundle.kem) return;
+          known = { ...known, [bundle.pubkey]: bundle.kem };
+          set('accruing', FIELD, known);
+        }
+      }
+    );
+  },
+
+  stop(): void {
+    closer?.close();
+    closer = null;
+  }
+};

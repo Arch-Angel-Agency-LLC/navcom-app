@@ -147,6 +147,22 @@ export const CAPABILITIES: Capability[] = [
     requires: ['identity']
   },
   {
+    name: 'Post-quantum cover',
+    screen: 'terminal/setup/',
+    claims: [
+      // The *policy*, which is always true and belongs where the key it derives from is
+      // generated. The notice that fires when cover is actually missing is state-dependent
+      // by design -- showing it while cover is hybrid would be a lie -- so it is checked by
+      // a browser test that creates the state instead. This is the one place where the
+      // manifest's "make the claim unconditional" rule does not apply, and the reason is
+      // that the sentence is about a condition rather than about the screen.
+      'A second key is derived from it',
+      'the message still goes',
+      'Status says so'
+    ],
+    requires: []
+  },
+  {
     name: 'Peers',
     screen: 'terminal/peers/',
     claims: [

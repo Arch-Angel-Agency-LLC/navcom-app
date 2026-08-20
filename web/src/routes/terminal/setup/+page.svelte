@@ -117,6 +117,17 @@
         yours. If you need something genuinely unlinkable, it has to be a separate identity,
         and nothing here can retroactively unlink what this one has already signed.
       </p>
+      <p class="note">
+        <!--
+          Said where the key is generated, because the post-quantum key is derived from it
+          and there is consequently nothing for an operator to create, copy or back up.
+        -->
+        <strong>A second key is derived from it</strong> and published, so messages to you
+        can be sealed against a future quantum computer as well as a present one. If
+        somebody you send to has not published theirs yet, <strong>the message still
+        goes</strong> with ordinary encryption and <strong>Status says so</strong> — nothing
+        is held back, and nothing pretends to cover more than it did.
+      </p>
       <input id="callsign" bind:value={callsign} autocomplete="off" spellcheck="false" />
       <button type="submit">Generate keypair</button>
     </form>
