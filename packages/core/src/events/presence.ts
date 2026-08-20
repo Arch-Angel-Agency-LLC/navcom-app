@@ -1,4 +1,4 @@
-import { finalizeEvent, generateSecretKey, getPublicKey, verifyEvent } from 'nostr-tools/pure';
+import { finalizeEvent, generateSecretKey, verifyEvent } from 'nostr-tools/pure';
 import type { Event } from 'nostr-tools/core';
 import { open, seal } from '../crypto/envelope.js';
 import type { SecretKey } from '../crypto/keys.js';
