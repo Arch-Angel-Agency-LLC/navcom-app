@@ -88,6 +88,26 @@
     escalates, never pages anyone, and never counts as distress.
   </p>
 
+  <label for="share">Share where you are</label>
+  <select id="share" bind:value={share}>
+    <option value="off">Off — just the area above</option>
+    <option value="coarse">Roughly — about 500m</option>
+    <option value="exact">Exactly</option>
+  </select>
+  <p class="note">
+    <!--
+      Three facts, all of which change what an operator would choose, and none of which
+      they can discover by using it.
+    -->
+    Goes to <strong>the watch and the peers you paired with, and nowhere else</strong>.
+    There is no setting that makes it public. Only the latest is kept — nobody sees where
+    you were, and it stops the moment you stand down.
+  </p>
+  <p class="note">
+    A browser cannot follow you with the app closed, so this updates while it is open and
+    freezes at the last fix when it is not.
+  </p>
+
   {#if operator.error}
     <p class="error">{operator.error}</p>
   {/if}

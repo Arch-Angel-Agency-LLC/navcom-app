@@ -601,6 +601,17 @@ describe('the field terminal', () => {
     expect(peers.bodyText).toMatch(/they are not told|not told/i);
   });
 
+  it('lets an operator choose position sharing, and says where it goes', () => {
+    // This shipped once with the control missing and the setting still being written on
+    // every sign-on -- so signing on silently reset it to off, and nothing failed. The
+    // three facts below are ones an operator cannot discover by using it.
+    const signOn = screens().find((p) => p.path.includes('/terminal/sign-on/'))!;
+    expect(signOn.doc.querySelector('#share'), 'no position control').not.toBeNull();
+    expect(signOn.bodyText).toMatch(/no setting that makes it public/i);
+    expect(signOn.bodyText).toMatch(/Only the latest is kept/i);
+    expect(signOn.bodyText).toMatch(/cannot follow you with the app closed/i);
+  });
+
   it('carries a manifest so it can be installed', () => {
     expect(terminal()!.raw).toContain('manifest.webmanifest');
   });
