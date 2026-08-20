@@ -467,6 +467,29 @@ the screen where somebody joins a squad-held watch.
 | 4.3 | ~~A declaration must not read as a safety monitor~~ | **done** | *"This app does not watch anybody. You do."* Stated above the board, because everything below it looks like a monitor and is not one |
 | 4.4 | ~~Handover~~ | **done** | **Nobody hands over a board.** The incoming watch derives its own from operators re-announcing when their phones see the holder change — passing the outgoing holder's picture would make the new watch's board a thing it was told rather than derived |
 
+## Milestone 6 — Knowledge can get in
+
+**Done when:** an operator who was on that block last night can put what they learned into
+the directory, from the phone in their hand, without a git account.
+
+Found by reviewing the app against its own archetypes on 2026-08-20. It is the largest gap
+in the project and it is structural rather than a missing feature.
+
+[`lineage.md`](lineage.md) states the thesis plainly: *"there is a ninth group Steele did not
+name — people with local ground truth and no institution at all"*, and **NavCom is tooling
+for the ninth tribe.** The directory is the instrument for that claim.
+
+Right now knowledge only comes **out**. There is no path in:
+
+| | Item | Owner | Cost |
+|---|---|---|---|
+| 6.1 | **Flag a record in one tap** | agent | Display rule 4 is **half-built**: the app renders a flag and cannot set one. The rule's own words are *"reporting must always be easier than fixing"*, and reporting is currently impossible while fixing needs a pull request |
+| 6.2 | **Correct a record from the phone** | agent | The Convert has the best directory knowledge in the network and the most reason to be unlinkable. She cannot add a line to it without a laptop and a git account |
+| 6.3 | **Where corrections go** | **decision** | A correction is an attestation by a keypair — the primitive already exists. Whether it travels to a watch, to peers, or to a maintainer's inbox is unresolved, and it decides whether the directory is per-squad or shared |
+
+Until this exists, an operator's own night is well served and **the ninth tribe has no
+instrument**. That is the gap between what this project says it is for and what it does.
+
 ## Milestone 5 — The properties we have written down
 
 Each is self-contained and none blocks an operator. **None may be claimed publicly before it
@@ -635,11 +658,11 @@ visible as one rather than a line in a watch-mode commit.
 |---|---|---|
 | Solo on patrol | Works — callsign, directory, own person one tap away | Milestone 1 completes it |
 | Team on patrol, no leader | **Served.** Pair, and each phone draws its own picture | — |
-| Team on patrol with a leader | **Served** for seeing each other. No concept of a team, and no dispatch verb — deliberately | 4.1 for a shared watch |
+| Team on patrol with a leader | **Served** for seeing each other. No concept of a team, and no dispatch verb — deliberately | — |
 | Solo on watch | Well served. This is what got built first | — |
-| Team on patrol, watcher at home | Served; the watcher sees a flat list with no grouping | 4.1 |
+| Team on patrol, watcher at home | **Served.** The watcher holds the board in the app; the list is flat, with no grouping | — |
 | **Agent on watch** | Holds the board, answers questions, and **cannot close a `Distress`** — an agent is never the sole responder. A 24/7 agent watch is a query desk, not a safety net | Nothing fixes this, by design. Say it plainly to anyone setting one up |
-| Team on watch | Handover specified, unimplemented | 4.4 |
+| Team on watch | **Served.** Handover transfers nothing — the incoming watch derives its own board from operators re-announcing | — |
 
 ### Awaiting a decision
 
