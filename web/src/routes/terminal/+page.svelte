@@ -4,6 +4,7 @@
   import { watch } from '$lib/terminal/watch.svelte';
   import { operator } from '$lib/terminal/session.svelte';
   import { presence } from '$lib/terminal/presence.svelte';
+  import { position } from '$lib/terminal/position.svelte';
   import { loadConfig } from '$lib/terminal/config';
   import { loadIdentity } from '$lib/terminal/identity';
 
@@ -124,6 +125,21 @@
     <p class="told">
       Told at sign-on: <span>{session.toldAtSignOn}</span>
     </p>
+    <!--
+      Unmissable while it is live, for the same reason a phone shows the location arrow.
+      Somebody who forgot they turned this on should find out by looking at the screen.
+    -->
+    {#if position.live}
+      <p class="sharing" data-sharing>
+        Sharing where you are — {position.current?.precision_m
+          ? `about ${position.current.precision_m}m`
+          : 'exactly'}, to your watch and peers only
+      </p>
+    {:else if position.denied}
+      <p class="sharing denied">
+        You asked to share position and this phone will not — check its location permission.
+      </p>
+    {/if}
   </section>
 
   <nav class="actions">
@@ -392,6 +408,12 @@
   .home { border: 2px solid var(--t-station); background: var(--t-raised); padding: 1rem 1.1rem; }
   .home h2 { color: var(--t-station); }
   .home p { color: var(--t-ink); font-size: 1.05rem; margin: 0; }
+
+  .sharing {
+    margin: .4rem 0 0; font-size: .85rem; color: var(--t-oncall);
+    border-inline-start: 2px solid var(--t-oncall); padding-inline-start: .6rem;
+  }
+  .sharing.denied { color: var(--t-dark); border-inline-start-color: var(--t-dark); }
 
   .peers { border: 2px solid var(--t-line-strong); padding: .9rem 1rem; gap: .3rem; }
   .peer { margin: 0; }

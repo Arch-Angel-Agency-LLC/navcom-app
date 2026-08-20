@@ -440,7 +440,7 @@ no box and no leader.
 | 3.1a | ~~QR pairing~~ | **done** | `@paulmillr/qr` for the code — same author as the curve and hash libraries already here. **No decoder shipped**: the browser's own `BarcodeDetector` where it exists, and the paste field where it does not |
 | 3.2 | **Findable profiles and invites** | agent | The actual fix for cold start: pairing at a distance rather than only in person |
 | 3.3 | **Public presence** — a name, never a pin | agent | Gives the network a pulse |
-| 3.4 | **Live position sharing** — watch and peers only | agent | Never publicly optable. See [`product/visibility.md`](product/visibility.md) |
+| 3.4 | ~~Live position sharing~~ | **done** | Watch and peers only. Rounded to a grid rather than jittered, and the type has no public setting to choose |
 | 3.5 | Buddy pairing between two solos | agent | Nearly free now that peers exist — it is a pair with a check-in expectation, not a new mechanism |
 
 ## Milestone 4 — A squad with no box

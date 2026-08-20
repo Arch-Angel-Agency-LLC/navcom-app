@@ -11,12 +11,15 @@
   import { capabilitySentence } from '@navcom/core';
   import { watch } from '$lib/terminal/watch.svelte';
   import { operator } from '$lib/terminal/session.svelte';
+  import { precision, setPrecision, type Precision } from '$lib/terminal/position.svelte';
 
   let area = $state('');
   let hours = $state(2);
   let routine = $state<number | null>(60);
+  let share = $state<Precision>('off');
 
   onMount(() => {
+    share = precision();
     watch.start();
     return () => watch.stop();
   });
@@ -24,6 +27,7 @@
   async function submit(e: SubmitEvent) {
     e.preventDefault();
     if (!area.trim()) return;
+    setPrecision(share);
     await operator.signOn(area.trim(), hours, routine);
     if (operator.session) goto('/terminal/');
   }

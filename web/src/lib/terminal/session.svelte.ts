@@ -27,6 +27,7 @@ import { watch } from './watch.svelte';
 import { seenRoots } from './roots';
 import { recordPatrol } from './patrol';
 import { presence } from './presence.svelte';
+import { position } from './position.svelte';
 
 export interface SignOn {
   at: number;
@@ -136,14 +137,17 @@ export const operator = {
     const now = Math.floor(Date.now() / 1000);
     const state: WatchStatePayload = watch.state;
 
+    // Only while signed on, so nobody broadcasts from their kitchen.
+    position.start();
+
     if (operator.hasWatch) {
       const payload: OnStationPayload = {
         callsign: loadIdentity()?.callsign ?? undefined,
         area,
         expected_duration: Math.round(hours * 3600),
         routine_interval: routineMinutes === null ? null : routineMinutes * 60,
-        share_position: false,
-        position: null
+        share_position: position.current !== null,
+        position: position.current
       };
       const response = await run(() => send('on-station', payload));
       // A watch that did not answer does not stop the patrol. It is reported, and the
@@ -170,11 +174,15 @@ export const operator = {
 
   /** What peers are told. Coarse by construction, and nothing they did not agree to receive. */
   presencePayload() {
+    const fix = position.current;
     return {
       callsign: loadIdentity()?.callsign ?? 'unnamed',
       status: (session ? 'out' : 'stood-down') as 'out' | 'stood-down',
       area: session?.area ?? null,
-      until: session?.expectedUntil ?? Math.floor(Date.now() / 1000)
+      until: session?.expectedUntil ?? Math.floor(Date.now() / 1000),
+      // Present only where the operator chose it. Each heartbeat replaces the last, so a
+      // peer holds where you are and never where you were.
+      ...(fix ? { position: fix } : {})
     };
   },
 
@@ -249,6 +257,9 @@ export const operator = {
       until: Math.floor(Date.now() / 1000)
     });
 
+    // Stops following and forgets the last fix. Standing down leaves nothing behind.
+    position.stop();
+
     session = null;
     clearField('wipeable', 'signon');
     return closedBy;
@@ -269,7 +280,13 @@ export const operator = {
     try {
       await sendDistressUntilAcknowledged(
         pool, config.relays, identity.secretKey, identity.pubkey, config.pubkey,
-        { position: null, area: session?.area ?? null, text: text || undefined },
+        // A Distress carries the last known fix where one exists, and the declared area
+        // where it does not. Somewhere to start beats nothing to go on.
+        {
+          position: position.current,
+          area: session?.area ?? null,
+          ...(text ? { text } : {})
+        },
         {
           signal: distressController.signal,
           onPhase: (p) => { distressPhases = [...distressPhases, p]; }
