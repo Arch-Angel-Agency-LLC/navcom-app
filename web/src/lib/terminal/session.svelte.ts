@@ -27,6 +27,7 @@ import { watch } from './watch.svelte';
 import { seenRoots } from './roots';
 import { recordPatrol } from './patrol';
 import { presence } from './presence.svelte';
+import { announceListed, beatListed, stopListed } from './public.svelte';
 import { position } from './position.svelte';
 
 export interface SignOn {
@@ -170,6 +171,13 @@ export const operator = {
     // relays store none of it.
     void presence.announce(operator.presencePayload());
     presence.beat(() => (session ? operator.presencePayload() : null));
+
+    // Being listed publicly rides on being signed on, and does nothing unless the operator
+    // asked for it and has a card. That coupling is what bounds the mistake: somebody who
+    // forgets this is on broadcasts a callsign and a metro while out, and nothing at all
+    // the rest of the time.
+    void announceListed();
+    beatListed();
   },
 
   /** What peers are told. Coarse by construction, and nothing they did not agree to receive. */
@@ -259,6 +267,11 @@ export const operator = {
 
     // Stops following and forgets the last fix. Standing down leaves nothing behind.
     position.stop();
+
+    // No "no longer out" message, and none is needed: the public entry ages off the board
+    // by itself. A phone that dies removes you the same way, which is the honest behaviour
+    // for a board whose only claim is that somebody is out right now.
+    stopListed();
 
     session = null;
     clearField('wipeable', 'signon');

@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { CAPABILITIES, type Capability } from '../src/lib/capabilities';
-import { seedDevice } from './device';
+import { seedDevice, open } from './device';
 
 /**
  * `requires` is the truth, not a comment.
@@ -33,7 +33,7 @@ function seedFor(capability: Capability) {
 for (const capability of CAPABILITIES) {
   test(`${capability.name} works with only what it declares`, async ({ page }) => {
     await seedDevice(page, seedFor(capability));
-    await page.goto(`/${capability.screen}`);
+    await open(page, `/${capability.screen}`);
 
     // The screen renders at all. A capability whose page errors with its declared state is
     // not a capability.
@@ -47,23 +47,39 @@ for (const capability of CAPABILITIES) {
   });
 }
 
-test('a capability that declares no watch does not quietly need one', async ({ page }) => {
+test('a capability that declares no watch does not quietly need one', async ({ browser }) => {
   // Stated as one assertion over the whole set, because the failure it guards was not
   // specific to a screen -- it was a shared module reaching for the Watchtower config, and
   // every capability that touched it inherited the dependency.
+  //
+  // **A fresh context per capability**, which this did not have until the card screen
+  // exposed it. `seedDevice` deliberately seeds once and then leaves the device alone, so
+  // reusing one page meant every iteration after the first ran against the *first*
+  // capability's state -- an empty device. It was quietly asserting "works with no setup at
+  // all", which is a different and much weaker claim than the one in its name. Screens that
+  // happen not to gate on identity passed it for the wrong reason.
   const withoutWatch = CAPABILITIES.filter((c) => !c.requires.includes('watch'));
   expect(withoutWatch.length).toBeGreaterThan(0);
 
   for (const capability of withoutWatch) {
-    await seedDevice(page, seedFor(capability));
-    await page.goto(`/${capability.screen}`);
+    const context = await browser.newContext();
+    const page = await context.newPage();
+    try {
+      await seedDevice(page, seedFor(capability));
+      await open(page, `/${capability.screen}`);
 
-    // Nothing on the page may tell an operator to go and get a Watchtower first.
-    const text = (await page.locator('body').innerText()).toLowerCase();
-    expect(text, `${capability.name} demands a watch`).not.toContain('not configured');
+      // Nothing on the page may tell an operator to go and get a Watchtower first.
+      const text = (await page.locator('body').innerText()).toLowerCase();
+      expect(text, `${capability.name} demands a watch`).not.toContain('not configured');
 
-    if (capability.control) {
-      await expect(page.locator(capability.control)).toBeEnabled();
+      if (capability.control) {
+        await expect(
+          page.locator(capability.control),
+          `${capability.name}: ${capability.control} is not operable without a watch`
+        ).toBeEnabled();
+      }
+    } finally {
+      await context.close();
     }
   }
 });

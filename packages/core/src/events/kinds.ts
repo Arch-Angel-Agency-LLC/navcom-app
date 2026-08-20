@@ -13,6 +13,31 @@ export const KIND_WATCH_STATE = 10910;
 /** Ephemeral. Peer-to-peer presence, wrapped so no relay can see who talks to whom. */
 export const KIND_PEER_PRESENCE = 20913;
 
+/**
+ * Replaceable. An operator's public card — the one artifact they choose to be findable by.
+ *
+ * Signed by a **contact key**, never the operational one. See `events/public.ts` for why
+ * that separation is load-bearing rather than tidy.
+ */
+export const KIND_CARD = 10911;
+
+/**
+ * Ephemeral. *"Raven is out tonight."* A name and a region, and nothing else ever.
+ *
+ * Also signed by the contact key, so it is verifiably the same Raven whose card is up
+ * without exposing the key their peers address.
+ */
+export const KIND_PUBLIC_PRESENCE = 20914;
+
+/**
+ * Regular, and therefore **stored** — the one thing here a relay is meant to keep.
+ *
+ * An invite has to wait for somebody who is asleep. Everything else in this system is
+ * ephemeral because a queryable history is the failure mode [C27]; an invite is the
+ * exception because a request that expires in sixty seconds is not a request.
+ */
+export const KIND_INVITE = 1910;
+
 /** Ephemeral. Signals: on-station, routine, query, assist, stood-down. */
 export const KIND_SIGNAL = 20910;
 

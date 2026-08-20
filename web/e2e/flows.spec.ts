@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { readDevice, seedDevice } from './device';
+import { readDevice, seedDevice, open } from './device';
 
 /**
  * A night, end to end.
@@ -14,7 +14,7 @@ const WREN = { callsign: 'Wren' };
 test('a whole patrol, with nobody watching', async ({ page }) => {
   await seedDevice(page, WREN);
 
-  await page.goto('/terminal/sign-on/');
+  await open(page, '/terminal/sign-on/');
   await page.locator('#area').fill('Downtown');
   await page.locator('#hours').selectOption('2');
   await page.getByRole('button', { name: /sign on/i }).click();
@@ -35,7 +35,7 @@ test('a whole patrol, with nobody watching', async ({ page }) => {
   await expect(page.locator('[data-station]')).toHaveCount(0);
 
   // And it is in their own record, which never left the phone.
-  await page.goto('/terminal/patrols/');
+  await open(page, '/terminal/patrols/');
   await expect(page.getByText('Downtown')).toBeVisible();
   await expect(page.getByText(/two handouts at the underpass/)).toBeVisible();
   await expect(page.getByText(/1 patrol/)).toBeVisible();
@@ -45,7 +45,7 @@ test('the patrol lands in the wipeable tier unless asked otherwise', async ({ pa
   // Off by default. A seized phone shows nothing about anybody's nights.
   await seedDevice(page, WREN);
 
-  await page.goto('/terminal/sign-on/');
+  await open(page, '/terminal/sign-on/');
   await page.locator('#area').fill('Riverfront');
   await page.getByRole('button', { name: /sign on/i }).click();
   await page.getByRole('button', { name: /stand down/i }).click();
@@ -60,14 +60,14 @@ test('the patrol lands in the wipeable tier unless asked otherwise', async ({ pa
 test('an export carries the operator and nobody else', async ({ page }) => {
   await seedDevice(page, WREN);
 
-  await page.goto('/terminal/sign-on/');
+  await open(page, '/terminal/sign-on/');
   await page.locator('#area').fill('Downtown');
   await page.getByRole('button', { name: /sign on/i }).click();
   await page.getByRole('button', { name: /stand down/i }).click();
   await page.getByRole('button', { name: /i'm home/i }).click();
   await expect(page.locator('[data-came-home]')).toBeVisible();
 
-  await page.goto('/terminal/patrols/');
+  await open(page, '/terminal/patrols/');
   await page.getByRole('button', { name: /show what would be shared/i }).click();
 
   const shared = await page.locator('[data-export]').innerText();
@@ -79,7 +79,7 @@ test('an export carries the operator and nobody else', async ({ page }) => {
 });
 
 test('the directory is browsable and every field says what it is', async ({ page }) => {
-  await page.goto('/terminal/directory/');
+  await open(page, '/terminal/directory/');
   await page.getByRole('link', { name: /st\. louis/i }).click();
 
   await expect(page.locator('[data-record]').first()).toBeVisible();

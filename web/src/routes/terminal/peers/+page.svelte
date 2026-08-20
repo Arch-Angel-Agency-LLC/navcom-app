@@ -13,6 +13,7 @@
   import { relays, usingDefaults } from '$lib/terminal/relays';
   import encodeQR from '@paulmillr/qr';
   import { canScan, pubkeyFrom, scan, ScanError, type Scanner } from '$lib/terminal/scan';
+  import { invites, type Waiting } from '$lib/terminal/invites.svelte';
 
   let mine = $state<Peer[]>([]);
   let myPubkey = $state<string | null>(null);
@@ -26,6 +27,7 @@
   let scanning = $state(false);
   let camera = $state<HTMLVideoElement | null>(null);
   let scanner: Scanner | null = null;
+  let naming = $state<Record<string, string>>({});
 
   onMount(() => {
     using = relays();
@@ -37,6 +39,11 @@
     // still has to name them and accept, because pairing must be something you did.
     const fromLink = page.url.hash.replace(/^#/, '');
     if (fromLink) code = fromLink;
+
+    // Only listens on inboxes this operator actually has. Somebody who never published a
+    // card has no public address, so nothing can arrive here uninvited.
+    invites.start();
+    return () => invites.stop();
   });
 
   const link = $derived(myPubkey ? `https://navcom.app/terminal/peers/#${myPubkey}` : '');
@@ -80,8 +87,19 @@
     scanning = false;
   }
 
-  function accept(e: SubmitEvent) {
-    e.preventDefault();
+  /**
+   * Pairing, from a button rather than a form submit.
+   *
+   * A prerendered page is on screen and tappable before it hydrates, and a `<form>` tapped
+   * in that window does a native GET submit: the page reloads and the code the operator
+   * just typed is gone. A plain button does nothing at all until it works, and a tap that
+   * does nothing is recoverable in a way that a tap that clears the field is not.
+   *
+   * Same reasoning as the Distress hold control, which must never be disabled during
+   * hydration -- what a prerendered screen does before its JavaScript arrives is a design
+   * decision, not an implementation detail.
+   */
+  function accept() {
     error = null;
     try {
       pair(code, callsign);
@@ -100,6 +118,11 @@
 
   function toggleBuddy(peer: Peer) {
     setBuddy(peer.pubkey, !peer.buddy);
+    mine = peers();
+  }
+
+  async function take(w: Waiting) {
+    await invites.accept(w, naming[w.id] ?? '');
     mine = peers();
   }
 
@@ -151,6 +174,17 @@
     is. It is a nudge and nothing else: nothing escalates, nobody is paged, and going quiet
     is never treated as trouble.
   </p>
+  <p class="cost">
+    <!--
+      Said before an invite has ever arrived, because the moment one is on the screen is the
+      moment somebody feels they owe an answer. They do not.
+    -->
+    You can also pair with somebody you have not met, from <a href="/terminal/find/">their
+    card</a>. Anybody may ask you — and <strong>ignoring sends nothing</strong>: no refusal,
+    no read receipt, and no way for them to tell an ignored invite from one that never
+    arrived. <a href="/terminal/card/">Publishing a card</a> is what makes you askable, and
+    having none is the default.
+  </p>
 </section>
 
 <!--
@@ -167,6 +201,28 @@
   </p>
   <p class="blocks">{#each using as r (r)}<span>{r}</span>{/each}</p>
 </section>
+
+{#if invites.waiting.length > 0}
+  <section class="act">
+    <h2>Asked to pair</h2>
+    <ul class="asks">
+      {#each invites.waiting as w (w.id)}
+        <li>
+          <span class="name">{w.payload.callsign}</span>
+          {#if w.payload.note}<p class="doing">{w.payload.note}</p>{/if}
+          <label for="as-{w.id}">What you call them</label>
+          <input id="as-{w.id}" bind:value={naming[w.id]} autocomplete="off"
+            placeholder={w.payload.callsign} />
+          <div class="row">
+            <button onclick={() => take(w)}>Accept</button>
+            <button class="drop" onclick={() => invites.ignore(w)}>Ignore</button>
+          </div>
+        </li>
+      {/each}
+    </ul>
+    <p class="cost">Ignoring sends nothing. Take the time you want.</p>
+  </section>
+{/if}
 
 <section class="act">
   <h2>Your code</h2>
@@ -206,7 +262,7 @@
     ></video>
   {/if}
 
-  <form onsubmit={accept}>
+  <div class="form">
     <label for="code">Their code</label>
     <textarea id="code" bind:value={code} rows="2" autocomplete="off" spellcheck="false"
       placeholder="paste their code or link"></textarea>
@@ -216,8 +272,8 @@
       Your name for them, kept on this phone and never sent anywhere. They will never see it.
     </p>
     {#if error}<p class="error">{error}</p>{/if}
-    <button type="submit">Pair</button>
-  </form>
+    <button type="button" onclick={accept}>Pair</button>
+  </div>
 </section>
 
 {#if mine.length > 0}
@@ -243,6 +299,7 @@
 
 <style>
   .act { gap: .6rem; }
+  .form { display: flex; flex-direction: column; gap: .6rem; }
   .qr {
     background: #fff; padding: .7rem; align-self: flex-start; line-height: 0;
     /* White ground regardless of theme: a scanner needs the contrast the format assumes. */
@@ -272,5 +329,13 @@
     font-size: .62rem; letter-spacing: .1em; text-transform: uppercase;
     color: var(--t-station); border: 1px solid var(--t-station); padding: .1rem .3rem;
   }
+  .asks { list-style: none; margin: 0 0 .6rem; padding: 0; }
+  .asks li {
+    display: flex; flex-direction: column; gap: .5rem;
+    border-bottom: 1px solid var(--t-line); padding-block: .9rem;
+  }
+  .asks input { width: 100%; }
+  .row { display: flex; gap: .6rem; }
+  .doing { margin: 0; color: var(--t-faint); font-size: .92rem; }
   .drop { min-height: 2.2rem; font-size: .8rem; padding: 0 .7rem; border-color: var(--t-line); color: var(--t-faint); }
 </style>

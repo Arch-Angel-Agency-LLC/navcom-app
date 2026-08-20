@@ -7,9 +7,27 @@
    * one hand, cold, dark — and a nav bar offering "Docs" is both wrong for that moment and
    * dead weight in a bundle sized for a prepaid Android 8.
    */
+  import { onMount } from 'svelte';
   import '$lib/terminal/tokens.css';
   import '$lib/terminal/screen.css';
   let { children } = $props();
+
+  /**
+   * Marks the terminal as interactive.
+   *
+   * Every screen here is prerendered, so it is on the glass and tappable before its
+   * JavaScript has run. That window is real on a prepaid Android 8, and it is where a tap
+   * lands on a control that is drawn but not yet wired.
+   *
+   * The browser tests wait for this rather than racing it. They were racing it — several
+   * specs failed intermittently under load, always as "the button did nothing", and each
+   * one looked like a bug in whichever screen happened to lose. A test that waits for the
+   * app to actually be interactive is testing the app; one that clicks a picture of a
+   * button is testing nothing and failing at random.
+   */
+  onMount(() => {
+    document.documentElement.dataset.hydrated = 'true';
+  });
 </script>
 
 <svelte:head>

@@ -353,6 +353,7 @@
        hit while putting the phone in a pocket. -->
   <nav class="quiet">
     <a href="/terminal/peers/">Peers</a>
+    <a href="/terminal/card/">Your card</a>
     <a href="/terminal/directory/">Directory</a>
     <a href="/terminal/patrols/">Your patrols</a>
     <a href="/terminal/log/">What the watch wrote</a>

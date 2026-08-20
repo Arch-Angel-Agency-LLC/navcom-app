@@ -434,14 +434,18 @@ weekly until somebody is on-call — which is the finding, published, rather tha
 **Done when:** two operators who paired over coffee can see each other patrol, with no watch,
 no box and no leader.
 
+**All items built.** Milestone 3 now also covers two operators who have *never* met: a card
+makes somebody findable in their metro, and an invite pairs them at a distance. What remains
+is 0.2 — two real devices on one relay — which is a human check, not code.
+
 | | Item | Owner | Cost |
 |---|---|---|---|
 | 3.1 | ~~Peer pairing and presence~~ | **done** | Wrapped in throwaway keys so no relay can see who talks to whom |
 | 3.1a | ~~QR pairing~~ | **done** | `@paulmillr/qr` for the code — same author as the curve and hash libraries already here. **No decoder shipped**: the browser's own `BarcodeDetector` where it exists, and the paste field where it does not |
-| 3.2 | **Findable profiles and invites** | agent | The actual fix for cold start: pairing at a distance rather than only in person |
-| 3.3 | **Public presence** — a name, never a pin | agent | Gives the network a pulse |
+| 3.2 | ~~Findable profiles and invites~~ | **done** | Cards are signed by a **contact key**, never the operational one — publishing costs no operational exposure. An accept is an invite in the other direction, so declining is silence and there is no decline message to write |
+| 3.3 | ~~Public presence~~ — a name, never a pin | **done** | Empty content, region tag, contact key. Shipped as `off · listed` rather than the specified four values — see [`product/visibility.md`](product/visibility.md) |
 | 3.4 | ~~Live position sharing~~ | **done** | Watch and peers only. Rounded to a grid rather than jittered, and the type has no public setting to choose |
-| 3.5 | Buddy pairing between two solos | agent | Nearly free now that peers exist — it is a pair with a check-in expectation, not a new mechanism |
+| 3.5 | ~~Buddy pairing between two solos~~ | **done** | `watching` is per-recipient, so nobody learns who watches whom. Nothing escalates from `overdue` |
 
 ## Milestone 4 — A squad with no box
 

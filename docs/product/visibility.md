@@ -23,8 +23,8 @@ by a bad decision, but by a bundled one.
 | Preset | Presence | Position in ops | Endorsements | Op recap | Discoverable card |
 |---|---|---|---|---|---|
 | **Ghost** | off | off | receive only | off | off |
-| **Team** | team only | opt-in per op | on | off | team only |
-| **Open** | network | opt-in per op | on | on | on |
+| **Team** | off | opt-in per op | on | off | off |
+| **Open** | listed | opt-in per op | on | on | on |
 
 **Team is the default.** Ghost is a complete, fully useful configuration — knowledge
 layer, safety kit, personal record, incident log, standing. An operator can run Ghost
@@ -67,6 +67,22 @@ Three things bound the window further, and all three are cheap:
 - While position is live the app shows it, unmissably and continuously. The same reason a
   phone shows the location arrow
 
+## Two values, not four — and why the other two are not built
+
+The switch specified `off · team · city · network`. What shipped is **off · listed**, and
+the difference is deliberate rather than partial:
+
+- **`team` was never a public setting.** Peers seeing each other is peer presence, which
+  needs no switch at all — pairing *is* the consent, and it is already built
+- **`city` and `network` are indistinguishable at current scale.** Both would publish a name
+  to a region board. Shipping two settings that do the same thing teaches an operator a
+  distinction the system does not honour, which is worse than one honest setting
+
+Being listed also **requires a published card**, rather than standing as an independent
+switch. A name with nothing to resolve it against is not a pulse, it is an unverifiable
+string — and two independent opt-ins can drift into a state where somebody broadcasts under
+a key they believed they had discarded.
+
 ## Public presence is a name, never a pin and never a number
 
 An operator set to `city` or `network` presence is saying *"Raven is out tonight."* That is
@@ -77,6 +93,21 @@ all it says.
 - **No position, at any precision.** See above
 - It exists so the network has a pulse — so somebody opening the app can see it is real and
   in use. That is a genuine need and this is the cheapest honest way to meet it
+
+### A card is signed by a key used for nothing else
+
+Being findable costs **no operational exposure**. A card and its *"out tonight"* are signed
+by a **contact key**, generated when the first card is published and used for nothing but
+the card and receiving invites. It is never a presence recipient and never known to a watch.
+
+Without that separation, publishing a card would silently undo peer presence: presence is
+`p`-tagged to its recipient in plaintext, so a public operational key lets anyone watching a
+relay count the events addressed to it and learn when that operator is out, how many peers
+they have, and which nights they work.
+
+Withdrawing a card **discards the contact key**. The card survives on whatever relays kept
+it — nothing can unpublish it, and the screen says exactly that — but it now names a key
+nobody holds and nobody listens on.
 
 **The proof that the network is alive is the directory, not the operators.** A shelter entry
 that reads *"checked 3 days ago by Wren"* says the work is being done, by a named person,
@@ -89,7 +120,7 @@ Each is independently settable regardless of preset:
 
 | Switch | Values |
 |---|---|
-| Presence | off · team · city · network — team is useful at 3 operators, network needs far more. Above `team` it is a name and nothing else |
+| Presence | **off · listed.** See below — `city` and `network` were specified and are not built, because at current scale they are the same switch |
 | Position sharing | off · per-op opt-in (never persistent). **Recipients are the watch and paired peers only** — this switch has no public setting |
 | Position precision | coarse · precise |
 | Card discoverability | off · team · network |

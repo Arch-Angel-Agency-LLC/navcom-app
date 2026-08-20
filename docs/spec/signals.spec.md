@@ -15,6 +15,8 @@ retrievable by a client that just connected.
 | `20912` | ephemeral | **Response** | Acknowledgements, query answers, escalation status |
 | `20913` | ephemeral | **Peer presence** | Who is out, sent operator-to-operator with no watch involved |
 | `20914` | ephemeral | **Public presence** | *"Raven is out tonight."* Unencrypted, and structurally cannot carry a position |
+| `10911` | replaceable | **Card** | The one artifact an operator may publish about themselves. Signed by a contact key, never the operational one |
+| `1910` | regular | **Invite** | *"Here is my key. I would like to pair."* **Stored**, because an invite has to wait for somebody who is asleep |
 
 Ephemeral kinds (20000–29999) are not expected to be stored by relays — required by
 [C27], since the board MUST NOT become a queryable history.
@@ -66,7 +68,6 @@ about 5 KB every interval.
 **Nothing may claim this publicly until it ships.** The status page states what is built, not
 what is planned.
 
-## Invites, and pairing at a distance
 The event `p`-tags the Watchtower pubkey. See [`README.md`](./README.md) for why, and what
 it costs.
 
@@ -232,6 +233,78 @@ Not a feed. A peer view is **current state**: who is out, roughly where, until w
 history of where anyone has been is the thing the rules forbid outright, and the difference
 between the two is one careless `push` in a client.
 
+## `10911` — Card
+
+The only artifact in this system an operator publishes *about themselves*. Optional, absent
+by default, and an operator who never publishes one is a complete operator.
+
+```json
+{
+  "kind": 10911,
+  "tags": [["d", "st-louis"]],
+  "content": "{\"callsign\":\"Raven\",\"region\":\"st-louis\",\"doing\":\"Water and socks, Thursdays.\"}"
+}
+```
+
+### Signed by a contact key, never the operational key
+
+**This is normative and it is the reason a card is safe to publish at all.**
+
+A card is signed by a second keypair whose only jobs are to sign the public events here and
+to receive invites. It MUST NOT be the key that sends signals, receives peer presence, or is
+known to a Watchtower.
+
+The reason is `p`-tag routing. Presence events are `p`-tagged to their recipient in
+plaintext — a relay needs that to route them, and it cannot be encrypted. That is harmless
+while an operational pubkey is known only to people who scanned it in person. Publish the
+same key on a card and it stops being harmless: anyone watching a public relay can count the
+events addressed to it and learn when this operator is out, roughly how many peers they
+have, and which nights they work. `20913` spends a throwaway key per message to prevent
+exactly that, and a card signed by the operational key would hand all of it back.
+
+### What a card may carry
+
+`callsign`, `region`, `doing`. **A reader MUST refuse a card carrying any other field**,
+rather than ignoring the extra — refusing is what makes the absence of a position field
+enforceable against a client written to a looser idea of this type.
+
+- `region` is a directory region slug: a metro, and there is nothing finer it can name
+- Replaceable, so an operator has one card and not a history of cards
+- **Withdrawal is discarding the contact key.** The card survives on whatever relays kept
+  it. Nothing can unpublish it and no wording anywhere may imply otherwise
+
+## `1910` — Invite
+
+*"Here is my key. I would like to pair."* The fix for cold start: until this existed the
+only way to pair was to stand next to somebody.
+
+```json
+{
+  "kind": 1910,
+  "tags": [["p", "<recipient>"]],
+  "content": "<sealed: a complete 1910 event signed by the sender's operational key>"
+}
+```
+
+Wrapped exactly like `20913`: a throwaway key signs the outer event, and the sealed content
+is a complete event signed by the sender's real key. The inner signature is what **proves**
+the key being offered belongs to the sender — a payload that merely states a pubkey can
+state anybody's. Payload is `callsign` and an optional `note`.
+
+**Regular, not ephemeral.** The one kind here a relay is meant to store, because a request
+that expires in sixty seconds is not a request.
+
+### An accept is an invite in the other direction
+
+There is one message, not three. A sends to B's **contact key**, read off a card. If B
+wants it, B sends back to A's **operational key**, which A's invite carried inside its
+ciphertext. Pairing is complete when each holds the other's key.
+
+**There MUST NOT be a decline message.** Ignoring sends nothing, so a sender learns nothing:
+not that it was read, not that it was refused, not that the key is live. Somebody who owes a
+refusal is somebody who accepts to avoid an awkward one — the same rule as unpairing, which
+also tells nobody. It also means there is no pending state to expire or nag about.
+
 ## `20914` — Public presence
 
 A name, and nothing else. It exists so the network has a pulse — so somebody opening the app
@@ -240,8 +313,8 @@ can see it is real and in use.
 ```json
 {
   "kind": 20914,
-  "tags": [],
-  "content": "{\"callsign\":\"Raven\",\"status\":\"out\"}"
+  "tags": [["d", "st-louis"]],
+  "content": ""
 }
 ```
 
@@ -250,17 +323,31 @@ and no amount of cryptography protects something published in the clear.
 
 ### There is nowhere to put a position, and that is the design
 
-The payload has two fields. **Not "do not include a position" — there is no field for one,
-at any precision, ever.** A rule can be forgotten by a client author at 2am; a missing field
-cannot.
+**The content is empty and MUST stay empty.** Not "do not include a position" — there is no
+payload at all, at any precision, ever. A rule can be forgotten by a client author at 2am; a
+missing field cannot.
 
 This is the same choice made for accountability-log outcomes, for the same reason: a leak
 that cannot be expressed does not need to be policed.
 
-- Published only while the operator's presence setting is `city` or `network`
-  [`../product/visibility.md`](../product/visibility.md). `off` and `team` publish nothing at all
+### Why the callsign is not in here
+
+An earlier version of this spec put `{"callsign":"Raven","status":"out"}` in the content and
+no tag on the event. Both parts were wrong, and the implementation deliberately differs:
+
+- **The callsign lives on the card**, and a reader resolves this event against the card the
+  same contact key signed. Repeating it here would create two places a callsign lives and no
+  way for them to disagree honestly
+- **The `d` tag is load-bearing.** Without it a client must pull every public presence event
+  on a relay and filter locally, which does not scale and is wrong for the device floor
+- **There is no `stood-down`.** The entry ages off the board by itself. Publishing *"I have
+  finished"* would pair a public start time with a public end time, which is a schedule — and
+  a phone whose battery died must be indistinguishable from one whose owner went home
+
+- Published only while the operator has a card and asked to be listed
+  [`../product/visibility.md`](../product/visibility.md), and only while signed on
 - **A name, never a count.** A total invites gaming and tells a reader nothing
-- Ephemeral and heartbeated, like `20913`. Standing down publishes `status: stood-down`
+- Signed by the contact key, so being listed exposes no more than the card already did
 
 ## `20911` — Distress
 

@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { seedDevice } from './device';
+import { readDevice, seedDevice, open } from './device';
 
 /**
  * Every control an operator is told about is on the screen and operable.
@@ -17,7 +17,7 @@ const OUT = { callsign: 'Wren' };
 test.describe('setup', () => {
   test('a first visit can create an identity and nothing else is required', async ({ page }) => {
     await seedDevice(page);
-    await page.goto('/terminal/setup/');
+    await open(page, '/terminal/setup/');
 
     await expect(page.locator('#callsign')).toBeVisible();
     await expect(page.getByRole('button', { name: /generate keypair/i })).toBeEnabled();
@@ -29,7 +29,7 @@ test.describe('setup', () => {
 
   test('somebody you would call can be added and removed', async ({ page }) => {
     await seedDevice(page, OUT);
-    await page.goto('/terminal/setup/');
+    await open(page, '/terminal/setup/');
 
     await page.locator('#clabel').fill('Sam');
     await page.locator('#cnumber').fill('+1 555 0100');
@@ -44,7 +44,7 @@ test.describe('setup', () => {
 test.describe('sign-on', () => {
   test('every choice an operator makes is on the page', async ({ page }) => {
     await seedDevice(page, OUT);
-    await page.goto('/terminal/sign-on/');
+    await open(page, '/terminal/sign-on/');
 
     await expect(page.locator('#area')).toBeVisible();
     await expect(page.locator('#hours')).toBeVisible();
@@ -55,7 +55,7 @@ test.describe('sign-on', () => {
 
   test('position sharing offers off, coarse and exact, and nothing public', async ({ page }) => {
     await seedDevice(page, OUT);
-    await page.goto('/terminal/sign-on/');
+    await open(page, '/terminal/sign-on/');
 
     const values = await page.locator('#share option').evaluateAll((els) =>
       els.map((e) => (e as HTMLOptionElement).value)
@@ -68,7 +68,7 @@ test.describe('sign-on', () => {
 
   test('signing on is refused without an area, since it travels with a Distress', async ({ page }) => {
     await seedDevice(page, OUT);
-    await page.goto('/terminal/sign-on/');
+    await open(page, '/terminal/sign-on/');
     await expect(page.getByRole('button', { name: /sign on/i })).toBeDisabled();
     await page.locator('#area').fill('Downtown');
     await expect(page.getByRole('button', { name: /sign on/i })).toBeEnabled();
@@ -81,7 +81,7 @@ test.describe('distress', () => {
     // promises what it cannot do, disarmed briefly REFUSES a real emergency during
     // hydration. So the press always registers.
     await seedDevice(page, OUT);
-    await page.goto('/terminal/distress/');
+    await open(page, '/terminal/distress/');
 
     const hold = page.locator('button.raise');
     await expect(hold).toBeVisible();
@@ -90,7 +90,7 @@ test.describe('distress', () => {
 
   test('your own person is offered first, above everything', async ({ page }) => {
     await seedDevice(page, { ...OUT, contact: { label: 'Sam', number: '+15550100' } });
-    await page.goto('/terminal/distress/');
+    await open(page, '/terminal/distress/');
 
     const text = page.getByRole('link', { name: /text sam/i });
     const call = page.getByRole('link', { name: /call sam/i });
@@ -109,7 +109,7 @@ test.describe('wipe', () => {
     // Opposite shapes on purpose: a wipe costs an evening and speed wins; a burn costs
     // everything and nothing about seizure makes typing impossible.
     await seedDevice(page, OUT);
-    await page.goto('/terminal/wipe/');
+    await open(page, '/terminal/wipe/');
 
     await expect(page.getByRole('button', { name: /hold to wipe tonight/i })).toBeVisible();
 
@@ -121,7 +121,7 @@ test.describe('wipe', () => {
 
   test('the wrong callsign does not arm the burn', async ({ page }) => {
     await seedDevice(page, OUT);
-    await page.goto('/terminal/wipe/');
+    await open(page, '/terminal/wipe/');
     await page.locator('#confirm').fill('wren');
     await expect(page.getByRole('button', { name: /burn this device/i })).toBeDisabled();
   });
@@ -130,7 +130,7 @@ test.describe('wipe', () => {
 test.describe('peers', () => {
   test('your code is shown as something scannable', async ({ page }) => {
     await seedDevice(page, OUT);
-    await page.goto('/terminal/peers/');
+    await open(page, '/terminal/peers/');
 
     const qr = page.locator('[data-qr] svg');
     await expect(qr).toBeVisible();
@@ -138,7 +138,7 @@ test.describe('peers', () => {
 
   test('pairing needs a code and a name for them', async ({ page }) => {
     await seedDevice(page, OUT);
-    await page.goto('/terminal/peers/');
+    await open(page, '/terminal/peers/');
 
     await page.locator('#code').fill('b'.repeat(64));
     await page.locator('#name').fill('Raven');
@@ -150,7 +150,7 @@ test.describe('peers', () => {
 
   test('a bad code is refused with a reason rather than ignored', async ({ page }) => {
     await seedDevice(page, OUT);
-    await page.goto('/terminal/peers/');
+    await open(page, '/terminal/peers/');
 
     await page.locator('#code').fill('not-a-code');
     await page.locator('#name').fill('Raven');
@@ -163,7 +163,7 @@ test.describe('peers', () => {
 test.describe('watching for somebody', () => {
   test('is taken on and put down in one tap, from the peer list', async ({ page }) => {
     await seedDevice(page, OUT);
-    await page.goto('/terminal/peers/');
+    await open(page, '/terminal/peers/');
 
     await page.locator('#code').fill('b'.repeat(64));
     await page.locator('#name').fill('Raven');
@@ -183,10 +183,91 @@ test.describe('watching for somebody', () => {
   });
 });
 
+test.describe('your card', () => {
+  test('publishing needs an area chosen deliberately', async ({ page }) => {
+    await seedDevice(page, OUT);
+    await open(page, '/terminal/card/');
+
+    const publish = page.getByRole('button', { name: /publish your card/i });
+    await expect(publish).toBeDisabled();
+    await page.locator('#region').selectOption('st-louis');
+    await expect(publish).toBeEnabled();
+  });
+
+  test('there is nothing to withdraw and nothing to list until a card exists', async ({ page }) => {
+    // Being listed as out is meaningless without a card to resolve the name against, and a
+    // switch you can arm before it does anything is a switch that will be on by surprise.
+    await seedDevice(page, OUT);
+    await open(page, '/terminal/card/');
+
+    await expect(page.getByRole('button', { name: /withdraw my card/i })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: /not listed|listed while out/i })).toHaveCount(0);
+  });
+
+  test('publishing is offered, and withdrawing takes a second deliberate tap', async ({ page }) => {
+    await seedDevice(page, OUT);
+    await open(page, '/terminal/card/');
+
+    await page.locator('#region').selectOption('st-louis');
+    await page.getByRole('button', { name: /publish your card/i }).click();
+
+    // Stored on this device even though no relay could be reached -- the card is the
+    // operator's, not the network's.
+    await expect(page.getByRole('button', { name: /replace your card/i })).toBeVisible();
+
+    // Off by default. Publishing a card must not sign anybody up to being listed nightly.
+    await expect(page.getByRole('button', { name: /^not listed$/i })).toBeVisible();
+
+    await page.getByRole('button', { name: /withdraw my card/i }).click();
+    await expect(page.getByRole('button', { name: /throw the key away/i })).toBeVisible();
+    await page.getByRole('button', { name: /keep my card/i }).click();
+    await expect(page.getByRole('button', { name: /replace your card/i })).toBeVisible();
+  });
+
+  test('withdrawing discards the key rather than claiming to unpublish', async ({ page }) => {
+    await seedDevice(page, OUT);
+    await open(page, '/terminal/card/');
+    await page.locator('#region').selectOption('st-louis');
+    await page.getByRole('button', { name: /publish your card/i }).click();
+
+    const before = await readDevice(page);
+    expect(before.accruing['contact_secret'], 'a card has a key of its own').toBeTruthy();
+    expect(before.accruing['contact_secret']).not.toBe(before.accruing['secret']);
+
+    await page.getByRole('button', { name: /withdraw my card/i }).click();
+    await page.getByRole('button', { name: /throw the key away/i }).click();
+
+    const after = await readDevice(page);
+    expect(after.accruing['contact_secret']).toBeUndefined();
+    expect(after.accruing['card']).toBeUndefined();
+    // The operational identity is untouched. Withdrawing a card is not leaving.
+    expect(after.accruing['secret']).toBe(before.accruing['secret']);
+  });
+});
+
+test.describe('finding somebody', () => {
+  test('an area is chosen, and nothing is shown until one is', async ({ page }) => {
+    await seedDevice(page, OUT);
+    await open(page, '/terminal/find/');
+
+    await expect(page.locator('#area')).toBeVisible();
+    await expect(page.locator('.board')).toHaveCount(0);
+  });
+
+  test('an empty area says so rather than looking broken', async ({ page }) => {
+    // The ordinary case early on, and in most metros for a long time. It is not an error.
+    await seedDevice(page, OUT);
+    await open(page, '/terminal/find/');
+    await page.locator('#area').selectOption('st-louis');
+
+    await expect(page.getByText(/nobody has published a card here/i)).toBeVisible();
+  });
+});
+
 test.describe('patrols', () => {
   test('whether the history survives a wipe is a control, not a setting somebody has to find', async ({ page }) => {
     await seedDevice(page, OUT);
-    await page.goto('/terminal/patrols/');
+    await open(page, '/terminal/patrols/');
 
     const toggle = page.getByRole('button', { name: /panic wipe/i });
     await expect(toggle).toBeVisible();

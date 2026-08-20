@@ -140,9 +140,40 @@ export const CAPABILITIES: Capability[] = [
       // are told you are doing it -- a private note means somebody can believe they are
       // watched while nobody is.
       'they are told you are doing it',
-      'nothing escalates, nobody is paged'
+      'nothing escalates, nobody is paged',
+      // Somebody who owes a refusal accepts to avoid an awkward one. Said before any invite
+      // has arrived, since that is when it changes what a person feels obliged to do.
+      'ignoring sends nothing'
     ],
     control: '#code',
+    requires: ['identity']
+  },
+  {
+    name: 'Your card',
+    screen: 'terminal/card/',
+    claims: [
+      // The claim that makes a card safe to publish at all, and the reason the contact key
+      // exists. Stated before the form, not under it.
+      'signed by a',
+      'separate key',
+      'A card carries no position',
+      // Reducing exposure is never symmetrical with increasing it, and a control that
+      // implies otherwise is a false promise this community would notice.
+      'Publishing cannot be undone'
+    ],
+    control: '#region',
+    requires: ['identity']
+  },
+  {
+    name: 'Find somebody',
+    screen: 'terminal/find/',
+    claims: [
+      'published a card about themselves',
+      'gives them your key',
+      // What a reader of this board must understand before deciding to be on it.
+      'not on this board unless you put yourself there'
+    ],
+    control: '#area',
     requires: ['identity']
   },
   {

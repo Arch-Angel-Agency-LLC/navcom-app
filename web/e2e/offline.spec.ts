@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
-import { seedDevice, serviceWorkerReady } from './device';
+import { seedDevice, serviceWorkerReady, open } from './device';
+import { TERMINAL_ROUTES } from '../src/lib/terminal/routes';
 
 /**
  * With the network off.
@@ -22,16 +23,19 @@ test('every terminal screen loads with the network off', async ({ page, context 
   await seedDevice(page, WREN);
 
   // Install and activate, online.
-  await page.goto('/terminal/');
+  await open(page, '/terminal/');
   await serviceWorkerReady(page);
 
   await context.setOffline(true);
 
-  // The list is the one the service worker precaches, and a test elsewhere asserts that
-  // list matches what was actually built — so this covers every screen without naming them
-  // twice.
-  for (const route of ['', 'sign-on/', 'query/', 'assist/', 'distress/', 'patrols/', 'peers/', 'wipe/', 'log/', 'setup/']) {
-    const response = await page.goto(`/terminal/${route}`);
+  // TERMINAL_ROUTES itself, not a copy of it.
+  //
+  // This was a second hand-maintained list, under a comment claiming it was the first one.
+  // It had already drifted: two screens shipped without being added here, which is the
+  // exact failure `routes.ts` exists to prevent and the exact way it was defeated. A list
+  // that must match another list is not a list, it is a bug with a delay on it.
+  for (const route of TERMINAL_ROUTES) {
+    const response = await open(page, `/terminal/${route}`);
     expect(response?.status(), `/terminal/${route} offline`).toBeLessThan(400);
     await expect(page.locator('h1')).toBeVisible();
   }
@@ -42,7 +46,7 @@ test('the cached directory is readable with no signal', async ({ page, context }
 
   // Opening an area is what saves it — there is no download button because visiting the
   // page IS the download.
-  await page.goto('/terminal/directory/');
+  await open(page, '/terminal/directory/');
   await serviceWorkerReady(page);
 
   // Tapping through, which is how anybody actually gets here — and is a client-side
@@ -71,10 +75,12 @@ test('an area never opened is not silently empty', async ({ page, context }) => 
   // matters is that it fails visibly rather than rendering an empty directory, which would
   // read as "nothing here" instead of "you do not have this".
   await seedDevice(page, WREN);
-  await page.goto('/terminal/');
+  await open(page, '/terminal/');
   await serviceWorkerReady(page);
 
   await context.setOffline(true);
+  // `goto`, not `open`: this navigation is EXPECTED to fail, so there is no hydration to
+  // wait for. Waiting for it here would turn the passing case into a fifteen-second hang.
   const response = await page.goto('/terminal/directory/london/');
 
   if (response && response.status() < 400) {
@@ -89,12 +95,12 @@ test('a patrol can be recorded and read back with no network', async ({ page, co
   // The patrol record says in as many words that it works with no signal. It shipped
   // without being cached, so it did not.
   await seedDevice(page, WREN);
-  await page.goto('/terminal/');
+  await open(page, '/terminal/');
   await serviceWorkerReady(page);
 
   await context.setOffline(true);
 
-  await page.goto('/terminal/sign-on/');
+  await open(page, '/terminal/sign-on/');
   await page.locator('#area').fill('Downtown');
   await page.getByRole('button', { name: /sign on/i }).click();
   await expect(page.locator('[data-station]')).toBeVisible();
@@ -103,6 +109,6 @@ test('a patrol can be recorded and read back with no network', async ({ page, co
   await page.getByRole('button', { name: /i'm home/i }).click();
   await expect(page.locator('[data-came-home]')).toBeVisible();
 
-  await page.goto('/terminal/patrols/');
+  await open(page, '/terminal/patrols/');
   await expect(page.getByText('Downtown')).toBeVisible();
 });

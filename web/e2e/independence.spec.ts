@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { seedDevice } from './device';
+import { seedDevice, open } from './device';
 
 /**
  * The app works with nothing.
@@ -20,7 +20,7 @@ import { seedDevice } from './device';
 test.describe('with nothing at all', () => {
   test('a first visit is offered something to do', async ({ page }) => {
     await seedDevice(page);
-    await page.goto('/terminal/');
+    await open(page, '/terminal/');
 
     // Not "Not configured". An operator who knows nobody is not half set up.
     await expect(page.getByText(/not configured/i)).toHaveCount(0);
@@ -30,20 +30,20 @@ test.describe('with nothing at all', () => {
 
   test('the whole of setup is one field', async ({ page }) => {
     await seedDevice(page);
-    await page.goto('/terminal/setup/');
+    await open(page, '/terminal/setup/');
 
     await page.locator('#callsign').fill('Wren');
     await page.getByRole('button', { name: /generate keypair/i }).click();
 
     await expect(page.getByText('Wren')).toBeVisible();
     // And now the app is ready. Nothing below is required.
-    await page.goto('/terminal/');
+    await open(page, '/terminal/');
     await expect(page.getByRole('link', { name: /cached directory/i })).toBeVisible();
   });
 
   test('the directory works before anything is configured', async ({ page }) => {
     await seedDevice(page);
-    await page.goto('/terminal/directory/');
+    await open(page, '/terminal/directory/');
     await expect(page.getByRole('link', { name: /st\. louis/i })).toBeVisible();
   });
 });
@@ -53,7 +53,7 @@ test.describe('with an identity but no watch', () => {
 
   test('is a normal state, not unfinished setup', async ({ page }) => {
     await seedDevice(page, SOLO);
-    await page.goto('/terminal/');
+    await open(page, '/terminal/');
 
     await expect(page.getByText(/normal way to work/i)).toBeVisible();
     // And it names what actually stops working, so nobody discovers it by holding Distress.
@@ -64,7 +64,7 @@ test.describe('with an identity but no watch', () => {
     // This is the one that shipped broken. Presence took its relays from the Watchtower
     // config, so with no watch there was nowhere to publish and pairing did nothing.
     await seedDevice(page, SOLO);
-    await page.goto('/terminal/peers/');
+    await open(page, '/terminal/peers/');
 
     await expect(page.locator('[data-qr] svg')).toBeVisible();
 
@@ -82,7 +82,7 @@ test.describe('with an identity but no watch', () => {
   test('a whole patrol needs no watch', async ({ page }) => {
     await seedDevice(page, SOLO);
 
-    await page.goto('/terminal/sign-on/');
+    await open(page, '/terminal/sign-on/');
     await page.locator('#area').fill('Downtown');
     await page.getByRole('button', { name: /sign on/i }).click();
     await expect(page.locator('[data-station]')).toBeVisible();
@@ -94,7 +94,7 @@ test.describe('with an identity but no watch', () => {
 
   test('Distress says there is nowhere to send it rather than pretending', async ({ page }) => {
     await seedDevice(page, SOLO);
-    await page.goto('/terminal/distress/');
+    await open(page, '/terminal/distress/');
 
     await expect(page.locator('[data-no-watch]')).toBeVisible();
     await expect(page.getByText(/nowhere to send this/i)).toBeVisible();

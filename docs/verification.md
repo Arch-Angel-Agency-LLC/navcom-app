@@ -190,6 +190,41 @@ Five folded. Two did not, and the second is the interesting one:
 
 ---
 
+## A fifth thing, found by the tests themselves
+
+Not planned. It surfaced while building Milestone 3, and it is the first failure this layer
+caught in *itself* rather than in the app.
+
+**Every browser test was racing hydration.** Each terminal screen is prerendered, so its
+controls are on the glass — visible, enabled, and wired to nothing — for a moment after the
+HTML loads. Playwright fills and clicks far faster than a person does, and landed in that
+window. Under load it did so often enough that specs began failing at random: a peers test,
+then a patrols test, each looking like a bug in a different screen and each passing when run
+alone.
+
+The fix is not a timeout. The terminal layout now sets `data-hydrated` when it mounts, and
+the test helper waits for it — waiting for exactly the thing that must have happened, so it
+cannot pass early on a fast machine or fail late on a slow one. The suite went from
+intermittent to fifty consecutive green, and got roughly twice as fast, because tests were
+previously sitting in retry loops against controls nothing was listening to.
+
+Three things worth keeping from it:
+
+- **A flaky test in a suite with `retries: 0` is a broken test**, and re-running until green
+  is how a project learns to disbelieve its own failures
+- One of the failures was real. Pairing was a `<form>` submit, and a form tapped before
+  hydration does a native GET: the page reloads and the typed code is gone. It is now a
+  plain button, which does nothing until it works — **inert beats destructive**, and what a
+  prerendered screen does before its JavaScript arrives is a design decision
+- The suite had been opening WebSockets to `relay.damus.io` on every run. It now stubs
+  `WebSocket` dead. A test that can fail because a stranger rebooted a volunteer-run box is
+  not a test, and the stubbed state — a pool whose socket never opens — is exactly the phone
+  with no signal that most of these tests are about
+
+A second list had also drifted: the offline spec named the terminal routes itself, under a
+comment claiming it used `TERMINAL_ROUTES`. Two screens shipped without being added to it —
+the precise failure `routes.ts` exists to prevent, defeated by copying it.
+
 ## Order, and why
 
 **3 → 1 → 2 → 4.**

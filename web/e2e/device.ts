@@ -1,4 +1,4 @@
-import type { Page } from '@playwright/test';
+import type { Page, Response } from '@playwright/test';
 
 /**
  * Putting a device into a known state before the app loads.
@@ -46,6 +46,41 @@ interface Seed {
  */
 export async function seedDevice(page: Page, seed: Seed = {}): Promise<void> {
   await page.addInitScript((s: Seed & { secret: string }) => {
+    /**
+     * No test touches the public internet.
+     *
+     * Several screens open relay connections on mount — presence, and now the invite
+     * inbox — so without this the suite quietly dialled `relay.damus.io` on every run.
+     * That is somebody else's volunteer-run server, it makes results depend on their
+     * uptime, and a test that can fail because a stranger rebooted a box is not a test.
+     *
+     * Stubbed rather than blocked at the network layer so the app's own code paths still
+     * run: a pool with a socket that never opens is exactly the state a phone with no
+     * signal is in, which is the state most of these tests are about anyway.
+     */
+    class DeadSocket extends EventTarget {
+      static readonly CONNECTING = 0;
+      static readonly OPEN = 1;
+      static readonly CLOSING = 2;
+      static readonly CLOSED = 3;
+      readonly readyState = 3;
+      readonly url: string;
+      onopen: unknown = null;
+      onclose: unknown = null;
+      onerror: unknown = null;
+      onmessage: unknown = null;
+      constructor(url: string) {
+        super();
+        this.url = url;
+        // Asynchronous, like a real failure. A synchronous throw in a constructor would
+        // take down whatever module was building the pool.
+        setTimeout(() => this.dispatchEvent(new Event('error')), 0);
+      }
+      send(): void {}
+      close(): void {}
+    }
+    (globalThis as unknown as { WebSocket: unknown }).WebSocket = DeadSocket;
+
     // Already set up by an earlier navigation in this test. Leave it alone.
     if (localStorage.getItem('navcom.seeded') === '1') return;
     localStorage.setItem('navcom.seeded', '1');
@@ -68,6 +103,25 @@ export async function seedDevice(page: Page, seed: Seed = {}): Promise<void> {
     localStorage.setItem('navcom.accruing', JSON.stringify(accruing));
     localStorage.setItem('navcom.wipeable', JSON.stringify(wipeable));
   }, { ...seed, secret: TEST_SECRET });
+}
+
+/**
+ * Opens a terminal screen and waits until it is actually interactive.
+ *
+ * `page.goto` resolves when the HTML has loaded, and every terminal screen is prerendered —
+ * so the controls are on screen, visible and enabled, a beat before anything is wired to
+ * them. Playwright fills and clicks far faster than a person does, and lands in that
+ * window; under parallel load it landed there often enough that several specs failed at
+ * random, each looking like a bug in a different screen.
+ *
+ * Waiting on the terminal layout's own hydration flag is the fix, rather than a timeout:
+ * it waits for exactly the thing that has to have happened, and it cannot pass early on a
+ * fast machine or fail late on a slow one.
+ */
+export async function open(page: Page, path: string): Promise<Response | null> {
+  const response = await page.goto(path);
+  await page.waitForSelector('html[data-hydrated="true"]', { timeout: 15_000 });
+  return response;
 }
 
 /** What is actually on the device now, for asserting on the result of a flow. */
