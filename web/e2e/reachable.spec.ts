@@ -145,6 +145,67 @@ test.describe('distress', () => {
   });
 });
 
+test.describe('distress before the app has loaded', () => {
+  /**
+   * The gap the bundle budget was standing in for.
+   *
+   * Every terminal screen is readable in about half a second and wired seconds later — three
+   * on a congested cell, ten on a throttled plan. On Distress that meant the page said "Hold
+   * to send" and holding did nothing, with no working `tel:` link either.
+   *
+   * These block the module bundle entirely, which is the same state as "it has not arrived
+   * yet" and is strictly harsher than any real network.
+   */
+  const withoutTheApp = async (page: import('@playwright/test').Page) => {
+    await page.route('**/_app/immutable/**/*.js', (route) => route.abort());
+  };
+
+  test('the person you would call is reachable with no application at all', async ({ page }) => {
+    await seedDevice(page, { ...OUT, contact: { label: 'Sam', number: '+15550100' } });
+    await withoutTheApp(page);
+    await page.goto('/terminal/distress/', { waitUntil: 'commit' });
+
+    const text = page.getByRole('link', { name: /text sam/i });
+    const call = page.getByRole('link', { name: /call sam/i });
+    await expect(text).toBeVisible();
+    await expect(call).toBeVisible();
+    await expect(text).toHaveAttribute('href', 'sms:+15550100');
+    await expect(call).toHaveAttribute('href', 'tel:+15550100');
+  });
+
+  test('says nothing at all when there is no contact to offer', async ({ page }) => {
+    // An empty "Your person" heading would be worse than no heading: it reads as a safety
+    // net that exists and is broken, rather than one that was never set up.
+    await seedDevice(page, OUT);
+    await withoutTheApp(page);
+    await page.goto('/terminal/distress/', { waitUntil: 'commit' });
+
+    await expect(page.getByRole('heading', { name: /your person/i })).toHaveCount(0);
+  });
+
+  test('does not survive as a duplicate once the app is running', async ({ page }) => {
+    // Two "Text Sam" links would be the fallback outliving its purpose. Svelte's version
+    // carries the written message; this one is deliberately plainer.
+    await seedDevice(page, { ...OUT, contact: { label: 'Sam', number: '+15550100' } });
+    await open(page, '/terminal/distress/');
+
+    await expect(page.getByRole('link', { name: /text sam/i })).toHaveCount(1);
+    await expect(page.locator('#reach-early')).toHaveCount(0);
+    // And the surviving one is the app's, which pre-writes the message.
+    await expect(page.getByRole('link', { name: /text sam/i })).toHaveAttribute('href', /body=/);
+  });
+
+  test('a broken or foreign storage blob does not take the page down', async ({ page }) => {
+    // A fallback that throws would break the screen it exists to protect.
+    await page.addInitScript(() => localStorage.setItem('navcom.accruing', 'not json'));
+    await withoutTheApp(page);
+    await page.goto('/terminal/distress/', { waitUntil: 'commit' });
+
+    await expect(page.locator('h1')).toBeVisible();
+    await expect(page.getByRole('heading', { name: /your person/i })).toHaveCount(0);
+  });
+});
+
 test.describe('wipe', () => {
   test('panic wipe is a hold and burn asks for the callsign', async ({ page }) => {
     // Opposite shapes on purpose: a wipe costs an evening and speed wins; a burn costs

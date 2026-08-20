@@ -132,6 +132,23 @@ which the screen says *"Hold to send"* and holding does nothing.
 That is the thing the bundle budget was standing in for, and it is better fixed directly than
 by shaving kilobytes off an unrelated screen.
 
+**Fixed 2026-08-20.** A ~600-byte classic inline script, injected into terminal pages only by
+`hooks.server.ts`, fills the `sms:` and `tel:` links from `localStorage` at parse time. The
+person an operator would call is now reachable **with the application bundle blocked
+entirely**, which is a harsher condition than any real network — there is a browser test that
+aborts every `_app/immutable/**.js` request and asserts the links still work.
+
+It cost two bugs worth recording:
+
+- It went into `app.html` first, which is the shell for **every** page — instantly breaking
+  the public site's zero-JavaScript invariant. `rendered.test.ts` caught it the same minute.
+  A script tag on a public page is a failure whatever the script does, so the injection moved
+  into a route-scoped hook
+- The fallback section is `hidden` until it has something to show, and `hidden` did not hide:
+  `.terminal section { display: flex }` beats the UA stylesheet's `[hidden] { display: none }`.
+  Operators with no contact saw an empty *"Your person"* heading, which reads as a safety net
+  that exists and is broken rather than one never set up
+
 ## The part the data does not decide
 
 [`principles.md`](../principles.md) says *"some of the most valuable operators have the

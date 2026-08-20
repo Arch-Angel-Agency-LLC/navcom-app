@@ -44,6 +44,9 @@
   onMount(() => {
     hasWatch = operator.hasWatch;
     contact = loadContact();
+    // The early block has done its job. Svelte's version carries the written message and
+    // the full wording; leaving both would show the same person twice.
+    document.getElementById('reach-early')?.remove();
     callsign = operator.callsign;
   });
 
@@ -125,6 +128,24 @@
   <h1>Distress</h1>
 </header>
 
+<!--
+  Filled by the inline script in app.html, before the bundle arrives, and removed by
+  `onMount` below once Svelte's own version is on the screen. Deliberately outside every
+  `{#if}`: it has to be in the prerendered HTML, because the whole point is that it works
+  when nothing has run yet.
+
+  Two copies never show at once -- this one is `hidden` until the script finds a contact, and
+  gone by the time the app can render its own.
+-->
+<section class="person" id="reach-early" hidden>
+  <h2>Your person</h2>
+  <div class="reach" id="reach-now"></div>
+  <p class="cost">
+    Opens your messages. <strong>You have to press send</strong> — a web app cannot do that
+    for you.
+  </p>
+</section>
+
 {#if contact}
   <!--
     First on the screen, always. For an operator with no watch this is the entire safety
@@ -167,6 +188,11 @@
     <p>
       This wakes people up. It keeps sending until a human answers — <strong>not an
       agent</strong> — and only you can stop it.
+    </p>
+    <p class="cost">
+      Calling your own person <strong>works before the rest of this screen does</strong>, and
+      with no signal at all. Everything below needs the app to have finished loading; a phone
+      call does not.
     </p>
     <label for="d">Anything you can say <span class="opt">optional</span></label>
     <textarea id="d" bind:value={text} placeholder="two of them, heading east"></textarea>

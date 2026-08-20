@@ -24,6 +24,20 @@
 }
 
 .terminal section { display: flex; flex-direction: column; }
+
+/*
+  `hidden` has to actually hide.
+
+  The UA stylesheet's `[hidden] { display: none }` loses to any author rule that sets
+  `display` -- and the rule above sets it on every section. So a section marked hidden stayed
+  on screen, which a browser test caught the day it was written: the pre-bundle Distress
+  fallback rendered an empty "Your person" heading for operators who have no contact, which
+  reads as a safety net that exists and is broken rather than one never set up.
+
+  `!important` because that is what it is for: an author rule restoring a UA behaviour the
+  author accidentally broke.
+*/
+[hidden] { display: none !important; }
 .terminal section p { margin: 0 0 .6rem; color: var(--t-muted); line-height: 1.55; }
 .terminal section p:last-child { margin-bottom: 0; }
 .terminal strong { color: var(--t-ink); font-weight: 650; }

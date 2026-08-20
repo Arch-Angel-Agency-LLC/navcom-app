@@ -138,6 +138,17 @@ export const CAPABILITIES: Capability[] = [
     requires: ['identity']
   },
   {
+    name: 'Your person, before the app loads',
+    screen: 'terminal/distress/',
+    claims: [
+      // The claim the pre-bundle fallback exists to keep true. It is stated on the screen
+      // because an operator deciding whether to rely on this needs to know it is the part
+      // that does not depend on anything arriving.
+      'works before the rest of this screen does'
+    ],
+    requires: ['identity']
+  },
+  {
     name: 'Your own patrols',
     screen: 'terminal/patrols/',
     claims: [
