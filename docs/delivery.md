@@ -180,10 +180,33 @@ display rule or the bundle budget fails instead of shipping.
 
 ## Budgets
 
-The device floor is a prepaid Android 8 with ~400MB free [C6], and it is a target rather
-than an aspiration — so it gets numbers:
+Budgets get numbers, and the numbers get a derivation. The old one — *"initial JS under
+100KB gzipped"*, justified by a prepaid Android 8 — was never measured, disagreed with the
+140KB the build actually enforced, and was measuring the wrong axis. Both are replaced.
 
-- **Initial JS under 100KB gzipped**
+**Measured 2026-08-20** — [`research/device-floor.md`](research/device-floor.md) has the
+method and the market data:
+
+| | |
+|---|---|
+| **Design point** | 0.8 Mbps, 6× CPU penalty — a congested LTE cell on a cheap phone |
+| **Target** | interactive within **4 s**, cold, first load |
+| **Measured cost** | ~1540 ms fixed, plus ~1050 ms per 100 kB |
+| **Hard limit** | **220 kB** of JavaScript, worst terminal page, gzipped |
+| **Ratchet** | **160 kB** — prints `WARN`, does not fail |
+
+Three things that decided the shape:
+
+- **Bandwidth dominates, not the device.** Doubling the CPU penalty costs 250 ms; halving
+  bandwidth costs seconds. The device floor is still real — it is about **storage**, and it
+  is why this is a PWA with nothing to install — but it never governed bundle size
+- **The cost is paid once.** A repeat visit is ~300 ms on any network and identical offline.
+  This number governs a first install, not a night on patrol
+- **A budget at 99% forces a crisis rather than a decision**, which is how the last raise
+  happened silently. The ratchet fires with room left to think
+
+The public site's budget is unchanged and is not a size: **zero JavaScript**, failing on the
+first byte.
 - **The public directory prerenders and works with JavaScript disabled.** Not purity: it is
   the fastest option on a slow phone, the most auditable one for the Skeptic, and the most
   reliable on one bar of signal for the Outpost

@@ -91,6 +91,21 @@ argues for something real — that NavCom is a PWA with nothing to install, so a
 room can still run it. That decision is already made. It has no bearing on bundle size, and
 using it to justify a JS budget conflates two unrelated things.
 
+## What another 100 kB actually costs
+
+Measured rather than extrapolated: the terminal was padded with ~100 kB of un-tree-shakeable
+JavaScript, rebuilt, and run against the same profiles.
+
+| Bundle | 1.6 Mbps | 0.8 Mbps | 128 kbps |
+|---|---|---|---|
+| 139 kB | 1.81 s | 3.00 s | 10.6 s |
+| 240 kB | 2.41 s | 4.05 s | 17.3 s |
+| **per +100 kB** | **+0.60 s** | **+1.05 s** | **+6.6 s** |
+
+Fitting those gives ~1540 ms of fixed cost plus ~1050 ms per 100 kB at 0.8 Mbps, which is
+what the budget is now derived from. The relationship is close to linear, so the derivation
+holds for a bundle two or three times this size and should be re-measured beyond that.
+
 ## What this means for the budget
 
 The budget is doing something genuinely useful, and it is not the thing it claims. It works
@@ -100,10 +115,22 @@ measured instead of assumed. That value is real and is independent of the number
 What it does not do is model a device. Nobody has ever loaded this on an Android 8 phone,
 and the numbers above suggest that if somebody did, it would be fine.
 
-If the budget is re-based, the honest axis is **first-load transfer on a degraded
-connection**, not CPU and not storage. At 1.6 Mbps each additional 100 kB costs roughly half
-a second; at 128 kbps it costs about six. A target expressed as a time — *"interactive within
-N seconds at 1.6 Mbps, cold"* — would mean something a size in kilobytes does not.
+**Re-based on 2026-08-20.** The axis is first-load time on a degraded connection: hard limit
+**220 kB** (4 s to interactive at 0.8 Mbps), ratchet at **160 kB** that warns without failing.
+The build prints the derived time alongside the size, so the number carries its own reason.
+
+## The gap this measurement actually found
+
+Worth more than the budget itself: **the Distress screen has no working control before its
+JavaScript arrives.**
+
+The prerendered HTML contains one button wired to nothing, and zero `sms:` or `tel:` links —
+the operator's own person is rendered from `localStorage`, so it needs script like everything
+else. On a congested cell that is a three-second window, and on a throttled plan ten, during
+which the screen says *"Hold to send"* and holding does nothing.
+
+That is the thing the bundle budget was standing in for, and it is better fixed directly than
+by shaving kilobytes off an unrelated screen.
 
 ## The part the data does not decide
 

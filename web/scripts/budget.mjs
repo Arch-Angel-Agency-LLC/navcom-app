@@ -26,21 +26,67 @@ const BUILD = fileURLToPath(new URL('../build/', import.meta.url));
  * budget is not "small", it is nothing, and it fails on the first byte.
  *
  * The Field Terminal is an application. It needs script to sign, seal and hold state
- * offline. Its budget is sized for the device floor — a prepaid Android 8 with ~400MB free
- * — rather than for what a laptop tolerates.
+ * offline.
+ *
+ * ## Where the terminal's number comes from
+ *
+ * It used to come from "a prepaid Android 8 with ~400MB free", which was never measured and
+ * turned out to be the wrong axis entirely — see `docs/research/device-floor.md`. Measured
+ * against the built terminal at a 6x CPU penalty:
+ *
+ * | bundle | 1.6 Mbps | 0.8 Mbps | 128 kbps |
+ * |--------|----------|----------|----------|
+ * | 139 kB |  1.81 s  |  3.00 s  |  10.6 s  |
+ * | 240 kB |  2.41 s  |  4.05 s  |  17.3 s  |
+ *
+ * Two findings decide the shape of this budget:
+ *
+ * - **Bandwidth dominates, not the device.** Doubling the CPU penalty costs 250 ms;
+ *   halving bandwidth costs seconds. A budget justified by a slow processor was measuring
+ *   the wrong thing
+ * - **The cost is paid once.** A repeat visit is ~300 ms on any network and identical
+ *   offline, because the service worker has it. This number governs a first install, not a
+ *   night on patrol
+ *
+ * So the budget is derived from a **time**, on the connection that actually degrades:
+ *
+ *   design point   0.8 Mbps, 6x CPU  — a congested LTE cell, which is where a first
+ *                                      install most plausibly happens
+ *   target         interactive within 4 s, cold
+ *   measured       ~1540 ms fixed + ~1050 ms per 100 kB
+ *   → limit        (4000 - 1540) / 1050 * 100  ≈  235 kB, rounded down to 220 kB
+ *
+ * **Re-derive it rather than nudging it.** The last time this number moved it went from
+ * 100 kB to 140 kB with no comment, and the two figures disagreed in two files for months.
+ * If 220 is wrong, change the target or the design point and recompute — both are here.
  */
+
+/** Measured coefficients, so the report can state a time and not just a size. */
+const COLD_FIXED_MS = 1540;
+const COLD_MS_PER_KB = 1050 / 100;
+
 const SURFACES = {
   public: {
     label: 'public site',
     match: (name) => !name.startsWith('terminal/'),
     js: 0,
+    warn: 0,
     page: 250 * 1024
   },
   terminal: {
     label: 'field terminal',
     match: (name) => name.startsWith('terminal/'),
-    js: 140 * 1024,
-    page: 200 * 1024
+    /** Hard stop. Derived above: 4 s to interactive at 0.8 Mbps on a cheap phone. */
+    js: 220 * 1024,
+    /**
+     * The ratchet, and the actually useful line.
+     *
+     * A budget only forces a decision while it is near, and one at 99% forces a *crisis* —
+     * which is how the last silent raise happened. This prints loudly and does not fail, so
+     * growth is noticed while there is still room to decide what to do about it.
+     */
+    warn: 160 * 1024,
+    page: 260 * 1024
   }
 };
 
@@ -122,6 +168,13 @@ for (const surface of Object.values(SURFACES)) {
   const worst = own[0];
 
   console.log('');
+  if (surface.js > 0) {
+    // The number that matters, in the unit the budget was derived from. A size means
+    // nothing on its own; seconds-to-usable is what somebody standing outside experiences.
+    const cold = (COLD_FIXED_MS + (worstJs / 1024) * COLD_MS_PER_KB) / 1000;
+    console.log(`  cold first load on a congested cell (0.8 Mbps, cheap phone): ~${cold.toFixed(1)}s to interactive`);
+    console.log('  repeat visits and offline are ~0.3s regardless — this governs a first install.\n');
+  }
   for (const [label, actual, budget, note] of [
     ['JavaScript', worstJs, surface.js, 'worst page'],
     ['Page total', worst.total, surface.page, worst.name]
@@ -129,10 +182,17 @@ for (const surface of Object.values(SURFACES)) {
     const ok = actual <= budget;
     if (!ok) failed = true;
     const pct = budget === 0 ? (actual === 0 ? 0 : Infinity) : Math.round((actual / budget) * 100);
+    const warned = label === 'JavaScript' && ok && surface.warn > 0 && actual > surface.warn;
     console.log(
-      `  ${ok ? 'PASS' : 'FAIL'}  ${label.padEnd(11)} ${kb(actual).padStart(9)} / ${kb(budget).padStart(9)}` +
+      `  ${!ok ? 'FAIL' : warned ? 'WARN' : 'PASS'}  ${label.padEnd(11)} ${kb(actual).padStart(9)} / ${kb(budget).padStart(9)}` +
         `  (${pct === Infinity ? 'over' : pct + '%'})  ${note}`
     );
+    if (warned) {
+      console.log(
+        `        past the ${kb(surface.warn)} ratchet. Not a failure — but the next addition is a` +
+          `\n        decision, not an accident. Re-derive the limit or take something out.`
+      );
+    }
   }
   console.log('');
 }
