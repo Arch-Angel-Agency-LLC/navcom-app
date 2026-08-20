@@ -394,7 +394,7 @@ while.
 | 0.1 | **Carry it for one night** | **human** | Three hours in the field finds more than three days of reading. The text will be too long, a flow will have a step too many, and something will be in the wrong place |
 | 0.2 | **Two devices, one relay** | either | Peer presence passes unit tests and has never crossed a relay. If the wrapping is wrong, it is wrong for everybody |
 | 0.3 | **Daemon and executor together** | **human — the Jetson** | Both subscribe to `20911`. I have reasoned that the two response streams do not confuse a client, and reasoning is not the same as watching it |
-| 0.4 | **Airplane mode, cold start** | either | The service worker has never been tested offline. The directory, the patrol record and Distress all claim to work there |
+| 0.4 | ~~Airplane mode, cold start~~ | **done — automated** | Playwright drives it: every screen loads with the network off, an area survives a reload, and a patrol can be recorded and read back. It found a real bug — tapping through to an area never cached the document, so *"opening an area is what saves it"* was false for the only path anybody takes |
 
 **Prefer a finding here to a feature anywhere below.** A gap found on real hardware is worth
 more than a screen built against an imagined one.
