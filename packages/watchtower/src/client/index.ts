@@ -5,6 +5,16 @@ import { installNodeWebSocket } from "../shared/nostr-node.js";
 import { loadOrCreateKeypair } from "../shared/identity.js";
 import { loadClientConfig, type ClientConfig } from "./config.js";
 import { sendSignal, sendDistressUntilAcknowledged, waitForResponse } from "./signal.js";
+import { watchtowerAt, type WatchtowerAddress } from "@navcom/core";
+
+/**
+ * Where signals go, and who can read them.
+ *
+ * One place, so no command can seal to the address when it meant the holders. A box has no
+ * `holders` and is its own holder; a squad lists one pubkey per phone.
+ */
+const watchtowerAddress = (config: ClientConfig): WatchtowerAddress =>
+  watchtowerAt(config.watchtower.pubkey, config.watchtower.holders);
 import { verifyInclusion, type LogReviewPayload } from "@navcom/core";
 import { checkDark } from "./dark.js";
 import type { OnStationPayload, QueryPayload, ResponsePayload , AssistPayload } from "../shared/payloads.js";
@@ -110,7 +120,7 @@ program
         position: opts.sharePosition ? { lat: opts.lat, lon: opts.lon, precision_m: opts.precision } : null,
       };
       const start = Date.now();
-      const sent = await sendSignal(pool, config.relays.urls, secretKey, config.watchtower.pubkey, "on-station", payload);
+      const sent = await sendSignal(pool, config.relays.urls, secretKey, watchtowerAddress(config), "on-station", payload);
       console.log(`-> on-station area=${opts.area} duration=${opts.duration}s`);
       const response = await waitForResponse(
         pool, config.relays.urls, secretKey, pubkey, config.watchtower.pubkey, sent, RESPONSE_TIMEOUT_MS,
@@ -125,7 +135,7 @@ program
   .action(async () => {
     await withClient(program.opts(), async ({ pool, config, secretKey, pubkey }) => {
       const start = Date.now();
-      const sent = await sendSignal(pool, config.relays.urls, secretKey, config.watchtower.pubkey, "routine", {});
+      const sent = await sendSignal(pool, config.relays.urls, secretKey, watchtowerAddress(config), "routine", {});
       console.log("-> routine");
       const response = await waitForResponse(
         pool, config.relays.urls, secretKey, pubkey, config.watchtower.pubkey, sent, RESPONSE_TIMEOUT_MS,
@@ -143,7 +153,7 @@ program
     await withClient(program.opts(), async ({ pool, config, secretKey, pubkey }) => {
       const payload: QueryPayload = { text: opts.text, ...(opts.area ? { area: opts.area } : {}) };
       const start = Date.now();
-      const sent = await sendSignal(pool, config.relays.urls, secretKey, config.watchtower.pubkey, "query", payload);
+      const sent = await sendSignal(pool, config.relays.urls, secretKey, watchtowerAddress(config), "query", payload);
       console.log(`-> query "${opts.text}"`);
       const response = await waitForResponse(
         pool, config.relays.urls, secretKey, pubkey, config.watchtower.pubkey, sent, RESPONSE_TIMEOUT_MS,
@@ -166,7 +176,7 @@ program
         ...(opts.area ? { area: opts.area } : {})
       };
       const start = Date.now();
-      const sent = await sendSignal(pool, config.relays.urls, secretKey, config.watchtower.pubkey, "assist", payload);
+      const sent = await sendSignal(pool, config.relays.urls, secretKey, watchtowerAddress(config), "assist", payload);
       console.log("-> assist");
       const response = await waitForResponse(
         pool, config.relays.urls, secretKey, pubkey, config.watchtower.pubkey, sent, RESPONSE_TIMEOUT_MS,
@@ -197,7 +207,7 @@ program
       console.log("-> DISTRESS (Ctrl-C to stand down)");
       try {
         const response = await sendDistressUntilAcknowledged(
-          pool, config.relays.urls, secretKey, pubkey, config.watchtower.pubkey,
+          pool, config.relays.urls, secretKey, pubkey, watchtowerAddress(config),
           { position: null, area: opts.area ?? null, ...(opts.text ? { text: opts.text } : {}) },
           {
             signal: controller.signal,
@@ -235,7 +245,7 @@ program
         ...(opts.since ? { since: Number(opts.since) } : {}),
         ...(opts.limit ? { limit: Number(opts.limit) } : {}),
       };
-      const sent = await sendSignal(pool, config.relays.urls, secretKey, config.watchtower.pubkey, "log-review", payload);
+      const sent = await sendSignal(pool, config.relays.urls, secretKey, watchtowerAddress(config), "log-review", payload);
       const response = await waitForResponse(
         pool, config.relays.urls, secretKey, pubkey, config.watchtower.pubkey, sent, RESPONSE_TIMEOUT_MS,
       );
@@ -268,7 +278,7 @@ program
   .action(async () => {
     await withClient(program.opts(), async ({ pool, config, secretKey, pubkey }) => {
       const start = Date.now();
-      const sent = await sendSignal(pool, config.relays.urls, secretKey, config.watchtower.pubkey, "stood-down", {});
+      const sent = await sendSignal(pool, config.relays.urls, secretKey, watchtowerAddress(config), "stood-down", {});
       console.log("-> stood-down");
       const response = await waitForResponse(
         pool, config.relays.urls, secretKey, pubkey, config.watchtower.pubkey, sent, RESPONSE_TIMEOUT_MS,

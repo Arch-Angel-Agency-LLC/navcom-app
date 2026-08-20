@@ -26,6 +26,7 @@ import { get, set, clearField } from './storage';
 import { watch } from './watch.svelte';
 import { seenRoots } from './roots';
 import { recordPatrol } from './patrol';
+import { watchtowerAt, type WatchtowerAddress } from '@navcom/core';
 import { presence } from './presence.svelte';
 import { announceListed, beatListed, stopListed } from './public.svelte';
 import { position } from './position.svelte';
@@ -77,7 +78,7 @@ function ctx() {
 async function send(type: SignalType, payload: object, timeoutMs = 10_000) {
   const { config, identity } = ctx();
   const sent = await sendSignal(
-    pool, config.relays, identity.secretKey, config.pubkey, type, payload as never
+    pool, config.relays, identity.secretKey, watchAddress(config), type, payload as never
   );
   return waitForResponse(
     pool, config.relays, identity.secretKey, identity.pubkey, config.pubkey, sent, timeoutMs
@@ -103,6 +104,16 @@ async function run<T>(fn: () => Promise<T>): Promise<T | null> {
   } finally {
     busy = false;
   }
+}
+
+/**
+ * Where a signal goes, and who can read it.
+ *
+ * One place, so nothing can seal to the address when it meant the holders. A box has no
+ * holders listed and is its own holder; a squad lists one pubkey per phone.
+ */
+function watchAddress(config: { pubkey: string; holders: string[] }): WatchtowerAddress {
+  return watchtowerAt(config.pubkey, config.holders);
 }
 
 export const operator = {
@@ -292,7 +303,7 @@ export const operator = {
     distressController = new AbortController();
     try {
       await sendDistressUntilAcknowledged(
-        pool, config.relays, identity.secretKey, identity.pubkey, config.pubkey,
+        pool, config.relays, identity.secretKey, identity.pubkey, watchAddress(config),
         // A Distress carries the last known fix where one exists, and the declared area
         // where it does not. Somewhere to start beats nothing to go on.
         {

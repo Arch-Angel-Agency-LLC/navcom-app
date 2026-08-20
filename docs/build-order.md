@@ -454,7 +454,7 @@ is 0.2 — two real devices on one relay — which is a human check, not code.
 | | Item | Owner | Cost |
 |---|---|---|---|
 | 4.1 | **Watch as a mode of the app** | agent | Replaces the Console-from-the-box plan entirely |
-| 4.2 | **Sealing to several keys** | agent | The enabling change. Without it, rotating watch means sharing one key forever |
+| 4.2 | ~~Sealing to several keys~~ | **done** | One encryption, one 32-byte wrap per holder. No pubkeys in the envelope, so a relay never sees the roster. A single-holder watch produces the same shape as a squad, so nobody can sort Watchtowers into "box" and "squad" without decrypting |
 | 4.3 | **A declaration must not read as a safety monitor** | agent | The hardest problem in this milestone, and it is wording and layout rather than mechanism |
 | 4.4 | Handover | agent | Specified since the beginning, never implemented, and phone-held watch makes it nightly |
 

@@ -11,7 +11,8 @@ import type { Event } from 'nostr-tools/core';
 import { finalizeEvent, verifyEvent } from 'nostr-tools/pure';
 import type { SimplePool } from 'nostr-tools/pool';
 
-import { seal, open } from './crypto/envelope.js';
+import { open } from './crypto/envelope.js';
+import { sealToGroup, type WatchtowerAddress } from './crypto/group.js';
 import type { SecretKey } from './crypto/keys.js';
 import { KIND_DISTRESS, KIND_RESPONSE, KIND_SIGNAL, type SignalType } from './events/kinds.js';
 import type { DistressPayload, SignalPayload } from './events/signal.js';
@@ -35,16 +36,17 @@ export async function sendSignal(
   pool: SimplePool,
   relays: string[],
   secret: SecretKey,
-  watchtower: string,
+  watchtower: WatchtowerAddress,
   type: SignalType,
   payload: SignalPayload
 ): Promise<Event> {
   const event = finalizeEvent(
     {
       kind: KIND_SIGNAL,
-      // Type unencrypted so a client can filter without decrypting; payload sealed.
-      tags: [['p', watchtower], ['t', type]],
-      content: seal(secret, watchtower, payload),
+      // Type unencrypted so a client can filter without decrypting; payload sealed to
+      // whoever holds the watch.
+      tags: [['p', watchtower.pubkey], ['t', type]],
+      content: sealToGroup(secret, watchtower.holders, payload),
       created_at: Math.floor(Date.now() / 1000)
     },
     secret
@@ -57,15 +59,15 @@ export async function sendDistress(
   pool: SimplePool,
   relays: string[],
   secret: SecretKey,
-  watchtower: string,
+  watchtower: WatchtowerAddress,
   payload: DistressPayload
 ): Promise<Event> {
   const event = finalizeEvent(
     {
       kind: KIND_DISTRESS,
       // No `t` tag: identified by kind, so a subscriber filtering signal types cannot miss it.
-      tags: [['p', watchtower]],
-      content: seal(secret, watchtower, payload),
+      tags: [['p', watchtower.pubkey]],
+      content: sealToGroup(secret, watchtower.holders, payload),
       created_at: Math.floor(Date.now() / 1000)
     },
     secret
@@ -80,6 +82,13 @@ export function waitForResponse(
   relays: string[],
   secret: SecretKey,
   ourPubkey: string,
+  /**
+   * The Watchtower **address**, not a holder.
+   *
+   * A response is signed by the watch identity and sealed straight back to the one operator
+   * who asked, so the return leg has no group envelope: there is exactly one recipient and
+   * wrapping a key for them would be overhead with no membership to express.
+   */
   watchtower: string,
   sent: Event,
   timeoutMs: number
@@ -211,7 +220,7 @@ export async function sendDistressUntilAcknowledged(
   relays: string[],
   secret: SecretKey,
   ourPubkey: string,
-  watchtower: string,
+  watchtower: WatchtowerAddress,
   payload: DistressPayload,
   opts: DistressOptions = {}
 ): Promise<ResponsePayload> {
@@ -244,7 +253,7 @@ export async function sendDistressUntilAcknowledged(
     if (sent) {
       try {
         const response = await waitForResponse(
-          pool, relays, secret, ourPubkey, watchtower, sent, ackWindow
+          pool, relays, secret, ourPubkey, watchtower.pubkey, sent, ackWindow
         );
         // An absent responder kind is treated as not-a-human. The spec requires the field on
         // every response, so a missing one is a broken responder, and guessing "human"

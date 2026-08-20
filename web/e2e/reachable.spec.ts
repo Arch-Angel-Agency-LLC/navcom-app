@@ -41,6 +41,47 @@ test.describe('setup', () => {
   });
 });
 
+test.describe('a squad-held watch', () => {
+  test('who holds it can be listed, and is empty by default', async ({ page }) => {
+    // Empty is the common case: a box holds its own key. The field exists because a squad
+    // with no box is the arrangement this project expects most, and until now it had no
+    // way to say so.
+    await seedDevice(page, OUT);
+    await open(page, '/terminal/setup/');
+
+    const holders = page.locator('#holders');
+    await expect(holders).toBeVisible();
+    await expect(holders).toHaveValue('');
+  });
+
+  test('a key that is not a key is refused rather than silently dropped', async ({ page }) => {
+    // A wrong entry here means somebody silently cannot read signals, which surfaces as an
+    // unanswered Distress rather than as an error.
+    await seedDevice(page, OUT);
+    await open(page, '/terminal/setup/');
+
+    await page.locator('#pubkey').fill('b'.repeat(64));
+    await page.locator('#holders').fill('not-a-key');
+    await page.getByRole('button', { name: /^connect$/i }).click();
+
+    await expect(page.getByText(/is not a pubkey/i)).toBeVisible();
+  });
+
+  test('holders are saved and read back', async ({ page }) => {
+    await seedDevice(page, OUT);
+    await open(page, '/terminal/setup/');
+
+    const one = 'c'.repeat(64);
+    const two = 'd'.repeat(64);
+    await page.locator('#pubkey').fill('b'.repeat(64));
+    await page.locator('#holders').fill(`${one}\n${two}`);
+    await page.getByRole('button', { name: /^connect$/i }).click();
+
+    const device = await readDevice(page);
+    expect(device.accruing['watch_holders']).toEqual([one, two]);
+  });
+});
+
 test.describe('sign-on', () => {
   test('every choice an operator makes is on the page', async ({ page }) => {
     await seedDevice(page, OUT);

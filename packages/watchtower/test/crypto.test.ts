@@ -1,8 +1,8 @@
 import { describe, it, expect } from "vitest";
 import { generateSecretKey, getPublicKey } from "nostr-tools/pure";
-import { encryptPayload, decryptPayload } from "../src/shared/crypto.js";
+import { openSignal, sealResponse, sealSignal } from "../src/shared/crypto.js";
 
-describe("encryptPayload / decryptPayload", () => {
+describe("sealing in both directions", () => {
   it("round-trips a payload between two keypairs", () => {
     const a = generateSecretKey();
     const b = generateSecretKey();
@@ -10,9 +10,9 @@ describe("encryptPayload / decryptPayload", () => {
     const aPub = getPublicKey(a);
 
     const payload = { type: "ack", responder: "watchtower", responder_kind: "agent", text: null, provenance: null };
-    const ciphertext = encryptPayload(a, bPub, payload);
+    const ciphertext = sealSignal(a, [bPub], payload);
 
-    const decrypted = decryptPayload<typeof payload>(b, aPub, ciphertext);
+    const decrypted = openSignal<typeof payload>(b, aPub, ciphertext);
     expect(decrypted).toEqual(payload);
   });
 
@@ -23,9 +23,9 @@ describe("encryptPayload / decryptPayload", () => {
     const bPub = getPublicKey(b);
     const aPub = getPublicKey(a);
 
-    const ciphertext = encryptPayload(a, bPub, { secret: "value" });
+    const ciphertext = sealSignal(a, [bPub], { secret: "value" });
 
-    expect(() => decryptPayload(eve, aPub, ciphertext)).toThrow();
+    expect(() => openSignal(eve, aPub, ciphertext)).toThrow();
   });
 
   it("ciphertext differs across calls even for the same payload (fresh nonce)", () => {
@@ -33,8 +33,8 @@ describe("encryptPayload / decryptPayload", () => {
     const b = generateSecretKey();
     const bPub = getPublicKey(b);
 
-    const c1 = encryptPayload(a, bPub, { x: 1 });
-    const c2 = encryptPayload(a, bPub, { x: 1 });
+    const c1 = sealSignal(a, [bPub], { x: 1 });
+    const c2 = sealSignal(a, [bPub], { x: 1 });
     expect(c1).not.toBe(c2);
   });
 
@@ -45,7 +45,7 @@ describe("encryptPayload / decryptPayload", () => {
     const aPub = getPublicKey(a);
 
     const payload = { area: "district-7", position: { lat: 1.23, lon: -4.56, precision_m: 500 }, tags: ["x", "y"] };
-    const ciphertext = encryptPayload(a, bPub, payload);
-    expect(decryptPayload(b, aPub, ciphertext)).toEqual(payload);
+    const ciphertext = sealSignal(a, [bPub], payload);
+    expect(openSignal(b, aPub, ciphertext)).toEqual(payload);
   });
 });

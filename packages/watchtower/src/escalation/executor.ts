@@ -13,7 +13,7 @@ import {
   type ResponsePayload,
 } from "@navcom/core";
 import { installNodeWebSocket } from "../shared/nostr-node.js";
-import { encryptPayload, decryptPayload } from "../shared/crypto.js";
+import { sealResponse, openSignal } from "../shared/crypto.js";
 import { KIND_SIGNAL, KIND_DISTRESS, KIND_RESPONSE } from "../shared/kinds.js";
 import { pageAll } from "./pager.js";
 import { due, readDrillState, runDrill, schedule, writeDrillState, type DrillState } from "./drills.js";
@@ -118,7 +118,7 @@ export class EscalationExecutor {
       kind: KIND_RESPONSE,
       created_at: now(),
       tags: [["p", ladder.operator], ["e", distressId]],
-      content: encryptPayload(this.secretKey, ladder.operator, payload),
+      content: sealResponse(this.secretKey, ladder.operator, payload),
     });
 
     console.log(`[ladder] ${distressId.slice(0, 8)} ${ladder.state}: ${payload.text}`);
@@ -232,7 +232,7 @@ export class EscalationExecutor {
     // The executor subscribes to 20910 only for acknowledgements. Everything else on that
     // kind is the daemon's business, and reaching into it would be a dependency.
     if (event.tags.find((t) => t[0] === "t")?.[1] !== "distress-ack") return;
-    const payload = decryptPayload<DistressAckPayload>(this.secretKey, event.pubkey, event.content);
+    const payload = openSignal<DistressAckPayload>(this.secretKey, event.pubkey, event.content);
     await this.handleAck(event, payload);
   }
 

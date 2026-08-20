@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { deriveWeight, ageInDays, known, unknown } from '../src/attestation';
 import { newSecretKey, publicKeyOf, secretFromHex, secretToHex } from '../src/crypto/keys';
 import { open, seal } from '../src/crypto/envelope';
+import { openFromGroup, watchtowerAt } from '../src/crypto/group';
 import { buildWatchStateEvent, capabilitySentence, darkState, pageableNow, publishableWatchState, readWatchState, WATCH_STATE_VERSION } from '../src/events/watch-state';
 import { readWatchStateAt } from '../src/events/watch-state';
 import { appendEntry, asCompleteLog, emptyLog, entriesAbout, verifyChain, type LogOutcome } from '../src/log';
@@ -131,21 +132,42 @@ describe('watch state — what may honestly be published', () => {
 describe('signals', () => {
   const operator = newSecretKey();
   const watchtower = newSecretKey();
-  const wt = publicKeyOf(watchtower);
+  const wt = watchtowerAt(publicKeyOf(watchtower));
 
   it('carries the signal type unencrypted so a client can filter without decrypting', () => {
     const e = buildSignal(operator, wt, 'query', { text: 'bed tonight, has a dog' }, NOW_S);
     expect(readTag(e.tags, 't')).toBe('query');
-    expect(readTag(e.tags, 'p')).toBe(wt);
+    expect(readTag(e.tags, 'p')).toBe(wt.pubkey);
     expect(e.content).not.toContain('dog');
   });
 
-  it('seals the payload to the Watchtower key', () => {
+  it('seals the payload to whoever holds the watch', () => {
+    // A box holds the Watchtower key itself, so it is its own holder -- and the envelope is
+    // the same group envelope a squad of four would get, with a list of length one. Two
+    // shapes would let a relay sort Watchtowers into "box" and "squad" without decrypting.
     const e = buildSignal(operator, wt, 'on-station', {
       area: 'north side', expected_duration: 7200, routine_interval: 3600,
       share_position: false, position: null
     }, NOW_S);
-    expect(open(watchtower, publicKeyOf(operator), e.content)).toMatchObject({ area: 'north side' });
+    expect(openFromGroup(watchtower, publicKeyOf(operator), e.content)).toMatchObject({
+      area: 'north side'
+    });
+  });
+
+  it('seals to every phone of a squad, and to nobody else', () => {
+    const squad = [newSecretKey(), newSecretKey(), newSecretKey()];
+    const held = watchtowerAt(publicKeyOf(watchtower), squad.map(publicKeyOf));
+    const e = buildSignal(operator, held, 'query', { text: 'bed tonight' }, NOW_S);
+
+    // Addressed to the watch, readable by its holders.
+    expect(readTag(e.tags, 'p')).toBe(held.pubkey);
+    for (const member of squad) {
+      expect(openFromGroup(member, publicKeyOf(operator), e.content)).toMatchObject({
+        text: 'bed tonight'
+      });
+    }
+    // Not even by the Watchtower key, which signs watch state but holds nothing here.
+    expect(() => openFromGroup(watchtower, publicKeyOf(operator), e.content)).toThrow();
   });
 
   it('gives distress its own kind and no filterable type tag', () => {
@@ -451,7 +473,8 @@ describe('distress keeps trying until a human acknowledges', () => {
   // so a single failed publish is a signal nobody ever receives.
   const secret = newSecretKey();
   const wt = newSecretKey();
-  const watchtower = publicKeyOf(wt);
+  const watchtowerPub = publicKeyOf(wt);
+  const watchtower = watchtowerAt(watchtowerPub);
   const ourPubkey = publicKeyOf(secret);
   const payload = { position: null, area: 'north side' };
 

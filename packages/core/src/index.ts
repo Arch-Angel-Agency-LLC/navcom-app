@@ -1,6 +1,7 @@
 export * from './attestation.js';
 export * from './crypto/keys.js';
 export * from './crypto/envelope.js';
+export * from './crypto/group.js';
 export * from './events/kinds.js';
 export * from './events/watch-state.js';
 export * from './events/signal.js';

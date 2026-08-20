@@ -18,18 +18,30 @@ import { get, set } from './storage';
 export interface WatchtowerConfig {
   pubkey: string;
   relays: string[];
+  /**
+   * Whose keys signals are sealed to.
+   *
+   * Empty for a box, which holds the Watchtower key itself and is its own holder. A squad
+   * with no box lists one pubkey per phone — handed over in the same conversation that
+   * hands over the address, because nothing here discovers anything.
+   */
+  holders: string[];
 }
 
 export function loadConfig(): WatchtowerConfig | null {
   const pubkey = get<string>('accruing', 'watchtower');
   const relays = get<string[]>('accruing', 'relays');
   if (!pubkey || !relays?.length) return null;
-  return { pubkey, relays };
+  return { pubkey, relays, holders: get<string[]>('accruing', 'watch_holders') ?? [] };
 }
 
 export class ConfigError extends Error {}
 
-export function saveConfig(pubkey: string, relaysRaw: string): WatchtowerConfig {
+export function saveConfig(
+  pubkey: string,
+  relaysRaw: string,
+  holdersRaw?: string
+): WatchtowerConfig {
   const cleanKey = pubkey.trim().toLowerCase();
   if (!isPubkey(cleanKey)) {
     throw new ConfigError('A Watchtower pubkey is 64 hexadecimal characters.');
@@ -44,5 +56,24 @@ export function saveConfig(pubkey: string, relaysRaw: string): WatchtowerConfig 
   }
   set('accruing', 'watchtower', cleanKey);
   set('accruing', 'relays', relays);
-  return { pubkey: cleanKey, relays };
+  return { pubkey: cleanKey, relays, holders: holders(holdersRaw) };
+}
+
+/**
+ * Who can read what this terminal sends.
+ *
+ * A box is its own holder, so an operator who was handed only a pubkey configures nothing
+ * extra and nothing changes for them. A squad's members are listed, and a wrong entry here
+ * means somebody silently cannot read signals — so it is validated rather than trusted.
+ */
+function holders(raw: string | undefined): string[] {
+  const keys = (raw ?? '')
+    .split(/[\s,]+/)
+    .map((k) => k.trim().toLowerCase())
+    .filter(Boolean);
+  for (const k of keys) {
+    if (!isPubkey(k)) throw new ConfigError(`"${k}" is not a pubkey — expected 64 hex characters.`);
+  }
+  set('accruing', 'watch_holders', keys);
+  return keys.length ? keys : [];
 }

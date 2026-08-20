@@ -2,7 +2,7 @@ import { SimplePool } from "nostr-tools/pool";
 import { finalizeEvent, verifyEvent } from "nostr-tools/pure";
 import type { Event, EventTemplate } from "nostr-tools/core";
 import { installNodeWebSocket } from "../shared/nostr-node.js";
-import { encryptPayload, decryptPayload } from "../shared/crypto.js";
+import { sealResponse, openSignal } from "../shared/crypto.js";
 import { existsSync, readFileSync } from "node:fs";
 import { WATCH_STATE_VERSION, type Drill, type LogAction, type LogOutcome, type LogReviewPayload } from "@navcom/core";
 import { KIND_WATCH_STATE, KIND_SIGNAL, KIND_DISTRESS, KIND_RESPONSE } from "../shared/kinds.js";
@@ -229,7 +229,7 @@ export class WatchtowerDaemon {
     inReplyToEventId: string,
     payload: ResponsePayload,
   ): Promise<void> {
-    const content = encryptPayload(this.secretKey, toPubkey, payload);
+    const content = sealResponse(this.secretKey, toPubkey, payload);
     const event = this.sign({
       kind: KIND_RESPONSE,
       tags: [
@@ -291,7 +291,7 @@ export class WatchtowerDaemon {
 
     let payload: unknown;
     try {
-      payload = decryptPayload(this.secretKey, event.pubkey, event.content);
+      payload = openSignal(this.secretKey, event.pubkey, event.content);
     } catch {
       console.log(`[signal] dropped: undecryptable content (${event.id.slice(0, 8)})`);
       return;

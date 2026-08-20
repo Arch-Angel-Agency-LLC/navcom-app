@@ -67,6 +67,19 @@ export const CAPABILITIES: Capability[] = [
     requires: []
   },
   {
+    name: 'Add a watch',
+    screen: 'terminal/setup/',
+    claims: [
+      'Nothing discovers a Watchtower on its own',
+      // Who can read what you send is the one thing an operator must know before
+      // configuring a squad-held watch, and it is stated before the field.
+      'whoever is on this list can read everything',
+      'Usually empty'
+    ],
+    control: '#holders',
+    requires: []
+  },
+  {
     name: 'Somebody you would call',
     screen: 'terminal/setup/',
     claims: [

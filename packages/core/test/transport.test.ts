@@ -11,6 +11,7 @@ import type { SimplePool } from "nostr-tools/pool";
 import type { Event } from "nostr-tools/core";
 import { generateSecretKey, getPublicKey } from "nostr-tools/pure";
 import { sendSignal, sendDistress, waitForResponse } from "../src/transport.js";
+import { watchtowerAt } from "../src/crypto/group.js";
 import { seal } from "../src/crypto/envelope.js";
 import { KIND_RESPONSE } from "../src/events/kinds.js";
 import type { ResponsePayload } from "../src/events/response.js";
@@ -30,48 +31,48 @@ describe("sendSignal / sendDistress publish-failure reporting (found in review)"
 
   it("sendSignal throws a clear error when every relay rejects the publish", async () => {
     const secretKey = generateSecretKey();
-    const watchtowerPubkey = getPublicKey(generateSecretKey());
+    const watchtower = watchtowerAt(getPublicKey(generateSecretKey()));
     const pool = fakePool({
       publish: () => [Promise.reject(new Error("connection refused"))],
     });
 
-    await expect(sendSignal(pool, RELAYS, secretKey, watchtowerPubkey, "routine", {})).rejects.toThrow(
+    await expect(sendSignal(pool, RELAYS, secretKey, watchtower, "routine", {})).rejects.toThrow(
       /Failed to publish to any relay/,
     );
   });
 
   it("sendSignal succeeds when at least one relay accepts, even if others reject", async () => {
     const secretKey = generateSecretKey();
-    const watchtowerPubkey = getPublicKey(generateSecretKey());
+    const watchtower = watchtowerAt(getPublicKey(generateSecretKey()));
     const pool = fakePool({
       publish: () => [Promise.resolve("ok"), Promise.reject(new Error("timeout"))],
     });
 
     await expect(
-      sendSignal(pool, ["wss://a", "wss://b"], secretKey, watchtowerPubkey, "routine", {}),
+      sendSignal(pool, ["wss://a", "wss://b"], secretKey, watchtower, "routine", {}),
     ).resolves.toBeDefined();
   });
 
   it("sendDistress throws when every relay rejects", async () => {
     const secretKey = generateSecretKey();
-    const watchtowerPubkey = getPublicKey(generateSecretKey());
+    const watchtower = watchtowerAt(getPublicKey(generateSecretKey()));
     const pool = fakePool({
       publish: () => [Promise.reject(new Error("dns failure"))],
     });
 
-    await expect(sendDistress(pool, RELAYS, secretKey, watchtowerPubkey, { position: null, area: "north side" })).rejects.toThrow(
+    await expect(sendDistress(pool, RELAYS, secretKey, watchtower, { position: null, area: "north side" })).rejects.toThrow(
       /Failed to publish to any relay/,
     );
   });
 
   it("the thrown error includes the underlying rejection reasons", async () => {
     const secretKey = generateSecretKey();
-    const watchtowerPubkey = getPublicKey(generateSecretKey());
+    const watchtower = watchtowerAt(getPublicKey(generateSecretKey()));
     const pool = fakePool({
       publish: () => [Promise.reject(new Error("connection refused"))],
     });
 
-    await expect(sendSignal(pool, RELAYS, secretKey, watchtowerPubkey, "routine", {})).rejects.toThrow(
+    await expect(sendSignal(pool, RELAYS, secretKey, watchtower, "routine", {})).rejects.toThrow(
       /connection refused/,
     );
   });
@@ -83,6 +84,7 @@ describe("waitForResponse (found in review)", () => {
     const clientPubkey = getPublicKey(clientSecretKey);
     const watchtowerSecretKey = generateSecretKey();
     const watchtowerPubkey = getPublicKey(watchtowerSecretKey);
+    const watchtower = watchtowerAt(watchtowerPubkey);
 
     const responsePayload: ResponsePayload = {
       type: "ack",
@@ -101,7 +103,7 @@ describe("waitForResponse (found in review)", () => {
     });
 
     const sentEvent = { id: "abc123", created_at: 1000 } as unknown as Parameters<typeof waitForResponse>[5];
-    const promise = waitForResponse(pool, RELAYS, clientSecretKey, clientPubkey, watchtowerPubkey, sentEvent, 5000);
+    const promise = waitForResponse(pool, RELAYS, clientSecretKey, clientPubkey, watchtower.pubkey, sentEvent, 5000);
 
     // Simulate the relay delivering a real, validly-signed response event.
     const { finalizeEvent } = await import("nostr-tools/pure");
@@ -117,7 +119,7 @@ describe("waitForResponse (found in review)", () => {
   it("rejects with a clear timeout error when nothing arrives", async () => {
     const clientSecretKey = generateSecretKey();
     const clientPubkey = getPublicKey(clientSecretKey);
-    const watchtowerPubkey = getPublicKey(generateSecretKey());
+    const watchtower = watchtowerAt(getPublicKey(generateSecretKey()));
 
     const pool = fakePool({
       subscribeMany: () => ({ close: () => {} }),
@@ -125,7 +127,7 @@ describe("waitForResponse (found in review)", () => {
     const sentEvent = { id: "abc", created_at: 1000 } as unknown as Parameters<typeof waitForResponse>[5];
 
     await expect(
-      waitForResponse(pool, RELAYS, clientSecretKey, clientPubkey, watchtowerPubkey, sentEvent, 20),
+      waitForResponse(pool, RELAYS, clientSecretKey, clientPubkey, watchtower.pubkey, sentEvent, 20),
     ).rejects.toThrow(/No response from Watchtower within/);
   });
 
@@ -139,7 +141,7 @@ describe("waitForResponse (found in review)", () => {
     // completely disconnected from the original, already-reported error.
     const clientSecretKey = generateSecretKey();
     const clientPubkey = getPublicKey(clientSecretKey);
-    const watchtowerPubkey = getPublicKey(generateSecretKey());
+    const watchtower = watchtowerAt(getPublicKey(generateSecretKey()));
 
     const pool = fakePool({
       subscribeMany: () => {
@@ -153,7 +155,7 @@ describe("waitForResponse (found in review)", () => {
     process.once("unhandledRejection", unhandled);
 
     await expect(
-      waitForResponse(pool, RELAYS, clientSecretKey, clientPubkey, watchtowerPubkey, sentEvent, 5000),
+      waitForResponse(pool, RELAYS, clientSecretKey, clientPubkey, watchtower.pubkey, sentEvent, 5000),
     ).rejects.toThrow(/invalid relay URL/);
 
     // Advance past where the leaked timer would have fired, if it still existed.
@@ -168,6 +170,7 @@ describe("waitForResponse (found in review)", () => {
     const clientPubkey = getPublicKey(clientSecretKey);
     const watchtowerSecretKey = generateSecretKey();
     const watchtowerPubkey = getPublicKey(watchtowerSecretKey);
+    const watchtower = watchtowerAt(watchtowerPubkey);
 
     let capturedOnEvent: ((event: Event) => void) | undefined;
     const pool = fakePool({
@@ -178,7 +181,7 @@ describe("waitForResponse (found in review)", () => {
     });
     const sentEvent = { id: "abc", created_at: 1000 } as unknown as Parameters<typeof waitForResponse>[5];
 
-    const promise = waitForResponse(pool, RELAYS, clientSecretKey, clientPubkey, watchtowerPubkey, sentEvent, 20);
+    const promise = waitForResponse(pool, RELAYS, clientSecretKey, clientPubkey, watchtower.pubkey, sentEvent, 20);
 
     // A structurally-event-shaped object with a bogus signature.
     // Event-shaped with a bogus signature: exactly what a forgery looks like on the wire,

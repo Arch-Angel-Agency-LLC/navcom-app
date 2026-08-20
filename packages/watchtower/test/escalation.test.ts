@@ -17,7 +17,7 @@ import { join } from "node:path";
 import type { ResponsePayload } from "@navcom/core";
 import { EscalationExecutor } from "../src/escalation/executor.js";
 import type { EscalationConfig, OnCallEntry } from "../src/escalation/config.js";
-import { encryptPayload, decryptPayload } from "../src/shared/crypto.js";
+import { sealSignal, openSignal, openResponse } from "../src/shared/crypto.js";
 import { KIND_DISTRESS, KIND_SIGNAL, KIND_RESPONSE } from "../src/shared/kinds.js";
 import type { pageAll } from "../src/escalation/pager.js";
 
@@ -83,7 +83,7 @@ function distressFrom(operator: Uint8Array, watchtower: string): Event {
     {
       kind: KIND_DISTRESS,
       tags: [["p", watchtower]],
-      content: encryptPayload(operator, watchtower, { position: null, area: "north side" }),
+      content: sealSignal(operator, [watchtower], { position: null, area: "north side" }),
       created_at: Math.floor(Date.now() / 1000),
     },
     operator,
@@ -95,7 +95,7 @@ function ackFrom(responder: Uint8Array, watchtower: string, distressId: string):
     {
       kind: KIND_SIGNAL,
       tags: [["p", watchtower], ["t", "distress-ack"]],
-      content: encryptPayload(responder, watchtower, { distress_id: distressId }),
+      content: sealSignal(responder, [watchtower], { distress_id: distressId }),
       created_at: Math.floor(Date.now() / 1000),
     },
     responder,
@@ -106,7 +106,7 @@ async function reports(published: Event[], operator: Uint8Array, watchtower: str
   await vi.waitFor(() => expect(published.length).toBeGreaterThan(0));
   return published
     .filter((e) => e.kind === KIND_RESPONSE)
-    .map((e) => decryptPayload<ResponsePayload>(operator, watchtower, e.content));
+    .map((e) => openResponse<ResponsePayload>(operator, watchtower, e.content));
 }
 
 afterEach(async () => {

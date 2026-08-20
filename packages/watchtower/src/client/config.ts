@@ -11,6 +11,14 @@ export interface ClientConfig {
   };
   watchtower: {
     pubkey: string;
+    /**
+     * Whose keys signals are sealed to.
+     *
+     * Absent for a box, which holds the Watchtower key itself and is therefore its own
+     * holder. A squad with no box lists one pubkey per phone, handed over in the same
+     * conversation that hands over the address — nothing discovers this.
+     */
+    holders?: string[];
   };
   relays: {
     urls: string[];
@@ -22,7 +30,7 @@ export interface ClientConfig {
 
 interface RawToml {
   identity?: { privkey_path?: string };
-  watchtower?: { pubkey?: string };
+  watchtower?: { pubkey?: string; holders?: string[] };
   relays?: { urls?: string[] };
   operator?: { callsign?: string };
 }
@@ -54,6 +62,20 @@ export function loadClientConfig(path: string): ClientConfig {
     );
   }
 
+  const holders = raw.watchtower?.holders;
+  if (holders !== undefined) {
+    if (!Array.isArray(holders) || holders.length === 0) {
+      throw new Error(`Config [watchtower] holders must list at least one pubkey if present (${path})`);
+    }
+    const badHolder = holders.find((h) => typeof h !== "string" || !isValidHexPubkey(h));
+    if (badHolder !== undefined) {
+      throw new Error(
+        `Config [watchtower] holders contains an invalid pubkey: ${JSON.stringify(badHolder)} (${path}) -- ` +
+          `each must be 64 lowercase hex characters. A wrong entry here means somebody silently cannot read signals.`,
+      );
+    }
+  }
+
   const urls = raw.relays?.urls;
   if (!urls || urls.length === 0) throw new Error(`Config missing required [relays] urls (${path})`);
   const badUrl = urls.find((u) => typeof u !== "string" || !RELAY_URL.test(u));
@@ -68,7 +90,7 @@ export function loadClientConfig(path: string): ClientConfig {
 
   return {
     identity: { privkeyPath },
-    watchtower: { pubkey: watchtowerPubkey },
+    watchtower: { pubkey: watchtowerPubkey, ...(holders ? { holders } : {}) },
     relays: { urls },
     operator: { callsign },
   };

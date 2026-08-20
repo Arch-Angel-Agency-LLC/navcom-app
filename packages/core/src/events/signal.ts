@@ -8,7 +8,7 @@
  * Normative source: docs/spec/signals.spec.md
  */
 
-import { seal } from '../crypto/envelope.js';
+import { sealToGroup, type WatchtowerAddress } from '../crypto/group.js';
 import type { SecretKey } from '../crypto/keys.js';
 import { KIND_DISTRESS, KIND_SIGNAL, tagRecipient, tagSignalType, type SignalType } from './kinds.js';
 
@@ -120,7 +120,7 @@ export const RESPONSE_WINDOW: Record<SignalType | 'distress', number | null> = {
 
 export function buildSignal(
   secret: SecretKey,
-  watchtowerPubkey: string,
+  to: WatchtowerAddress,
   type: SignalType,
   payload: SignalPayload,
   createdAt: number
@@ -129,9 +129,11 @@ export function buildSignal(
     kind: KIND_SIGNAL,
     created_at: createdAt,
     // The type is an unencrypted tag so a client can filter without decrypting; the payload
-    // is sealed to the Watchtower key.
-    tags: [tagRecipient(watchtowerPubkey), tagSignalType(type)],
-    content: seal(secret, watchtowerPubkey, payload)
+    // is sealed to whoever holds the watch, which is one key for a box and one per phone
+    // for a squad. Always the group envelope, even for one holder -- two shapes would let
+    // anyone watching a relay sort Watchtowers into "box" and "squad" without decrypting.
+    tags: [tagRecipient(to.pubkey), tagSignalType(type)],
+    content: sealToGroup(secret, to.holders, payload)
   };
 }
 
@@ -144,7 +146,7 @@ export function buildSignal(
  */
 export function buildDistress(
   secret: SecretKey,
-  watchtowerPubkey: string,
+  to: WatchtowerAddress,
   payload: DistressPayload,
   createdAt: number
 ) {
@@ -153,7 +155,7 @@ export function buildDistress(
     created_at: createdAt,
     // No `t` tag: distress is identified by its kind, not by a filterable label, so it
     // cannot be missed by a subscriber filtering on signal types.
-    tags: [tagRecipient(watchtowerPubkey)],
-    content: seal(secret, watchtowerPubkey, payload)
+    tags: [tagRecipient(to.pubkey)],
+    content: sealToGroup(secret, to.holders, payload)
   };
 }

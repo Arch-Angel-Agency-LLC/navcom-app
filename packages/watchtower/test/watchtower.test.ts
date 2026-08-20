@@ -7,7 +7,7 @@ import { finalizeEvent, generateSecretKey, getPublicKey } from "nostr-tools/pure
 import type { Event } from "nostr-tools/core";
 import { WatchtowerDaemon } from "../src/daemon/watchtower.js";
 import type { DaemonConfig } from "../src/daemon/config.js";
-import { encryptPayload, decryptPayload } from "../src/shared/crypto.js";
+import { sealSignal, openSignal, openResponse } from "../src/shared/crypto.js";
 import { KIND_SIGNAL, KIND_DISTRESS, KIND_RESPONSE, KIND_WATCH_STATE } from "../src/shared/kinds.js";
 import type { ResponsePayload, WatchStatePayload } from "../src/shared/payloads.js";
 import * as authorization from "../src/daemon/authorization.js";
@@ -87,7 +87,7 @@ function signalEvent(
   type: string,
   payload: unknown,
 ): Event {
-  const content = encryptPayload(operatorSecretKey, watchtowerPubkey, payload);
+  const content = sealSignal(operatorSecretKey, [watchtowerPubkey], payload);
   return finalizeEvent(
     { kind: KIND_SIGNAL, tags: [["p", watchtowerPubkey], ["t", type]], content, created_at: Math.floor(Date.now() / 1000) },
     operatorSecretKey,
@@ -95,7 +95,7 @@ function signalEvent(
 }
 
 function distressEvent(operatorSecretKey: Uint8Array, watchtowerPubkey: string, text: string | null): Event {
-  const content = encryptPayload(operatorSecretKey, watchtowerPubkey, { text });
+  const content = sealSignal(operatorSecretKey, [watchtowerPubkey], { text });
   return finalizeEvent(
     { kind: KIND_DISTRESS, tags: [["p", watchtowerPubkey]], content, created_at: Math.floor(Date.now() / 1000) },
     operatorSecretKey,
@@ -312,7 +312,7 @@ describe("what the watch writes down", () => {
     const before = publishedEvents.length;
     deliver(signalEvent(a, pubkey, "log-review", {}));
     const responseEvent = await waitForResponse(publishedEvents, before);
-    const payload = decryptPayload<ResponsePayload>(a, pubkey, responseEvent.content);
+    const payload = openResponse<ResponsePayload>(a, pubkey, responseEvent.content);
 
     expect(payload.type).toBe("log-review");
     expect(payload.review).toBeDefined();
@@ -334,7 +334,7 @@ describe("what the watch writes down", () => {
     const before = publishedEvents.length;
     deliver(signalEvent(a, pubkey, "log-review", {}));
     const responseEvent = await waitForResponse(publishedEvents, before);
-    const { review } = decryptPayload<ResponsePayload>(a, pubkey, responseEvent.content);
+    const { review } = openResponse<ResponsePayload>(a, pubkey, responseEvent.content);
 
     for (const { entry, proof } of review!.entries) {
       expect(verifyInclusion(entry, proof, review!.root)).toBe(true);
@@ -349,7 +349,7 @@ describe("what the watch writes down", () => {
 
     deliver(signalEvent(a, pubkey, "log-review", {}));
     const responseEvent = await waitForResponse(publishedEvents);
-    const payload = decryptPayload<ResponsePayload>(a, pubkey, responseEvent.content);
+    const payload = openResponse<ResponsePayload>(a, pubkey, responseEvent.content);
 
     expect(payload.review).toBeUndefined();
     expect(payload.text).toMatch(/keeps no accountability log/i);
@@ -456,7 +456,7 @@ describe("on-station dispatch", () => {
     }));
 
     const responseEvent = await waitForResponse(publishedEvents);
-    const payload = decryptPayload<ResponsePayload>(operator, pubkey, responseEvent.content);
+    const payload = openResponse<ResponsePayload>(operator, pubkey, responseEvent.content);
     expect(payload.type).toBe("ack");
     expect(daemon.board.get(operatorPubkey)?.status).toBe("active");
     expect(daemon.board.get(operatorPubkey)?.area).toBe("district-7");
@@ -477,7 +477,7 @@ describe("on-station dispatch", () => {
     }));
 
     const responseEvent = await waitForResponse(publishedEvents);
-    const payload = decryptPayload<ResponsePayload>(operator, pubkey, responseEvent.content);
+    const payload = openResponse<ResponsePayload>(operator, pubkey, responseEvent.content);
     expect(payload.type).toBe("ack");
     expect(payload.text).toMatch(/expected_duration/);
     expect(daemon.board.size).toBe(0); // never made it onto the board
@@ -492,7 +492,7 @@ describe("query dispatch", () => {
     deliver(signalEvent(operator, pubkey, "query", { text: "bed tonight, has a dog" }));
 
     const responseEvent = await waitForResponse(publishedEvents);
-    const payload = decryptPayload<ResponsePayload>(operator, pubkey, responseEvent.content);
+    const payload = openResponse<ResponsePayload>(operator, pubkey, responseEvent.content);
     expect(payload.type).toBe("answer");
     expect(payload.responder.kind).toBe("agent");
     expect(payload.provenance).toBeNull();
@@ -508,7 +508,7 @@ describe("query dispatch", () => {
     deliver(signalEvent(operator, pubkey, "query", { text: "anyone there?" }));
 
     const responseEvent = await waitForResponse(publishedEvents);
-    const payload = decryptPayload<ResponsePayload>(operator, pubkey, responseEvent.content);
+    const payload = openResponse<ResponsePayload>(operator, pubkey, responseEvent.content);
     expect(payload.type).toBe("ack");
     expect(payload.text).toMatch(/timed out/);
   });
@@ -550,7 +550,7 @@ describe("distress dispatch", () => {
     deliver(distressEvent(operator, pubkey, "help"));
 
     const responseEvent = await waitForResponse(publishedEvents);
-    const payload = decryptPayload<ResponsePayload>(operator, pubkey, responseEvent.content);
+    const payload = openResponse<ResponsePayload>(operator, pubkey, responseEvent.content);
     expect(payload.type).toBe("ack");
     expect(daemon.board.get(operatorPubkey)?.status).toBe("distress");
   });

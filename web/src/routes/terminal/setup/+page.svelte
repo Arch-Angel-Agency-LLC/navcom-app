@@ -7,6 +7,7 @@
   let callsign = $state('');
   let pubkey = $state('');
   let relays = $state('wss://relay.damus.io\nwss://nos.lol');
+  let holders = $state('');
   let error = $state<string | null>(null);
   let contactLabel = $state('');
   let contactNumber = $state('');
@@ -26,6 +27,7 @@
     if (c) {
       pubkey = c.pubkey;
       relays = c.relays.join('\n');
+      holders = c.holders.join('\n');
     }
   });
 
@@ -61,7 +63,7 @@
     event.preventDefault();
     error = null;
     try {
-      saveConfig(pubkey, relays);
+      saveConfig(pubkey, relays, holders);
       configured = true;
     } catch (e) {
       error = e instanceof ConfigError ? e.message : 'Could not save that.';
@@ -161,6 +163,21 @@
     <input id="pubkey" bind:value={pubkey} autocomplete="off" spellcheck="false" placeholder="64 hex characters" />
     <label for="relays">Relays</label>
     <textarea id="relays" bind:value={relays} rows="3" autocomplete="off" spellcheck="false"></textarea>
+
+    <label for="holders">Who holds it</label>
+    <textarea id="holders" bind:value={holders} rows="3" autocomplete="off" spellcheck="false"
+      placeholder="leave empty unless you were given a list"></textarea>
+    <p class="note">
+      <!--
+        Stated before the field, because the answer for most operators is "leave it empty"
+        and a blank box with no explanation reads as something missing.
+      -->
+      <strong>Usually empty.</strong> A watch running on a box holds its own key, and that is
+      what most people are given. A squad with no box holds the watch on their phones instead,
+      and lists one key per phone here — <strong>whoever is on this list can read everything
+      you send</strong>, on watch or off. It comes from the same person who gave you the
+      pubkey; nothing discovers it.
+    </p>
     <button type="submit">{configured ? 'Update' : 'Connect'}</button>
   </form>
   {#if configured}<p class="done">Saved. <a href="/terminal/">Back to status</a></p>{/if}
