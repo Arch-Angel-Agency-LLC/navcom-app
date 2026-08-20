@@ -252,7 +252,10 @@ export const CAPABILITIES: Capability[] = [
     screen: 'terminal/assist/',
     claims: [
       'An assist with no words still means you need someone',
-      'use Distress'
+      'use Distress',
+      // 5.3. An assist that was received and an assist nobody is answering must never look
+      // alike, and the operator must be told which before they decide what to do next.
+      'A watch that has nobody to send will say so'
     ],
     control: '#a',
     requires: ['identity', 'watch']

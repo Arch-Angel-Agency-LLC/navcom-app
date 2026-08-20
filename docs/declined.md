@@ -131,6 +131,27 @@ signed.
 **Instead:** state the trade at the moment of contribution, in those words. Never write
 "anonymous" where "pseudonymous" is what is true.
 
+### Publishing battery level to peers or the watch
+
+Useful-sounding and one small edit away: put a level on the heartbeat, and a peer can tell
+*"their phone died"* from *"something happened"*.
+
+**It makes silence interpretable, and the inference runs both ways.** Somebody who goes quiet
+at 6% reads as a flat battery. Somebody who goes quiet at 90% reads as *something is wrong* —
+and that is a conclusion drawn from an absence, by a worried person, at 2am. Invariant 3 says
+duress is never inferred from silence; a field that makes silence look alarming is that
+inference wearing a different hat, and it pushes people toward escalating on nothing.
+`signals.spec.md` already requires the public case to work this way: a phone whose battery
+died must be indistinguishable from one whose owner went home.
+
+**Cost:** a peer genuinely cannot tell the two apart, which is the whole point and is still a
+cost. Somebody will worry about a dead battery.
+
+**Instead:** the operator's own phone tells *them*, while they are out, and publishes
+nothing. They are the only person who can act on it without guessing about somebody else.
+Built — see `battery.svelte.ts`. It is Chromium-only and therefore absent on iOS, which is
+stated rather than estimated around.
+
 ### Storing your emergency contact on the node
 
 The escalation ladder's contact rung is **device-initiated**: your own phone reaches your own

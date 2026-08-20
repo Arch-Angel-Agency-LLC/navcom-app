@@ -371,6 +371,27 @@ test.describe('holding the watch', () => {
   });
 });
 
+test.describe('saying no to an assist', () => {
+  test('the operator is told a refusal is possible before they send', async ({ page }) => {
+    // It changes whether somebody sends an assist at all, or goes straight to their own
+    // person -- so it cannot wait until a refusal arrives.
+    await seedDevice(page, { ...OUT, watchtower: { pubkey: 'e'.repeat(64), relays: ['wss://relay.example'] } });
+    await open(page, '/terminal/assist/');
+
+    await expect(page.getByText(/will say so/i)).toBeVisible();
+  });
+
+  test('no control offers to decline a Distress', async ({ page }) => {
+    // Invariant 2. The rule lives in core so every client inherits it, and this checks the
+    // one surface that could offer the button anyway.
+    await seedDevice(page, OUT);
+    await open(page, '/terminal/watch/');
+    await page.getByRole('button', { name: /start a watch on this phone/i }).click();
+
+    await expect(page.getByRole('button', { name: /nobody can come/i })).toHaveCount(0);
+  });
+});
+
 test.describe('patrols', () => {
   test('whether the history survives a wipe is a control, not a setting somebody has to find', async ({ page }) => {
     await seedDevice(page, OUT);

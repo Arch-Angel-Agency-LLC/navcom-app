@@ -473,9 +473,9 @@ ships** — the status page states what is built.
 |---|---|---|
 | 5.1 | **Post-quantum hybrid sealing** — ML-KEM-768 beside the classical exchange | agent |
 | 5.2 | **Anchor the log root to Bitcoin** — OpenTimestamps, daily | agent |
-| 5.3 | Saying no to an `Assist` | agent |
+| 5.3 | ~~Saying no to an `Assist`~~ | **done** | A `declined` response — *"nobody is coming"*. Refused for `Distress` in core, so no client can offer a button that ends one with a tap [invariant 2] |
 | 5.4 | Weather-activated warming and cooling centres | agent |
-| 5.5 | Battery state | agent |
+| 5.5 | ~~Battery state~~ | **done** | Told to the operator, published to nobody — see [`declined.md`](declined.md). Chromium-only, so absent on iOS, and absent rather than estimated |
 | 5.6 | Supplies | either |
 | 5.7 | ~~Never write "anonymous" where "pseudonymous" is true~~ | **done** | Said on the setup screen where the key is generated, not in a policy — the trade is stated at the moment it is made |
 | 5.8 | ~~Logical CSS properties~~ so right-to-left scripts are not broken | **done** | Plus `dir` on the document, without which they are inert. Guarded by a test that scans the **built** CSS, since Svelte rewrites styles and a dependency can emit physical properties nothing in `src/` contains |

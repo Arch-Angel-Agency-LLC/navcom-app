@@ -5,6 +5,7 @@
   import { operator } from '$lib/terminal/session.svelte';
   import { presence } from '$lib/terminal/presence.svelte';
   import { position } from '$lib/terminal/position.svelte';
+  import { battery } from '$lib/terminal/battery.svelte';
   import { loadConfig } from '$lib/terminal/config';
   import { loadIdentity } from '$lib/terminal/identity';
 
@@ -17,6 +18,7 @@
     identity = loadIdentity();
     watch.start();
     presence.start();
+    void battery.start();
     return () => {
       watch.stop();
       presence.stop();
@@ -171,6 +173,18 @@
         </button>
       </nav>
     </section>
+  {/if}
+  {#if battery.low}
+    <!--
+      Told to the operator, published to nobody. A battery level on the heartbeat would let
+      a peer read somebody's silence as alarming or as fine, and that is a conclusion drawn
+      from an absence [invariant 3]. The person who can act on this is the one holding the
+      phone.
+    -->
+    <p class="battery">
+      <strong>Battery {battery.percent}%.</strong> When it dies you stop sending, and the
+      people watching for you will see nothing rather than something wrong.
+    </p>
   {/if}
   <a class="action distress" href="/terminal/distress/">Distress</a>
 {:else if configured && identity}

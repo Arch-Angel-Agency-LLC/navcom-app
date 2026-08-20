@@ -13,7 +13,41 @@ import type { LogEntry } from '../log.js';
 import type { InclusionProof, LogRoot } from '../merkle.js';
 import { KIND_RESPONSE, tagInReplyTo, tagRecipient } from './kinds.js';
 
-export type ResponseType = 'ack' | 'answer' | 'escalation-status' | 'log-review';
+export type ResponseType =
+  | 'ack'
+  | 'answer'
+  | 'escalation-status'
+  | 'log-review'
+  /**
+   * *"Nobody is coming."*
+   *
+   * An `assist` means **I need someone**, and until this existed a watch could only
+   * acknowledge one. An operator who asked for help, got "received", and waited is in the
+   * same position as one who was told help was on the way — which is invariant 2's failure
+   * shape, one rung down from `Distress`.
+   *
+   * A watch that cannot send anybody has to be able to say so. That is not a judgement
+   * about the request; it is a fact about capacity, and an operator can act on it. They
+   * cannot act on silence.
+   *
+   * **Never valid in reply to a `Distress`.** `Distress` terminates in a human or reports
+   * that it could not [invariant 2], and that reporting is the escalation ladder's job, in
+   * its own `escalation-status`. A watch able to decline one could end it with a tap.
+   * `declineIsValid` enforces this, and it is a function rather than a comment so that a
+   * client cannot express the invalid case by accident.
+   */
+  | 'declined';
+
+/**
+ * Whether *"nobody is coming"* may be said in reply to this kind of signal.
+ *
+ * The check lives in core rather than in a screen, so every client inherits it and no
+ * second surface can forget. It refuses `distress` and refuses an unknown type — an
+ * unrecognised signal is not a licence to decline it.
+ */
+export function declineIsValid(replyingTo: string): boolean {
+  return replyingTo === 'assist' || replyingTo === 'query';
+}
 
 /** Which record an answer came from, verified when, and how. */
 export interface Provenance {

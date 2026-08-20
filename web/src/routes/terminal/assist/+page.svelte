@@ -16,6 +16,7 @@
   let urgency = $state<'soon' | 'now'>('soon');
   let text = $state('');
   let sent = $state(false);
+  let declined = $state(false);
 
   onMount(() => {
     hasWatch = operator.hasWatch;
@@ -28,6 +29,7 @@
     sent = false;
     await operator.assist(urgency, text.trim());
     if (operator.lastResponse) sent = true;
+    declined = operator.lastResponse?.type === 'declined';
   }
 </script>
 
@@ -67,6 +69,11 @@
   <label for="a">What for <span class="opt">optional</span></label>
   <textarea id="a" bind:value={text} placeholder="second pair of hands, corner of 4th"></textarea>
   <p class="note">
+    <strong>A watch that has nobody to send will say so</strong>, in as many words, rather
+    than leaving you on an acknowledgement. If that comes back, your own person is one tap
+    away and <code>Distress</code> is still there.
+  </p>
+  <p class="opt">
     Leave it blank if typing costs you time. <strong>An assist with no words still means
     you need someone</strong>, and the watch can ask.
   </p>
@@ -84,7 +91,20 @@
   {#if operator.error}
     <p class="error">{operator.error}</p>
   {/if}
-  {#if sent}
+  {#if declined}
+    <!--
+      Louder than the acknowledgement, because it is the one that changes what the operator
+      does next. An assist that was received and an assist that nobody is answering must
+      never look alike.
+    -->
+    <p class="no" data-declined>
+      <strong>Nobody is coming.</strong>
+      {#if operator.lastResponse?.text}{operator.lastResponse.text}{/if}
+      Your own person is one tap away on
+      <a href="/terminal/distress/">the Distress screen</a>, and if this is worse than you
+      first said, <strong>Distress does not stop until a human answers</strong>.
+    </p>
+  {:else if sent}
     <p class="ok" data-acked>Acknowledged by the watch.</p>
   {/if}
 
@@ -109,4 +129,5 @@
   .opt { color: var(--t-faint); font-size: .8rem; }
   .to-distress { color: var(--t-dark); }
   .ok { color: var(--t-station); margin: 0; }
+  .no { color: var(--t-alarm); margin: 0; }
 </style>

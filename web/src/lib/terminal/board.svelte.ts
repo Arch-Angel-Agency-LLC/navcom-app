@@ -37,6 +37,7 @@ import {
   buildResponse,
   buildWatchStateEvent,
   darkState,
+  declineIsValid,
   isOverdue,
   KIND_DISTRESS,
   KIND_SIGNAL,
@@ -190,11 +191,20 @@ export const board = {
    * takes the signal off the board because it has been dealt with — **except a `Distress`,
    * which only a human ending it can clear** [invariant 2]. There is no button here that
    * closes one.
+   *
+   * `declining` sends *"nobody is coming"* instead of an answer. It is a real reply and the
+   * honest one when a watch has nobody to send: an operator who asked for help, got an
+   * acknowledgement and waited is worse off than one who was told plainly. Core refuses it
+   * for a `Distress`, and this checks before sending rather than trusting the caller.
    */
-  async answer(item: Waiting, text: string): Promise<void> {
+  async answer(item: Waiting, text: string, declining = false): Promise<void> {
     const secret = watchKey();
     const urls = relays();
     if (!secret || urls.length === 0) return;
+
+    // Refused in core, not here, so no second surface can forget. A watch able to decline a
+    // Distress could end it with a tap [invariant 2].
+    if (declining && !declineIsValid(item.type)) return;
 
     const identity = loadIdentity();
     const event = finalizeEvent(
@@ -203,7 +213,7 @@ export const board = {
         item.operator,
         item.id,
         {
-          type: item.type === 'distress' ? 'ack' : 'answer',
+          type: declining ? 'declined' : item.type === 'distress' ? 'ack' : 'answer',
           // A person, saying so. An operator must never be uncertain whether they are
           // talking to one [invariant 5], and this is the field that decides it.
           responder: { kind: 'human', callsign: identity?.callsign ?? 'watch' },

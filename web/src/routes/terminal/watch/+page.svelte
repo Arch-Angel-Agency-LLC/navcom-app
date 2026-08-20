@@ -13,6 +13,7 @@
    * somebody went out believing something false.
    */
   import { onMount } from 'svelte';
+  import { declineIsValid } from '@navcom/core';
   import { board } from '$lib/terminal/board.svelte';
   import { createWatch, joinWatch, leaveWatch, watchPubkey, WatchKeyError } from '$lib/terminal/watch-key';
   import { loadIdentity } from '$lib/terminal/identity';
@@ -59,12 +60,12 @@
     confirmLeave = false;
   }
 
-  async function send(id: string) {
+  async function send(id: string, declining = false) {
     const item = board.waiting.find((w) => w.id === id);
     if (!item || busy) return;
     busy = true;
     try {
-      await board.answer(item, text);
+      await board.answer(item, text, declining);
       answering = null;
       text = '';
     } finally {
@@ -235,6 +236,21 @@
                 <button onclick={() => send(w.id)} disabled={busy}>Send</button>
                 <button onclick={() => (answering = null)}>Cancel</button>
               </div>
+              {#if declineIsValid(w.type)}
+                <!--
+                  A separate button, not a phrasing of the answer. "Nobody is coming" has to
+                  arrive as a fact the operator's screen can act on, not as text they have to
+                  read carefully at 2am.
+                -->
+                <button class="danger" onclick={() => send(w.id, true)} disabled={busy}>
+                  Nobody can come
+                </button>
+                <p class="cost">
+                  Sends <strong>nobody is coming</strong>, plus whatever you wrote. Say it
+                  when it is true — somebody who is told plainly can act, and somebody left
+                  waiting on an acknowledgement cannot.
+                </p>
+              {/if}
             {:else}
               <button onclick={() => { answering = w.id; text = ''; }}>
                 {w.type === 'distress' ? 'Tell them you are awake' : 'Answer'}
