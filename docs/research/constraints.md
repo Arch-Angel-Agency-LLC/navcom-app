@@ -20,7 +20,7 @@ Non-negotiable. A design that violates one is wrong regardless of its merits.
 | **H3** | No legal names anywhere. Contact details only where an operator opts in for themselves | Skeptic, Convert |
 | **H4** | Duress is always deliberate, never inferred from silence | Heart |
 | **H5** | Volatile data displays its age; stale reads "call first" — *weight from method and age* | Medic |
-| **H6** | Runs on a prepaid Android 8 with ~400MB free | Convert |
+| **H6** | Runs on a prepaid Android 8 with ~400MB free | Convert — **measured 2026-08-20, see [`device-floor.md`](device-floor.md)**: the constraint is real but it is about *storage*, and the CPU is not what makes the app slow |
 | **H7** | Knowledge layer fully usable offline | Outpost |
 | **H8** | Every network call auditable; no third-party analytics. No push except opt-in `Distress` paging | Skeptic |
 
