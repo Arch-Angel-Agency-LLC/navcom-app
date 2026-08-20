@@ -437,7 +437,7 @@ no box and no leader.
 | | Item | Owner | Cost |
 |---|---|---|---|
 | 3.1 | ~~Peer pairing and presence~~ | **done** | Wrapped in throwaway keys so no relay can see who talks to whom |
-| 3.1a | **QR pairing** | agent | The missing half of a live feature. Today it is "paste 64 characters of hex", which nobody will do twice. Needs a reviewed encoder rather than a hand-rolled one |
+| 3.1a | ~~QR pairing~~ | **done** | `@paulmillr/qr` for the code — same author as the curve and hash libraries already here. **No decoder shipped**: the browser's own `BarcodeDetector` where it exists, and the paste field where it does not |
 | 3.2 | **Findable profiles and invites** | agent | The actual fix for cold start: pairing at a distance rather than only in person |
 | 3.3 | **Public presence** — a name, never a pin | agent | Gives the network a pulse |
 | 3.4 | **Live position sharing** — watch and peers only | agent | Never publicly optable. See [`product/visibility.md`](product/visibility.md) |

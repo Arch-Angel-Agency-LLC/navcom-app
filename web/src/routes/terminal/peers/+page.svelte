@@ -11,6 +11,8 @@
   import { PairError, pair, peers, unpair, type Peer } from '$lib/terminal/peers';
   import { loadIdentity } from '$lib/terminal/identity';
   import { relays, usingDefaults } from '$lib/terminal/relays';
+  import encodeQR from '@paulmillr/qr';
+  import { canScan, pubkeyFrom, scan, ScanError, type Scanner } from '$lib/terminal/scan';
 
   let mine = $state<Peer[]>([]);
   let myPubkey = $state<string | null>(null);
@@ -20,10 +22,15 @@
   let copied = $state(false);
   let using = $state<string[]>([]);
   let defaults = $state(false);
+  let scannable = $state(false);
+  let scanning = $state(false);
+  let camera = $state<HTMLVideoElement | null>(null);
+  let scanner: Scanner | null = null;
 
   onMount(() => {
     using = relays();
     defaults = usingDefaults();
+    scannable = canScan();
     mine = peers();
     myPubkey = loadIdentity()?.pubkey ?? null;
     // A pairing link opens straight into the form with the code already there. The person
@@ -33,8 +40,45 @@
   });
 
   const link = $derived(myPubkey ? `https://navcom.app/terminal/peers/#${myPubkey}` : '');
+
+  /**
+   * The code as a QR, drawn as SVG.
+   *
+   * `@paulmillr/qr` is by the same author as the elliptic-curve and hashing libraries
+   * nostr-tools already depends on — same ecosystem, no new supply chain, and no
+   * dependencies of its own. The alternative was hand-rolling Reed-Solomon on a screen
+   * whose whole job is exchanging keys, which is not a place to be inventive.
+   *
+   * SVG rather than canvas: it scales to whatever the phone is, prints, and needs no
+   * pixel-density arithmetic.
+   */
+  const qr = $derived(myPubkey ? encodeQR(link, 'svg', { ecc: 'medium', border: 2 }) : '');
   /** Broken into blocks. Sixty-four unbroken characters is unreadable and unspeakable. */
   const blocks = $derived(myPubkey ? (myPubkey.match(/.{1,8}/g) ?? []) : []);
+
+  async function startScan() {
+    if (!camera) return;
+    error = null;
+    scanning = true;
+    try {
+      scanner = await scan(camera);
+      const raw = await scanner.found;
+      const key = pubkeyFrom(raw);
+      if (!key) throw new ScanError('That code is not a NavCom code.');
+      code = key;
+    } catch (err) {
+      error = err instanceof ScanError ? err.message : 'Could not scan.';
+    } finally {
+      scanning = false;
+      scanner = null;
+    }
+  }
+
+  function stopScan() {
+    scanner?.stop();
+    scanner = null;
+    scanning = false;
+  }
 
   function accept(e: SubmitEvent) {
     e.preventDefault();
@@ -110,11 +154,17 @@
 <section class="act">
   <h2>Your code</h2>
   {#if myPubkey}
-    <p class="blocks">{#each blocks as b, i (i)}<span>{b}</span>{/each}</p>
+    <!-- Held up to their camera. This is the in-person path the design prefers, and it is
+         the only one that does not travel through somebody else's servers. -->
+    <div class="qr" data-qr>{@html qr}</div>
+    <details>
+      <summary>Or read it out</summary>
+      <p class="blocks">{#each blocks as b, i (i)}<span>{b}</span>{/each}</p>
+    </details>
     <button onclick={copy}>{copied ? 'Copied' : 'Copy your link'}</button>
     <p class="cost">
-      Show them this, or send the link. Nothing happens until they accept, and nothing about
-      you is published by having a code.
+      Hold it up to their camera. Nothing happens until they accept, and nothing about you
+      is published by having a code.
     </p>
   {:else}
     <p>Pick a callsign first — <a href="/terminal/setup/">it takes one screen</a>.</p>
@@ -123,6 +173,22 @@
 
 <section class="act">
   <h2>Add somebody</h2>
+  <!-- Camera first where the browser has one, because holding a phone up beats reading
+       hex aloud. Where it does not, this is absent rather than broken. -->
+  {#if scannable}
+    <button type="button" onclick={scanning ? stopScan : startScan}>
+      {scanning ? 'Stop' : 'Scan their code'}
+    </button>
+    <video
+      bind:this={camera}
+      class="camera"
+      class:live={scanning}
+      playsinline
+      muted
+      aria-label="Camera, looking for a pairing code"
+    ></video>
+  {/if}
+
   <form onsubmit={accept}>
     <label for="code">Their code</label>
     <textarea id="code" bind:value={code} rows="2" autocomplete="off" spellcheck="false"
@@ -157,6 +223,16 @@
 
 <style>
   .act { gap: .6rem; }
+  .qr {
+    background: #fff; padding: .7rem; align-self: flex-start; line-height: 0;
+    /* White ground regardless of theme: a scanner needs the contrast the format assumes. */
+  }
+  .qr :global(svg) { width: min(62vw, 15rem); height: auto; display: block; }
+  .camera { width: 100%; max-height: 0; border-radius: 2px; background: var(--t-sunk); }
+  .camera.live { max-height: 16rem; object-fit: cover; margin-top: .5rem; }
+
+  details summary { color: var(--t-faint); font-size: .88rem; min-height: 2.4rem; cursor: pointer; }
+
   .blocks {
     display: flex; flex-wrap: wrap; gap: .35rem .6rem; margin: 0;
     font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .95rem;
