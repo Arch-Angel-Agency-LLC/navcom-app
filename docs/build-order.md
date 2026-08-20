@@ -375,6 +375,30 @@ Milestones rather than a ranked list, because each has a state you can be in or 
 
 ---
 
+## Milestone 0 — Prove what is already built
+
+**Done when:** every claim below has been true on real hardware at least once.
+
+This one is new, and it comes first because of what a single afternoon of checking turned
+up. Two shipped features contradicted their own purpose — peer presence required a
+Watchtower despite existing for operators without one, and the patrol record was not cached
+offline despite saying it works with no signal. Neither failed a test. Both were found by
+reading.
+
+**Nothing here has ever been used.** Not one patrol, not one night. Everything is built for
+people who do not exist yet, and the ratio of building to verifying has been wrong for a
+while.
+
+| | Item | Owner | Why it is worth an hour |
+|---|---|---|---|
+| 0.1 | **Carry it for one night** | **human** | Three hours in the field finds more than three days of reading. The text will be too long, a flow will have a step too many, and something will be in the wrong place |
+| 0.2 | **Two devices, one relay** | either | Peer presence passes unit tests and has never crossed a relay. If the wrapping is wrong, it is wrong for everybody |
+| 0.3 | **Daemon and executor together** | **human — the Jetson** | Both subscribe to `20911`. I have reasoned that the two response streams do not confuse a client, and reasoning is not the same as watching it |
+| 0.4 | **Airplane mode, cold start** | either | The service worker has never been tested offline. The directory, the patrol record and Distress all claim to work there |
+
+**Prefer a finding here to a feature anywhere below.** A gap found on real hardware is worth
+more than a screen built against an imagined one.
+
 ## Milestone 1 — One operator, alone, tonight
 
 **Done when:** somebody patrolling alone in one metro can look up a real shelter with no
@@ -384,7 +408,7 @@ signal, and has a record of their own night.
 
 | | Item | Owner | Cost of not doing it |
 |---|---|---|---|
-| 1.1 | **The scraper** — `packages/seeder`, five commands, public half only | agent | The unlock for everything else. Architecture and the agent contract: [`product/seeding.md`](product/seeding.md) |
+| 1.1 | ~~The scraper~~ | **done** | 479 records across 67 metros. Public half only, and it taught that a source which cannot distinguish what matters must not be used for that category |
 | 1.2 | **Intake rules for places you know** | **human, local** | The half no scraper produces, and the half the directory exists for. Ten records done properly beats a thousand skeletons |
 | 1.3 | ~~Your own patrol record~~ | **done** | Local by default and by design — nothing in it reaches a watch, a relay or a peer. Export carries no coordinates and nobody but the operator |
 | 1.4 | ~~Coming home~~ | **done** | Confirmed by name where somebody was watching, and confirmed anyway where nobody was |
@@ -398,7 +422,7 @@ Nothing here needs a watch, a box, a peer or a network.
 | | Item | Owner | Cost |
 |---|---|---|---|
 | 2.1 | **One human on-call with a proven channel** | **human — you** | The ladder pages nobody and everything under it is theatre. One config entry and `navcom-escalation --check` |
-| 2.2 | **Drills** — weekly, randomised, published | agent | A watch that cannot demonstrate a passing drill is presumed broken, so today it is permanently presumed broken |
+| 2.2 | ~~Drills~~ | **done** | Randomised weekly, `--drill` fires one now. **Fails every time until 2.1**, which is the finding rather than a gap |
 | 2.3 | **Web push as a paging channel** | agent | The one native-grade capability a web app already has on both platforms. How somebody gets woken without an app store |
 | 2.4 | Keyless pagers | either | Redundancy without trust. Cheap, and it decouples always-on from trusted |
 
@@ -412,11 +436,12 @@ no box and no leader.
 
 | | Item | Owner | Cost |
 |---|---|---|---|
-| 3.1 | ~~Peer pairing and presence~~ | **done** | Wrapped in throwaway keys so no relay can see who talks to whom. Pairing is by code or link; **QR is still to do** — it needs an encoder worth adding rather than hand-rolling |
+| 3.1 | ~~Peer pairing and presence~~ | **done** | Wrapped in throwaway keys so no relay can see who talks to whom |
+| 3.1a | **QR pairing** | agent | The missing half of a live feature. Today it is "paste 64 characters of hex", which nobody will do twice. Needs a reviewed encoder rather than a hand-rolled one |
 | 3.2 | **Findable profiles and invites** | agent | The actual fix for cold start: pairing at a distance rather than only in person |
 | 3.3 | **Public presence** — a name, never a pin | agent | Gives the network a pulse |
 | 3.4 | **Live position sharing** — watch and peers only | agent | Never publicly optable. See [`product/visibility.md`](product/visibility.md) |
-| 3.5 | Buddy pairing between two solos | agent | Probably the commonest real arrangement after pure solo |
+| 3.5 | Buddy pairing between two solos | agent | Nearly free now that peers exist — it is a pair with a check-in expectation, not a new mechanism |
 
 ## Milestone 4 — A squad with no box
 
