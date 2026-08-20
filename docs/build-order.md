@@ -375,6 +375,9 @@ Milestones rather than a ranked list, because each has a state you can be in or 
 
 ---
 
+> **Doing any of these?** [`human-tasks.md`](human-tasks.md) has step-by-step instructions
+> for all five, with the real commands, ordered by value per minute rather than by number.
+
 ## Milestone 0 — Prove what is already built
 
 **Done when:** every claim below has been true on real hardware at least once.
