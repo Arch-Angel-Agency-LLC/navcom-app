@@ -17,9 +17,9 @@ import {
   readPresence,
   type PresencePayload
 } from '@navcom/core';
-import { loadConfig } from './config';
 import { loadIdentity } from './identity';
 import { peerPubkeys, peers } from './peers';
+import { relays } from './relays';
 
 /** How often presence is republished, and therefore how quickly a peer appears. */
 export const HEARTBEAT_SECONDS = 60;
@@ -47,13 +47,6 @@ let connected = $state(false);
 let closer: { close(): void } | null = null;
 let beat: ReturnType<typeof setInterval> | null = null;
 const pool = new SimplePool();
-
-function relays(): string[] {
-  // Peers ride the same relays as the watch. Somebody with no Watchtower configured has no
-  // relay list yet, which is a real gap rather than a bug -- pairing needs somewhere to
-  // publish, and that is the next thing to give them.
-  return loadConfig()?.relays ?? [];
-}
 
 export const presence = {
   /** Everyone heard from recently enough to say anything about. */

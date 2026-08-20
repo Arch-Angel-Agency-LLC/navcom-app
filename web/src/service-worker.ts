@@ -13,6 +13,7 @@
  */
 
 import { base, build, files, version } from '$service-worker';
+import { TERMINAL_ROUTES } from '$lib/terminal/routes';
 
 const CACHE = `navcom-terminal-${version}`;
 
@@ -28,7 +29,7 @@ const CACHE = `navcom-terminal-${version}`;
 const SHELL = [
   ...build,
   ...files.filter((f) => !f.endsWith('.csv')),
-  ...['', 'directory/', 'wipe/', 'log/', 'sign-on/', 'query/', 'assist/', 'distress/'].map(
+  ...TERMINAL_ROUTES.map(
     (page) => `${base}/terminal/${page}`
   )
 ];

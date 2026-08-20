@@ -10,6 +10,7 @@
   import { page } from '$app/state';
   import { PairError, pair, peers, unpair, type Peer } from '$lib/terminal/peers';
   import { loadIdentity } from '$lib/terminal/identity';
+  import { relays, usingDefaults } from '$lib/terminal/relays';
 
   let mine = $state<Peer[]>([]);
   let myPubkey = $state<string | null>(null);
@@ -17,8 +18,12 @@
   let callsign = $state('');
   let error = $state<string | null>(null);
   let copied = $state(false);
+  let using = $state<string[]>([]);
+  let defaults = $state(false);
 
   onMount(() => {
+    using = relays();
+    defaults = usingDefaults();
     mine = peers();
     myPubkey = loadIdentity()?.pubkey ?? null;
     // A pairing link opens straight into the form with the code already there. The person
@@ -85,6 +90,21 @@
     Ending it is one tap, immediate, and <strong>they are not told</strong>. It stops what
     you send them from then on; it cannot recall what they already have.
   </p>
+</section>
+
+<!--
+  Said plainly because every network call this app makes has to be explainable to somebody
+  pointing a proxy at it. Relays carry sealed envelopes they cannot read, and using one
+  reveals no Watchtower -- but an operator should still know which strangers' machines
+  their presence travels through.
+-->
+<section class="relays">
+  <h2>Where this goes</h2>
+  <p class="cost">
+    Presence travels through {defaults ? 'these public relays, which ship as defaults' : 'the relays you configured'}.
+    They carry sealed messages they cannot read, and none of them learns who your peers are.
+  </p>
+  <p class="blocks">{#each using as r (r)}<span>{r}</span>{/each}</p>
 </section>
 
 <section class="act">
