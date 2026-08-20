@@ -137,6 +137,7 @@ Every one is a conventional solution that is wrong here.
 | `docs/attestation.md` | **The primitive.** Read first — most rules are this, aimed somewhere |
 | `docs/positioning.md` | What this is and who it's for |
 | `docs/declined.md` | **Real problems we are not taking on.** Check before adding to the build order |
+| `docs/verification.md` | How this project checks itself, and the layer that was missing |
 | `docs/spec/` | **Normative.** Event kinds, state machines, windows |
 | `docs/watch/` | The watch model, narrative |
 | `docs/product/` | Identity, data tiers, visibility, directory, funding |
@@ -153,3 +154,7 @@ Where narrative and spec disagree, **the spec wins** — and the narrative is a 
 - The device floor is a real target. `npm run verify` in `web/` enforces the bundle budget
 - **Prefer a test against the built artifact over a test against the logic.** Three times
   this project has shipped a rule the logic honoured and the output didn't
+- **A mechanism nobody can reach is not built.** `panicWipe` had no button for weeks, and
+  the position control was absent while sign-on still wrote the setting. Both passed every
+  test, because nothing checked that a person could operate them — see
+  [`verification.md`](docs/verification.md)
