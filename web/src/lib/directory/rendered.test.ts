@@ -269,6 +269,37 @@ describe('the public surface', () => {
   });
 });
 
+describe('the status page', () => {
+  const status = () => pages.find((p) => p.path.includes('/status/'))!;
+
+  it('does not describe shipped things as not built', () => {
+    // This list was hand-written, and build-order.md predicted in writing that it "will
+    // drift from this file". It did -- five of six lines were wrong, with escalation and
+    // the field terminal both saying "not built" after they had shipped. Now derived from
+    // whether the code is present, and this asserts the derivation is actually wired up.
+    const text = status().bodyText;
+    for (const shipped of ['Escalation ladder', 'Field terminal', 'Drills', 'Directory']) {
+      const at = text.indexOf(shipped);
+      expect(at, `${shipped} missing from the status page`).toBeGreaterThan(-1);
+      // The state word follows the name in the rendered row.
+      expect(text.slice(at, at + 120), `${shipped} claims not built`).not.toMatch(/not built/i);
+    }
+  });
+
+  it('says plainly what being built does not prove', () => {
+    // The weaker claim matters more than the list. Code being present says nothing about
+    // whether anybody is on-call or whether a drill has ever passed.
+    const text = status().bodyText;
+    expect(text).toMatch(/No watch is staffed/i);
+    expect(text).toMatch(/No drill has ever passed/i);
+    expect(text).toMatch(/Nobody has verified an intake rule/i);
+  });
+
+  it('does not claim a number of records it does not have', () => {
+    expect(status().bodyText).toContain(`${loadDirectory().length} records`);
+  });
+});
+
 describe('reader-facing documents are actually published', () => {
   it('publishes CONTRIBUTING and LICENSING, not just docs/', () => {
     const slugs = pages.map((p) => p.path);

@@ -40,6 +40,21 @@ jobs:
       - name: watchtower
         run: npm run verify --workspace @navcom/watchtower
 
+      # The seeder was absent from this file for its whole life, so its tests and -- more
+      # importantly -- its audit of the committed directory never ran on a change. The
+      # audit is the thing that catches an intake rule reaching a seeded row, which is the
+      # single most harmful edit anybody could make to this repository.
+      - name: seeder
+        run: npm run verify --workspace @navcom/seeder
+
+      - name: directory audit
+        run: |
+          for region in data/regions/*/; do
+            slug=$(basename "$region")
+            case "$slug" in _*) continue;; esac
+            npm run seed --workspace @navcom/seeder -- audit "$slug"
+          done
+
       # Type check, data check, build, tests (unit + against the built HTML), bundle budget.
       # The budget fails the job rather than warning: the device floor is a real target,
       # and the data check fails it rather than letting an invalid region reach a deploy.
@@ -53,8 +68,31 @@ jobs:
           path: web/build
           retention-days: 7
 
-  # deploy:
-  #   Deployment is not wired up because the host is not chosen yet. Whatever it is, it
-  #   needs to run on the `schedule` trigger above and not only on push — a site that
-  #   redeploys only when someone commits will drift out of date and go on claiming its
-  #   data is fresh. See docs/delivery.md.
+  # The daily rebuild has to actually redeploy, or it is not a rebuild.
+  #
+  # This job existed for weeks building an artifact that nothing consumed, while the live
+  # site deployed on push only. So the "load-bearing" daily cadence that the staleness
+  # margin is sized for was not happening at all: a week without a commit meant a week of
+  # the published directory claiming its data was a day fresher than it was.
+  #
+  # Needs one repository secret, VERCEL_DEPLOY_HOOK — a Deploy Hook URL from the Vercel
+  # project settings. Without it this step is skipped and says so, rather than passing
+  # quietly and leaving the gap in place.
+  redeploy:
+    needs: verify
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - name: trigger the deploy
+        env:
+          HOOK: ${{ secrets.VERCEL_DEPLOY_HOOK }}
+        run: |
+          if [ -z "$HOOK" ]; then
+            echo "::warning::VERCEL_DEPLOY_HOOK is not set, so the daily rebuild is NOT reaching the live site."
+            echo "The published directory will keep computing staleness from whenever it was last pushed."
+            echo "Add a Deploy Hook URL as a repository secret to close this."
+            exit 0
+          fi
+          curl -fsS -X POST "$HOOK" > /dev/null
+          echo "Deploy triggered."
+

@@ -5,14 +5,11 @@
    * demonstrate a passing drill is presumed broken, and this page is where that becomes
    * visible rather than a claim.
    */
-  const components = [
-    { name: 'Watch state machine', state: 'building', note: 'Session 1 — the board, timers, signal routing' },
-    { name: 'Escalation executor', state: 'not built', note: 'Separate process. Ships only after its seven failure tests' },
-    { name: 'Mecha Jono', state: 'live', note: 'Local inference. Not yet holding a board' },
-    { name: 'Field terminal', state: 'not built', note: 'Gated on the loop passing' },
-    { name: 'Console', state: 'not built', note: 'Served from the box, never the public web' },
-    { name: 'Public directory', state: 'live', note: 'navcom.app — deployed, but seeded with no real data yet' }
-  ];
+  // Derived at build time, not written by hand. See +page.ts for why.
+  let { data } = $props();
+  const components = $derived(
+    data.components.map((c) => ({ ...c, state: c.built ? 'built' : 'not built' }))
+  );
 </script>
 
 <svelte:head>
@@ -65,6 +62,24 @@
           <span class="state">{c.state}</span>
           <span class="note">{c.note}</span>
         </li>
+      {/each}
+    </ul>
+    <p class="hint">
+      Derived from the repository at build time rather than written by hand. <strong>"Built"
+      means the code is here</strong> — it is a much weaker claim than it looks, and the
+      list below is what it does not cover.
+    </p>
+  </section>
+
+  <section>
+    <h2>What is not proven</h2>
+    <p class="hint">
+      The things that are true and that no build can check. These matter more than the list
+      above.
+    </p>
+    <ul class="unproven">
+      {#each data.unproven as line (line)}
+        <li>{line}</li>
       {/each}
     </ul>
   </section>
