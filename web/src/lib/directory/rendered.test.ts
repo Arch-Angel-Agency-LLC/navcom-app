@@ -443,31 +443,6 @@ describe('the field terminal', () => {
     expect(t.bodyText).toMatch(/same app either way/i);
   });
 
-  it('never claims a capability that is not built', () => {
-    // The Status screen once promised "the cached directory, the playbooks and your own log
-    // all work with no watch and no signal" while none of the three existed. Claiming a
-    // capability on the one screen that must be honest is the same failure as claiming a
-    // watch that isn't there, and worse, because an operator plans around it.
-    //
-    // Each claim is tied to the screen that would have to exist for it to be true. Restore
-    // a sentence and this passes; restore it early and it fails.
-    const built = screens().map((p) => p.path);
-    const claims: [RegExp, string][] = [
-      [/cached directory/i, 'directory'],
-      [/playbook/i, 'playbook'],
-      [/your own log/i, 'log']
-    ];
-    for (const page of screens()) {
-      for (const [claim, screen] of claims) {
-        if (!claim.test(page.bodyText)) continue;
-        expect(
-          built.some((p) => p.includes(`/terminal/${screen}`)),
-          `${page.path} claims "${claim.source}" but no ${screen} screen is built`
-        ).toBe(true);
-      }
-    }
-  });
-
   it('states where a wipe stops, rather than implying it is total', () => {
     // An operator who believes a wipe removes them from the watch is wrong in a way that
     // changes what they do next. Invariant 7 is a boundary, and the boundary is the part
@@ -512,14 +487,6 @@ describe('the field terminal', () => {
     expect(log.bodyText).toMatch(/this device saw the watch\s+publish/i);
   });
 
-  it('states the limit that survives every check on the record screen', () => {
-    // Omission. No proof closes it, and a screen full of green ticks is exactly where an
-    // operator would otherwise conclude the record is complete.
-    const log = screens().find((p) => p.path.includes('/terminal/log/'))!;
-    expect(log.bodyText).toMatch(/whether anything is missing/i);
-    expect(log.bodyText).toMatch(/nothing signs yet/i);
-  });
-
   it('keeps the relay stack off the offline directory page', () => {
     // The one page an operator opens with no signal was shipping nostr-tools and NIP-44,
     // because it imported the watch store to ask whether a watch was up. It does not need
@@ -532,6 +499,31 @@ describe('the field terminal', () => {
     const all = [...modules, inline].join(' ');
     for (const name of ['nostr', 'relay']) {
       expect(all.toLowerCase(), `offline directory pulls in ${name}`).not.toContain(name);
+    }
+  });
+
+  it('never claims a capability that is not built', () => {
+    // **Not subsumed by the capability manifest, and it looks like it should be.** The
+    // manifest checks that a DECLARED claim appears on its screen. This checks the opposite
+    // direction: that a claim made anywhere has a mechanism behind it. Folding it in on the
+    // grounds that both are "about claims" would have quietly dropped the guard.
+    //
+    // The Status screen once promised "the cached directory, the playbooks and your own log
+    // all work with no watch and no signal" while none of the three existed.
+    const built = screens().map((p) => p.path);
+    const claims: [RegExp, string][] = [
+      [/cached directory/i, 'directory'],
+      [/playbook/i, 'playbook'],
+      [/your own log/i, 'log']
+    ];
+    for (const page of screens()) {
+      for (const [claim, screen] of claims) {
+        if (!claim.test(page.bodyText)) continue;
+        expect(
+          built.some((p) => p.includes(`/terminal/${screen}`)),
+          `${page.path} claims "${claim.source}" but no ${screen} screen is built`
+        ).toBe(true);
+      }
     }
   });
 
@@ -563,13 +555,6 @@ describe('the field terminal', () => {
     expect(dir.doc.querySelector('[data-snapshot-age]'), 'no snapshot age rendered').not.toBeNull();
   });
 
-  it('says the patrol record stays on the phone, before offering to share it', () => {
-    // The operator's own logbook. Nothing in it is transmitted to a watch, a relay or a
-    // peer, and somebody deciding whether to post it should read that first.
-    const p = screens().find((s) => s.path.includes('/terminal/patrols/'))!;
-    expect(p.bodyText).toMatch(/stays on this phone/i);
-  });
-
   it('distinguishes the operator\'s own record from the watch\'s record of them', () => {
     // Two different things that both sound like "your record", and conflating them would
     // let somebody think the watch can see their notes. Asserted on the pages themselves:
@@ -592,24 +577,6 @@ describe('the field terminal', () => {
       expect(peers.bodyText.toLowerCase(), `peers page suggests: ${banned}`).not.toContain(banned);
     }
     expect(peers.bodyText).toMatch(/best done face to face/i);
-  });
-
-  it('says unpairing is silent and cannot be undone', () => {
-    // Somebody who has to justify unpairing, or whose unpairing sends a notification, is
-    // somebody who stays paired with a person they would rather not be.
-    const peers = screens().find((p) => p.path.includes('/terminal/peers/'))!;
-    expect(peers.bodyText).toMatch(/they are not told|not told/i);
-  });
-
-  it('lets an operator choose position sharing, and says where it goes', () => {
-    // This shipped once with the control missing and the setting still being written on
-    // every sign-on -- so signing on silently reset it to off, and nothing failed. The
-    // three facts below are ones an operator cannot discover by using it.
-    const signOn = screens().find((p) => p.path.includes('/terminal/sign-on/'))!;
-    expect(signOn.doc.querySelector('#share'), 'no position control').not.toBeNull();
-    expect(signOn.bodyText).toMatch(/no setting that makes it public/i);
-    expect(signOn.bodyText).toMatch(/Only the latest is kept/i);
-    expect(signOn.bodyText).toMatch(/cannot follow you with the app closed/i);
   });
 
   it('carries a manifest so it can be installed', () => {

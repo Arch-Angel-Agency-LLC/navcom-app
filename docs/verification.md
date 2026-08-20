@@ -101,7 +101,7 @@ still need hardware — but they are two items, not four.
 
 ---
 
-## Move 2 — A capability manifest
+## Move 2 — A capability manifest — **done**
 
 One small data file. Each user-facing capability declares what it claims, which screen
 exposes it, and what it needs.
@@ -130,8 +130,16 @@ Three checks derive from it, and none is written by hand per capability:
    test with empty storage operates the control successfully
 
 **The manifest is the data; Playwright is the engine.** Item 3 is the one that catches
-peers-needing-a-watch, and it cannot be done statically — which is why this move waits for
-the one above.
+peers-needing-a-watch, and it cannot be done statically.
+
+**Proved by breaking it.** Renaming the position control's id made the suite fail with
+`#share is not on terminal/sign-on/` — the exact bug that shipped, caught by the exact
+mechanism built for it. A guard nobody has watched fail is a guard nobody should trust.
+
+One consequence worth naming, because it reads as a limitation and is the opposite: **claims
+are checked against prerendered HTML, so they cannot sit behind `{#if}`.** Five times this
+session an important sentence hid behind a conditional a fresh visitor never reaches. Putting
+the claim where the test can see it puts it where the operator can.
 
 ---
 
@@ -154,7 +162,7 @@ found by reading the workflow, and it would have announced itself.
 
 ---
 
-## Move 4 — Fold the guards that Move 2 subsumes
+## Move 4 — Fold the guards that Move 2 subsumes — **done**
 
 Four hand-written tests are four versions of one idea:
 
@@ -167,8 +175,18 @@ Each was written after the failure it now guards. Together they are the manifest
 one incident at a time. Folding them in is a **deletion**, which the rules here prefer to an
 addition.
 
-Not everything folds. *"No search box on the field terminal"* is a **prohibition**, not a
-claim — there is no capability to attach it to, and it stays as it is.
+Five folded. Two did not, and the second is the interesting one:
+
+- *"No search box on the field terminal"* is a **prohibition**, not a claim. There is no
+  capability to attach it to
+- ***"Never claims a capability that is not built"* points the other way.** The manifest
+  checks that a **declared** claim appears on its screen. That test checks that a claim made
+  **anywhere** has a mechanism behind it — the direction that caught a Status screen
+  promising a cached directory, playbooks and a log while none of the three existed.
+
+  Folding it in on the grounds that both are "about claims" would have quietly dropped the
+  guard, which is the exact failure this whole page is about. It stays, with a comment
+  saying why it looks redundant and is not.
 
 ---
 
