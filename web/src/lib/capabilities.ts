@@ -190,6 +190,24 @@ export const CAPABILITIES: Capability[] = [
     requires: ['identity']
   },
   {
+    name: 'Take the watch',
+    screen: 'terminal/watch/',
+    claims: [
+      // 4.3, and the sentence the whole screen exists to make unmissable. Everything below
+      // it looks like a safety monitor and is not one.
+      'This app does not watch anybody. You do',
+      'keeping it means looking',
+      // Overdue nudges and does nothing else [invariant 3].
+      'marked, and nothing else happens',
+      // Invariant 2: only a human ends a Distress, and no button here closes one.
+      'is not closed by answering it',
+      // A new holder reading an empty board as "nobody is out" is the failure mode of
+      // handover, and it is silent.
+      'An empty board is not the same as nobody being out'
+    ],
+    requires: ['identity']
+  },
+  {
     name: 'Wipe this device',
     screen: 'terminal/wipe/',
     claims: [

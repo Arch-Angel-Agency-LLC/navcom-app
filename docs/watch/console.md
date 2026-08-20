@@ -1,3 +1,9 @@
+> **Superseded in part.** The Console is now a **mode of the same app** — `/terminal/watch/`
+> — not a separate surface served from a box. The premise of the original plan was that a box
+> exists, and for a squad with no hardware it does not. What follows still describes what
+> holding a board involves; where it describes a separate application, read it as the watch
+> mode instead. Decided 2026-08-19, built 2026-08-20.
+
 # The Console
 
 Where watch is held. Desktop-shaped, information-dense, built for someone sitting down

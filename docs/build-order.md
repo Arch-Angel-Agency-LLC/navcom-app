@@ -451,12 +451,18 @@ is 0.2 — two real devices on one relay — which is a human check, not code.
 
 **Done when:** four people take turns holding watch on their phones.
 
+**All items built.** What is not built, and is now the top of Mk1: **key rotation.** Every
+member holds the watch key, so removing somebody stops them *reading* new signals and does
+not stop them publishing watch state — they can still claim, on the public record, to be the
+watch. `bootstrap.spec.md` already recorded this; 4.1 makes it reachable, so it is stated on
+the screen where somebody joins a squad-held watch.
+
 | | Item | Owner | Cost |
 |---|---|---|---|
-| 4.1 | **Watch as a mode of the app** | agent | Replaces the Console-from-the-box plan entirely |
+| 4.1 | ~~Watch as a mode of the app~~ | **done** | `/terminal/watch/`. A member reads the board with their **own** key and needs the watch key only to answer — so listening is not holding, which is what makes handover cost nothing |
 | 4.2 | ~~Sealing to several keys~~ | **done** | One encryption, one 32-byte wrap per holder. No pubkeys in the envelope, so a relay never sees the roster. A single-holder watch produces the same shape as a squad, so nobody can sort Watchtowers into "box" and "squad" without decrypting |
-| 4.3 | **A declaration must not read as a safety monitor** | agent | The hardest problem in this milestone, and it is wording and layout rather than mechanism |
-| 4.4 | Handover | agent | Specified since the beginning, never implemented, and phone-held watch makes it nightly |
+| 4.3 | ~~A declaration must not read as a safety monitor~~ | **done** | *"This app does not watch anybody. You do."* Stated above the board, because everything below it looks like a monitor and is not one |
+| 4.4 | ~~Handover~~ | **done** | **Nobody hands over a board.** The incoming watch derives its own from operators re-announcing when their phones see the holder change — passing the outgoing holder's picture would make the new watch's board a thing it was told rather than derived |
 
 ## Milestone 5 — The properties we have written down
 
@@ -474,6 +480,22 @@ ships** — the status page states what is built.
 | 5.7 | Never write "anonymous" where "pseudonymous" is true | agent |
 | 5.8 | **Logical CSS properties** so right-to-left scripts are not broken | agent |
 | 5.9 | **Message catalogue**, one locale shipped, English fallback | agent |
+| 5.10 | **Drop `overdue_count` from `10910`** — bump to v4 | agent |
+
+### 5.10, because the condition it waited on has been met
+
+`10910` is unencrypted, so `overdue_count` announces *that* somebody is overdue to anybody
+subscribed. It never says who — but a watcher correlating timing learns something, and that
+is the [Doxxer's](research/ecosystem-roster.md) method.
+
+`watch-state.ts` has said since it was written that this should go **once a Console exists**,
+because a Console reads the board directly and needs no public field. 4.1 is that Console.
+Nothing consumes the field today: the daemon writes it, tests assert it, and no client
+displays or reacts to it.
+
+Left for its own change rather than folded into 4.1, because dropping a published field is a
+wire-format decision — v3 to v4, the daemon, the spec and the tests — and it deserves to be
+visible as one rather than a line in a watch-mode commit.
 
 ## Deferred, with reasons
 

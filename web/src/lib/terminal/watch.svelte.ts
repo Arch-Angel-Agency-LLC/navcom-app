@@ -11,6 +11,32 @@ import { loadConfig } from './config';
 import { watchWatchtower, type Connection } from './relay';
 import { recordRoot, rootAlarms } from './roots';
 
+/**
+ * The last holder this device actually saw, and who to tell when it changes.
+ *
+ * **Not cleared by a Dark read.** A handover is normally holder A, then a moment of Dark
+ * while nobody has taken it up, then holder B — and treating that gap as "no previous
+ * holder" would swallow exactly the change worth reacting to.
+ */
+let knownHolder: string | null = null;
+let onHandover: (() => void) | null = null;
+
+/**
+ * Registers what to do when the watch changes hands.
+ *
+ * The board is rebuilt by whoever holds it, from signals they hear themselves — nobody
+ * hands a board over, because nobody holds anybody else's picture. So the incoming watch
+ * starts empty, and the way it fills is that **operators say they are out again**, which is
+ * what this exists to trigger.
+ *
+ * Deliberately not the other design. Passing the outgoing holder's board to the incoming
+ * one would make the new watch's picture a thing it was told rather than a thing it
+ * derived, and that is the property this whole system is built to avoid.
+ */
+export function whenWatchChangesHands(cb: () => void): void {
+  onHandover = cb;
+}
+
 let read = $state<WatchStateRead>(readWatchStateAt(null));
 let connected = $state(false);
 let alarms = $state<RootAlarm[]>([]);
@@ -46,6 +72,12 @@ export const watch = {
     alarms = rootAlarms();
     connection = watchWatchtower(config, (r) => {
       read = r;
+
+      const holder = r.dark ? null : r.state.holder;
+      if (holder) {
+        if (knownHolder !== null && holder !== knownHolder) onHandover?.();
+        knownHolder = holder;
+      }
       // Only a live read tells us anything about the log. A Dark read means we could not
       // reach the watch, which is not the same as a watch that stopped committing.
       if (!r.dark) {

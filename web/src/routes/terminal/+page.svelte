@@ -352,6 +352,7 @@
   <!-- Two taps from anywhere in the terminal. Not buried, and not a button large enough to
        hit while putting the phone in a pocket. -->
   <nav class="quiet">
+    <a href="/terminal/watch/">Watch</a>
     <a href="/terminal/peers/">Peers</a>
     <a href="/terminal/card/">Your card</a>
     <a href="/terminal/directory/">Directory</a>

@@ -23,7 +23,7 @@ import {
 import { loadConfig } from './config';
 import { loadIdentity } from './identity';
 import { get, set, clearField } from './storage';
-import { watch } from './watch.svelte';
+import { watch, whenWatchChangesHands } from './watch.svelte';
 import { seenRoots } from './roots';
 import { recordPatrol } from './patrol';
 import { watchtowerAt, type WatchtowerAddress } from '@navcom/core';
@@ -43,6 +43,8 @@ export interface SignOn {
    * the capability receipt, and it lands when the daemon issues one.
    */
   toldAtSignOn: string;
+  /** Seconds between routine check-ins, or null. Kept so a re-announce can restate it. */
+  routineInterval: number | null;
 }
 
 let session = $state<SignOn | null>(get<SignOn>('wipeable', 'signon'));
@@ -112,6 +114,25 @@ async function run<T>(fn: () => Promise<T>): Promise<T | null> {
  * One place, so nothing can seal to the address when it meant the holders. A box has no
  * holders listed and is its own holder; a squad lists one pubkey per phone.
  */
+/**
+ * What to tell a watch that has just taken over, about a patrol already in progress.
+ *
+ * `expected_duration` is what is **left**, not what was originally asked for. The incoming
+ * watch needs to know when this operator is due back, and restating the original duration
+ * would push that time forward by however long they have already been out.
+ */
+function onStationPayload(): OnStationPayload {
+  const now = Math.floor(Date.now() / 1000);
+  return {
+    callsign: loadIdentity()?.callsign ?? undefined,
+    area: session?.area ?? 'unknown',
+    expected_duration: Math.max(0, (session?.expectedUntil ?? now) - now),
+    routine_interval: session?.routineInterval ?? null,
+    share_position: position.current !== null,
+    position: position.current
+  };
+}
+
 function watchAddress(config: { pubkey: string; holders: string[] }): WatchtowerAddress {
   return watchtowerAt(config.pubkey, config.holders);
 }
@@ -172,7 +193,8 @@ export const operator = {
       at: now,
       area,
       expectedUntil: now + Math.round(hours * 3600),
-      toldAtSignOn: capabilitySentence(state)
+      toldAtSignOn: capabilitySentence(state),
+      routineInterval: routineMinutes === null ? null : routineMinutes * 60
     };
     // Wipeable: tonight's data. Panic wipe removes it; identity survives.
     set('wipeable', 'signon', session);
@@ -189,6 +211,18 @@ export const operator = {
     // the rest of the time.
     void announceListed();
     beatListed();
+
+    // A watch that changes hands inherits nothing: the incoming holder's board is empty
+    // until the operators on it say so themselves. This is that -- one signal, sent when
+    // this device notices somebody else is answering now.
+    //
+    // It matters most for the operator who is already out. Without it they are invisible
+    // to the new watch until their next routine check-in, which by default is an hour of
+    // somebody believing they are being watched by a person who cannot see them.
+    whenWatchChangesHands(() => {
+      if (!session) return;
+      void run(() => send('on-station', onStationPayload()));
+    });
   },
 
   /** What peers are told. Coarse by construction, and nothing they did not agree to receive. */

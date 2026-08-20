@@ -20,6 +20,7 @@ export const TERMINAL_ROUTES = [
   'peers/',
   'card/',
   'find/',
+  'watch/',
   'log/',
   'wipe/'
 ] as const;

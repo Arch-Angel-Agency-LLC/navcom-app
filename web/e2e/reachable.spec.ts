@@ -305,6 +305,72 @@ test.describe('finding somebody', () => {
   });
 });
 
+test.describe('holding the watch', () => {
+  test('a watch can be started on this phone, and taking it is a separate act', async ({ page }) => {
+    // Starting a watch and being ON it are different. A key on the device promises nothing;
+    // publishing that a named human is watching is the promise.
+    await seedDevice(page, OUT);
+    await open(page, '/terminal/watch/');
+
+    await page.getByRole('button', { name: /start a watch on this phone/i }).click();
+    await expect(page.getByRole('heading', { name: /off watch/i })).toBeVisible();
+    await expect(page.getByRole('button', { name: /take the watch/i })).toBeVisible();
+  });
+
+  test('the watch key is its own key, not the operator identity', async ({ page }) => {
+    await seedDevice(page, OUT);
+    await open(page, '/terminal/watch/');
+    await page.getByRole('button', { name: /start a watch on this phone/i }).click();
+
+    const device = await readDevice(page);
+    expect(device.accruing['watch_secret']).toBeTruthy();
+    expect(device.accruing['watch_secret']).not.toBe(device.accruing['secret']);
+  });
+
+  test('a key that is not a key is refused with a reason', async ({ page }) => {
+    await seedDevice(page, OUT);
+    await open(page, '/terminal/watch/');
+
+    await page.locator('#key').fill('nonsense');
+    await page.getByRole('button', { name: /^join$/i }).click();
+    await expect(page.getByText(/not a watch key/i)).toBeVisible();
+  });
+
+  test('giving up the watch takes a second deliberate tap and says what it does not do', async ({ page }) => {
+    await seedDevice(page, OUT);
+    await open(page, '/terminal/watch/');
+    await page.getByRole('button', { name: /start a watch on this phone/i }).click();
+
+    // The limit stated before the button, not after: other holders keep the same key and
+    // nothing here can reach their devices.
+    //
+    // `\s+` rather than a space: getByText does not normalise whitespace when given a
+    // regex, and this phrase spans a line break in the markup. A literal space here fails
+    // for a formatting reason that has nothing to do with what is being asserted.
+    await expect(page.getByText(/it does not end the\s+watch/i)).toBeVisible();
+
+    await page.getByRole('button', { name: /give up this watch/i }).click();
+    await page.getByRole('button', { name: /remove it from this phone/i }).click();
+
+    const device = await readDevice(page);
+    expect(device.accruing['watch_secret']).toBeUndefined();
+    // Giving up a watch is not leaving. The operator identity is untouched.
+    expect(device.accruing['secret']).toBeTruthy();
+  });
+
+  test('there is no control anywhere that closes a Distress', async ({ page }) => {
+    // Invariant 2: a Distress terminates in a human. A watch screen that could clear one
+    // would let it terminate in a tap instead.
+    await seedDevice(page, OUT);
+    await open(page, '/terminal/watch/');
+    await page.getByRole('button', { name: /start a watch on this phone/i }).click();
+
+    for (const name of [/close/i, /resolve/i, /clear/i, /dismiss/i, /stand.*down.*distress/i]) {
+      await expect(page.getByRole('button', { name })).toHaveCount(0);
+    }
+  });
+});
+
 test.describe('patrols', () => {
   test('whether the history survives a wipe is a control, not a setting somebody has to find', async ({ page }) => {
     await seedDevice(page, OUT);
