@@ -3,5 +3,16 @@
   "buildCommand": "npm run verify --workspace navcom-web",
   "installCommand": "npm install",
   "outputDirectory": "web/build",
-  "framework": null
+  "framework": null,
+  "headers": [
+    {
+      "source": "/version.json",
+      "headers": [
+        {
+          "key": "cache-control",
+          "value": "public, max-age=0, must-revalidate"
+        }
+      ]
+    }
+  ]
 }

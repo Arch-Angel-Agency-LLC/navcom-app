@@ -5,11 +5,15 @@
    * demonstrate a passing drill is presumed broken, and this page is where that becomes
    * visible rather than a claim.
    */
-  // Derived at build time, not written by hand. See +page.ts for why.
+  // Derived at build time, not written by hand. See +page.server.ts for why.
+  import { formatDate } from '$lib/directory';
+
   let { data } = $props();
   const components = $derived(
     data.components.map((c) => ({ ...c, state: c.built ? 'built' : 'not built' }))
   );
+  /** The same absolute-date formatter the directory uses, for the same reason. */
+  const buildDate = $derived(formatDate(data.version.builtAt.slice(0, 10)));
 </script>
 
 <svelte:head>
@@ -68,6 +72,21 @@
       Derived from the repository at build time rather than written by hand. <strong>"Built"
       means the code is here</strong> — it is a much weaker claim than it looks, and the
       list below is what it does not cover.
+    </p>
+    <!--
+      Absolute, not "3 days ago": this page ships no JavaScript, so a relative age would be
+      frozen at build time and start lying the moment somebody read it. A date stays true.
+
+      It is also how the daily rebuild reports on itself — a date several days back means
+      the scheduled job has stopped, which previously could only be found by reading a
+      workflow file.
+    -->
+    <p class="stamp" data-version={data.version.commit}>
+      This page was built from
+      <code>{data.version.commit}</code>{#if data.version.dirty}&nbsp;(with uncommitted changes){/if}
+      on <time datetime={data.version.builtAt}>{buildDate}</time>. It rebuilds daily —
+      an older date than that means the rebuild has stopped.
+      <a href="/version.json">version.json</a> says the same thing to a machine.
     </p>
   </section>
 

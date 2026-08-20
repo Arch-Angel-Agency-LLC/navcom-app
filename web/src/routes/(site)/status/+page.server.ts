@@ -17,6 +17,7 @@
 import { existsSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { loadDirectory, loadRegions } from '$lib/directory/load';
+import { VERSION } from '$lib/server/version';
 
 export const prerender = true;
 
@@ -50,6 +51,18 @@ export function load() {
   const withData = new Set(records.map((r) => r.region)).size;
 
   return {
+    /**
+     * When this page was built, absolutely.
+     *
+     * Absolute rather than "3 days ago" for the same reason the directory shows absolute
+     * dates: this site ships no JavaScript, so a relative age would be frozen at build
+     * time and start lying the moment it was read. A date stays true.
+     *
+     * It is also how the daily rebuild reports on itself. A date several days back means
+     * the scheduled job is not running.
+     */
+    version: VERSION,
+
     components: [
       {
         name: 'Watch state machine',
