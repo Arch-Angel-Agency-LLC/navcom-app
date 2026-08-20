@@ -93,9 +93,22 @@ export const board = {
       .sort((a, b) => a.callsign.localeCompare(b.callsign));
   },
 
-  /** Signals somebody is waiting on an answer to. Oldest first — they have waited longest. */
+  /**
+   * Signals somebody is waiting on an answer to. Oldest first — they have waited longest.
+   *
+   * **Resupply is deliberately not here.** It is a request that can wait until somebody is
+   * somewhere warm, and putting it in the same list as *"I need someone"* would make it
+   * compete for attention with things that matter more. That is the alarm-fatigue problem
+   * in a quieter dress: a list where most entries do not matter teaches somebody to skim
+   * the list.
+   */
   get waiting(): Waiting[] {
-    return [...waiting].sort((a, b) => a.at - b.at);
+    return [...waiting].filter((w) => w.type !== 'resupply').sort((a, b) => a.at - b.at);
+  },
+
+  /** What ran out. Its own list, quiet, and nobody is waiting in the street on it. */
+  get restock(): Waiting[] {
+    return [...waiting].filter((w) => w.type === 'resupply').sort((a, b) => a.at - b.at);
   },
 
   get onStation(): boolean {

@@ -479,7 +479,7 @@ ships** — the status page states what is built.
 | 5.3 | ~~Saying no to an `Assist`~~ | **done** | A `declined` response — *"nobody is coming"*. Refused for `Distress` in core, so no client can offer a button that ends one with a tap [invariant 2] |
 | 5.4 | ~~Weather-activated warming and cooling centres~~ | **done** | **Display rule 7**, not a weather API. The case rules 1–2 miss: the data is fresh and the answer is still wrong. No network call, no third party, no content generated |
 | 5.5 | ~~Battery state~~ | **done** | Told to the operator, published to nobody — see [`declined.md`](declined.md). Chromium-only, so absent on iOS, and absent rather than estimated |
-| 5.6 | Supplies | **needs a decision** | Not underspecified by accident — it collides with an invariant and an anti-pattern. See below |
+| 5.6 | ~~Supplies~~ | **done** | A **request, not a tally**. `resupply` carries no number, so there is nothing to game and nothing to merge. The patrol record stays purely local |
 | 5.7 | ~~Never write "anonymous" where "pseudonymous" is true~~ | **done** | Said on the setup screen where the key is generated, not in a policy — the trade is stated at the moment it is made |
 | 5.8 | ~~Logical CSS properties~~ so right-to-left scripts are not broken | **done** | Plus `dir` on the document, without which they are inert. Guarded by a test that scans the **built** CSS, since Svelte rewrites styles and a dependency can emit physical properties nothing in `src/` contains |
 | 5.9 | ~~Message catalogue~~, one locale shipped, English fallback | **deferred** | See below. It contradicted a decision already recorded in [`product/languages.md`](product/languages.md) |
@@ -527,7 +527,9 @@ Until then the log root is still published and clients still keep the roots they
 which is what closes rewriting **since somebody looked**. Backdating a window nobody watched
 stays open, and [`declined.md`](declined.md) already says so.
 
-### 5.6 needs a decision before it can be built
+### 5.6 — how the decision went
+
+**A request, not a tally.**
 
 The Quartermaster wants *"to know what we handed out so I know what to restock"*, and
 [`archetypes.md`](research/archetypes.md) asks for **supply signals that tolerate several
@@ -554,10 +556,32 @@ Two versions, and they are genuinely different products:
 | **Local only** | *"What I handed out tonight"* in the patrol record, which is already local. Useful to the operator, tells them what they need to restock, publishes nothing, invites no comparison. **Does not solve the Quartermaster's problem at all** — they still have to ask people |
 | **Shared** | Handouts travel to whoever holds the storage unit. Solves the actual problem, and means the patrol record stops being purely local and a per-person number exists somewhere |
 
-The local version is buildable today and is what would be built by default. It is recorded
-here rather than done, because shipping it would quietly settle the larger question by making
-the smaller one look finished — and the Quartermaster is a named archetype whose problem
-would then be marked done without being touched.
+**Both were rejected, because the question was the wrong one.** The Quartermaster did not ask
+what was handed out; they asked *"so I know what to restock."* That is answerable without a
+tally at all.
+
+So `resupply` is a **need, not a report**: *"I ran out of socks."* No number, so nothing to
+game. Sparse, because you only say it when it is true. It travels because somebody chose to
+send it rather than because the system collected it. And there is nothing to merge, so the
+*"several people editing offline"* requirement dissolves rather than getting solved — which
+is usually the sign a reframe is right.
+
+Two things fall out of it:
+
+- **The patrol record stays purely local**, untouched. Nothing about what anybody carried or
+  gave away is transmitted, now or ever
+- The Quartermaster's other half — how fast the shelf empties — is answered by **counting
+  their own shelf**, which needs no code, no protocol and no self-reports, and is more
+  accurate than self-reports because people forget
+
+It goes to the watch rather than to a named peer, which is a change from how it was first
+sketched. Routing it peer-to-peer meant a new stored kind for peer-directed notes, and that
+is a general messaging surface — a chat app with one feature so far. The watch is already
+whoever is holding things together tonight.
+
+**Its own section on the watch screen, below everything anybody is waiting on.** Putting it
+in the same list as *"I need someone"* would make it compete for attention with things that
+matter more, which is the alarm-fatigue problem in a quieter dress.
 
 ### 5.9 was listed by mistake, and is deferred
 

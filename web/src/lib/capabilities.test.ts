@@ -68,7 +68,15 @@ describe('the manifest itself stays honest', () => {
   it('has no capability requiring a watch that it does not need', () => {
     // Most operators have no Watchtower. A capability that lists one is claiming most
     // people cannot use it, which had better be true.
+    //
+    // An allow-list rather than a rule, so that adding a third is a decision somebody had
+    // to write down here:
+    //
+    //  - Query and Assist need a person on the other end. That is what they are
+    //  - Resupply goes to whoever keeps the shared stash, and somebody patrolling alone has
+    //    no quartermaster either — they buy their own socks. The screen says exactly that
+    //    rather than reading as incomplete setup
     const needWatch = CAPABILITIES.filter((c) => c.requires.includes('watch')).map((c) => c.name);
-    expect(needWatch.sort()).toEqual(['Assist', 'Query']);
+    expect(needWatch.sort()).toEqual(['Assist', 'Query', 'Resupply']);
   });
 });

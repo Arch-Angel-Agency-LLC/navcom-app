@@ -91,6 +91,22 @@ export interface LogReviewPayload {
 }
 
 /** Accepting a specific `Distress`. The id is the `20911` event being answered. */
+/**
+ * What ran out. Free text, and deliberately no quantities and no taxonomy.
+ *
+ * A list of supply categories would be content this project has no business generating —
+ * what a squad carries is local knowledge, and a dropdown that omits the thing you actually
+ * need teaches people the app is not for them.
+ *
+ * **Nothing about anybody being served belongs here** [invariant 1]. That cannot be enforced
+ * on free text, so the screen guides rather than pretends — the same as `Query`.
+ */
+export interface ResupplyPayload {
+  text: string;
+  /** Coarse, like everywhere else. Helps whoever restocks know which stash it is. */
+  area?: string;
+}
+
 export interface DistressAckPayload {
   distress_id: string;
 }
@@ -100,6 +116,7 @@ export type SignalPayload =
   | QueryPayload
   | AssistPayload
   | LogReviewPayload
+  | ResupplyPayload
   | DistressAckPayload
   | Record<string, never>;
 
@@ -115,6 +132,15 @@ export const RESPONSE_WINDOW: Record<SignalType | 'distress', number | null> = {
   // Acknowledging is the fastest thing in the system: it is one tap, and somebody is
   // waiting on it in a way they are not waiting on anything else.
   'distress-ack': 10,
+  /**
+   * The longest window in the table, on purpose.
+   *
+   * Nobody is waiting in the street on a resupply. It is still acknowledged, because every
+   * signal here is acknowledged and silence is never a response — but the window says
+   * plainly that this is the least urgent thing an operator can send, and it must never
+   * compete for attention with something that is not.
+   */
+  resupply: 600,
   distress: null
 };
 

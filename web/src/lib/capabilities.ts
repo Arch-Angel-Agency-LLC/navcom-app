@@ -253,6 +253,21 @@ export const CAPABILITIES: Capability[] = [
     requires: []
   },
   {
+    name: 'Resupply',
+    screen: 'terminal/resupply/',
+    claims: [
+      // The decision, stated where somebody would otherwise expect a tally. Most apps would
+      // count handouts here, and that is a feed and a leaderboard at once.
+      'Nothing counts what you handed out',
+      'a request, not a report',
+      // Invariant 1, in the same words the Query screen uses.
+      'Write about the supply, not the person',
+      'pages nobody'
+    ],
+    control: '#r',
+    requires: ['identity', 'watch']
+  },
+  {
     name: 'Wipe this device',
     screen: 'terminal/wipe/',
     claims: [

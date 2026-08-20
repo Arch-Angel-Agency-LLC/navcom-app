@@ -262,6 +262,31 @@
     {/if}
   </section>
 
+  <section>
+    <h2>Restock</h2>
+    <!--
+      Its own section, below everything anybody is waiting on, and with no badge or count.
+      A resupply request is the least urgent thing in this system and the screen has to say
+      so by where it puts it, not only in words.
+    -->
+    {#if board.restock.length === 0}
+      <p class="cost">Nothing has run out.</p>
+    {:else}
+      <ul class="board asks">
+        {#each board.restock as w (w.id)}
+          <li>
+            <div class="who"><span class="name">{w.callsign}</span></div>
+            {#if w.text}<p class="said">{w.text}</p>{/if}
+          </li>
+        {/each}
+      </ul>
+      <p class="cost">
+        Nobody is waiting on these. They are here so whoever keeps the stash knows what to
+        buy — <strong>there is no count of what anyone handed out</strong>, here or anywhere.
+      </p>
+    {/if}
+  </section>
+
   <section class="act">
     <h2>Give up this watch</h2>
     <p class="cost">

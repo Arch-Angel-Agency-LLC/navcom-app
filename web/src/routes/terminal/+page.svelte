@@ -388,12 +388,14 @@
        hit while putting the phone in a pocket. -->
   <nav class="quiet">
     <a href="/terminal/watch/">Watch</a>
+    <a href="/terminal/resupply/">Resupply</a>
     <a href="/terminal/peers/">Peers</a>
     <a href="/terminal/card/">Your card</a>
     <a href="/terminal/directory/">Directory</a>
     <a href="/terminal/patrols/">Your patrols</a>
     <a href="/terminal/log/">What the watch wrote</a>
     <a href="/terminal/wipe/">Wipe this device</a>
+    <a href="/terminal/on-call/">On call</a>
     <a href="/terminal/setup/">Setup</a>
   </nav>
 {/if}

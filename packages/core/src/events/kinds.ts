@@ -85,7 +85,24 @@ export const SIGNAL_TYPES = [
    * be an explicit act by a person. A delivery receipt, a read receipt or an app-open event
    * MUST NOT be routed into it — someone whose phone buzzed is not someone who woke up.
    */
-  'distress-ack'
+  'distress-ack',
+  /**
+   * *"I ran out of socks."*
+   *
+   * A **request, not a tally.** The Quartermaster's question is "what should I buy next",
+   * and the obvious answer — everyone reports what they handed out — is the wrong shape
+   * twice over: it is a feed and it is a count, and a per-operator total published to a
+   * squad is a leaderboard whatever it is called.
+   *
+   * A need has none of that. It carries no number, it is sparse because you only say it
+   * when it is true, and it travels because somebody chose to send it rather than because
+   * the system collected it. There is also nothing to merge, so the "several people editing
+   * offline" problem does not arise rather than being solved.
+   *
+   * The operator's patrol record stays purely local. Nothing about what anybody carried or
+   * gave away is transmitted, now or ever.
+   */
+  'resupply'
 ] as const;
 export type SignalType = (typeof SIGNAL_TYPES)[number];
 

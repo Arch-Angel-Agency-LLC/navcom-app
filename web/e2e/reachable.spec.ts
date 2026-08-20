@@ -521,6 +521,45 @@ test.describe('being on call', () => {
   });
 });
 
+test.describe('resupply', () => {
+  const WATCHED = { ...OUT, watchtower: { pubkey: 'e'.repeat(64), relays: ['wss://relay.example'] } };
+
+  test('says plainly that nothing counts what you handed out', async ({ page }) => {
+    // The decision, stated where somebody would otherwise expect a tally.
+    await seedDevice(page, WATCHED);
+    await open(page, '/terminal/resupply/');
+
+    await expect(page.getByText(/nothing counts what you handed out/i)).toBeVisible();
+    await expect(page.getByText(/a request, not a report/i)).toBeVisible();
+  });
+
+  test('guides away from writing about a person', async ({ page }) => {
+    await seedDevice(page, WATCHED);
+    await open(page, '/terminal/resupply/');
+    await expect(page.getByText(/write about the supply, not the person/i)).toBeVisible();
+  });
+
+  test('an operator with no watch is told nothing is missing', async ({ page }) => {
+    // Somebody patrolling alone has no quartermaster either. This must not read as
+    // incomplete setup.
+    await seedDevice(page, OUT);
+    await open(page, '/terminal/resupply/');
+    await expect(page.getByText(/nothing here is missing/i)).toBeVisible();
+  });
+
+  test('the restock list on the watch is separate from what people are waiting on', async ({ page }) => {
+    // Putting it in "Waiting on you" would make it compete with "I need someone" -- the
+    // alarm-fatigue problem in a quieter dress.
+    await seedDevice(page, OUT);
+    await open(page, '/terminal/watch/');
+    await page.getByRole('button', { name: /start a watch on this phone/i }).click();
+
+    await expect(page.getByRole('heading', { name: /^restock$/i })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /waiting on you/i })).toBeVisible();
+    await expect(page.getByText(/nothing has run out/i)).toBeVisible();
+  });
+});
+
 test.describe('patrols', () => {
   test('whether the history survives a wipe is a control, not a setting somebody has to find', async ({ page }) => {
     await seedDevice(page, OUT);

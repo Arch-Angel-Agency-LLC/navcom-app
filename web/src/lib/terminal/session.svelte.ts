@@ -264,6 +264,23 @@ export const operator = {
     if (r) lastResponse = r;
   },
 
+  /**
+   * *"I ran out of socks."*
+   *
+   * Goes to the watch rather than to a named peer, which is a change from how this was
+   * first sketched. Routing it peer-to-peer would have meant a new stored kind for
+   * peer-directed notes — which is a general messaging surface, and a general messaging
+   * surface is a chat app with one feature so far. The watch is already whoever is holding
+   * things together tonight, and in a squad every holder reads the same board.
+   *
+   * An operator with no watch cannot send this, and does not need to: somebody patrolling
+   * alone has no quartermaster either. They buy their own socks.
+   */
+  async resupply(text: string) {
+    const r = await run(() => send('resupply', area(text), 15_000));
+    if (r) lastResponse = r;
+  },
+
   async assist(urgency: 'soon' | 'now', text: string) {
     const r = await run(() => send('assist', { urgency, ...area(text ? text : undefined) }, 15_000));
     if (r) lastResponse = r;
