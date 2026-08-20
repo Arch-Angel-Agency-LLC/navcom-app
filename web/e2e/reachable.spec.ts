@@ -489,6 +489,38 @@ test.describe('post-quantum cover', () => {
   });
 });
 
+test.describe('being on call', () => {
+  test('the sender key is pasted in, because nothing discovers it', async ({ page }) => {
+    await seedDevice(page, OUT);
+    await open(page, '/terminal/on-call/');
+
+    await expect(page.locator('#sender')).toBeVisible();
+    await expect(page.getByRole('button', { name: /let this device be woken/i })).toBeDisabled();
+    await page.locator('#sender').fill('x');
+    await expect(page.getByRole('button', { name: /let this device be woken/i })).toBeEnabled();
+  });
+
+  test('a key that is not a key is refused before anything is asked for', async ({ page }) => {
+    // The permission prompt is the expensive part -- an operator who is prompted and then
+    // told the key was wrong has been interrupted for nothing.
+    await seedDevice(page, OUT);
+    await open(page, '/terminal/on-call/');
+
+    await page.locator('#sender').fill('nonsense');
+    await page.getByRole('button', { name: /let this device be woken/i }).click();
+    await expect(page.getByText(/sender key is 65 bytes|does not look like a sender key/i)).toBeVisible();
+  });
+
+  test('says this is the only notification the app sends', async ({ page }) => {
+    // The rule the rest of the app is built on, stated on its one exception.
+    await seedDevice(page, OUT);
+    await open(page, '/terminal/on-call/');
+
+    await expect(page.getByText(/only notification navcom ever sends/i)).toBeVisible();
+    await expect(page.getByText(/field terminal is silent/i)).toBeVisible();
+  });
+});
+
 test.describe('patrols', () => {
   test('whether the history survives a wipe is a control, not a setting somebody has to find', async ({ page }) => {
     await seedDevice(page, OUT);

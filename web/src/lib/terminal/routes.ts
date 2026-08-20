@@ -21,6 +21,7 @@ export const TERMINAL_ROUTES = [
   'card/',
   'find/',
   'watch/',
+  'on-call/',
   'log/',
   'wipe/'
 ] as const;

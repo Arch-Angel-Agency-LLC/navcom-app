@@ -92,6 +92,73 @@ sw.addEventListener('message', (event) => {
   );
 });
 
+/**
+ * A page, and the only notification this app is allowed to show.
+ *
+ * **The field terminal is silent.** No badges, no activity, no nudges, no "somebody signed
+ * on". The single exception is a `Distress` reaching somebody who registered themselves as
+ * on-call, which is the one message in this system where failing to interrupt a person is
+ * the failure.
+ *
+ * ## Why web push rather than a third-party topic
+ *
+ * A page over an ntfy topic passes its text through somebody else's server in the clear. A
+ * Web Push payload is encrypted to keys that only this browser holds, so the push service —
+ * Google's, Mozilla's or Apple's, and there is no avoiding one — relays a blob it cannot
+ * read. That is a real improvement on the one channel that carries an emergency.
+ *
+ * It is also the one native-grade capability a web app already has on both platforms: Chrome
+ * on Android, and iOS 16.4+ once the app is on the home screen. No app store in either case.
+ *
+ * ## What it deliberately does not do
+ *
+ * No payload from the wire is rendered. The sender is a machine that cannot read the
+ * `Distress` either, so there is nothing to render — and a notification that quoted
+ * attacker-controlled text on a locked screen would be a way to put words in front of
+ * somebody at their least critical moment. The text is fixed and lives here.
+ */
+sw.addEventListener('push', (event) => {
+  // A push with no data, or data this version does not understand, still wakes somebody.
+  // Failing closed here would mean a silent page, which is the failure this exists to
+  // prevent -- so anything unparseable is treated as a real Distress.
+  let drill = false;
+  try {
+    drill = (event.data?.json() as { drill?: boolean } | null)?.drill === true;
+  } catch {
+    drill = false;
+  }
+
+  event.waitUntil(
+    sw.registration.showNotification(
+      drill ? 'NavCom drill — not an emergency' : 'NavCom — Distress',
+      {
+        body: drill
+          ? 'A drill. Acknowledge it so the roster can be proven.'
+          : 'An operator is waiting for a human. Open the terminal and acknowledge.',
+        // Distinguishable by the recipient, in the text they actually read [C29]. Somebody
+        // woken at 3am has seconds and no context.
+        tag: drill ? 'navcom-drill' : 'navcom-distress',
+        requireInteraction: !drill,
+        data: { url: `${base}/terminal/` }
+      }
+    )
+  );
+});
+
+/** Tapping it opens the terminal, focusing a tab that is already there rather than adding one. */
+sw.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const url = (event.notification.data as { url?: string } | null)?.url ?? `${base}/terminal/`;
+  event.waitUntil(
+    sw.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clients) => {
+      for (const client of clients) {
+        if (client.url.includes('/terminal') && 'focus' in client) return client.focus();
+      }
+      return sw.clients.openWindow(url);
+    })
+  );
+});
+
 sw.addEventListener('fetch', (event) => {
   const request = event.request;
   if (request.method !== 'GET') return;

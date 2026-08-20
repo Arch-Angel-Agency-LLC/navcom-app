@@ -239,6 +239,20 @@ export const CAPABILITIES: Capability[] = [
     requires: ['identity']
   },
   {
+    name: 'Being on call',
+    screen: 'terminal/on-call/',
+    claims: [
+      // The rule the whole app is built on, stated on the one screen that is an exception
+      // to it. Somebody agreeing to be interrupted needs to know exactly how often.
+      'This is the only notification NavCom ever sends',
+      'The field terminal is silent and stays silent',
+      // The page carries nothing from the wire, and the reason is worth saying.
+      'The page carries no detail',
+      'tells nobody'
+    ],
+    requires: []
+  },
+  {
     name: 'Wipe this device',
     screen: 'terminal/wipe/',
     claims: [

@@ -73,10 +73,35 @@ It holds **no key**, so it sees that a Distress arrived and nothing inside one, 
 runs it is trusted with nothing. Run several. Duplicate pages are a nuisance; a missed page
 is not.
 
-> **A note on ntfy:** it is a third party, and your paging metadata passes through their
-> server. Disclose that to anyone else you put on the roster. If you have anything of your
-> own — a script, a bot, a gateway — prefer it, because it puts nobody else in the one path
-> that must not depend on somebody else's uptime.
+> **A note on ntfy:** it is a third party, and your page's text passes through their server
+> in the clear. Disclose that to anyone else you put on the roster.
+
+### The better channel, and the one thing in this project that has never been proven
+
+**Web push encrypts the page to keys only your phone holds**, so Google's or Apple's push
+service relays a blob it cannot read. It is also the only way to be woken on both platforms
+without an app store. It is built and **its delivery has never been observed** — key
+generation and validation are tested, an actual page arriving is not.
+
+```bash
+navcom-push --keys          # once. Public half is handed over; private half stays put
+```
+
+Then on the phone that will be woken — **on iPhone, add NavCom to the Home Screen first,
+or none of this exists** — open `/terminal/on-call/`, paste the public half, and copy what
+it gives you back to a file on the box. Then:
+
+```toml
+[[escalation.oncall]]
+callsign = "Jono"
+channel  = "push"
+command  = ["navcom-push", "--to", "/etc/navcom/oncall/jono.json", "{{message}}"]
+```
+
+`navcom-escalation --check` will now page it. **Watch the phone.** If a notification arrives,
+that is the first time this path has ever worked, and it is worth writing down. If it does
+not, the failure is in the send half and the ntfy command above still works as a fallback —
+keep both on the roster, since duplicate pages are a nuisance and a missed page is not.
 
 ---
 
