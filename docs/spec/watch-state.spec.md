@@ -39,6 +39,19 @@ before signing on [C23, invariant 4].
   was written to prevent.
 - A client MUST therefore treat an event older than `stale_after_seconds` as Dark, and MUST
   treat an event of unknown age as Dark rather than assuming it is fresh.
+- **A client MUST treat an event stamped in its own future as Dark**, beyond a small
+  tolerance for delivery. The staleness rule above is arithmetic on two clocks, and it is
+  only worth anything while they agree.
+
+  The asymmetry is why this matters. A device clock running **fast** makes a live watch look
+  old, so it reads Dark — wrong, in the safe direction. A device clock running **slow** makes
+  a dead watch look fresh, and tells an operator somebody is watching when nobody is, which
+  is invariant 4 failing precisely as written. Only the second is detectable from a single
+  event, and only the second is dangerous.
+
+  A client SHOULD say which it is. *"Nobody is watching"* sends an operator out relying on
+  themselves, which is safe; *"this phone's clock is wrong"* is fixable in thirty seconds and
+  gets the watch back.
   `stale_after_seconds` is *configurable*, and should be a small multiple of the daemon's
   publish interval. The daemon MUST republish at that interval even when nothing changed
 

@@ -187,7 +187,12 @@ export function buildWatchStateEvent(input: WatchStateInput, createdAt: number) 
   };
 }
 
-export type DarkReason = 'absent' | 'stale' | 'corrupt';
+export type DarkReason =
+  | 'absent'
+  | 'stale'
+  | 'corrupt'
+  /** This device's clock and the node's disagree, so the age means nothing. */
+  | 'clock';
 
 export interface WatchStateRead {
   state: WatchStatePayload;
@@ -206,6 +211,20 @@ export interface WatchStateRead {
 export const STALE_AFTER_SECONDS = 300;
 
 /**
+ * How far the node's clock may lead this device's before the age becomes unusable.
+ *
+ * A watch state carries a `created_at` the node wrote. If that sits meaningfully in this
+ * device's future, the two clocks disagree — and every staleness judgement made from the
+ * difference is then arithmetic on a number that means nothing.
+ *
+ * Generous, because normal skew is seconds: relay delivery, a phone that has not synced
+ * since it woke, an NTP nudge. Two minutes catches the failures that matter — a phone
+ * hours or days out, which is ordinary on a cheap handset that has been off — while
+ * ignoring the noise.
+ */
+export const CLOCK_TOLERANCE_SECONDS = 120;
+
+/**
  * Reads a watch state event, and decides whether the client must render Dark.
  *
  * **Absence is Dark — and so is staleness, which is the part that is easy to miss.**
@@ -217,10 +236,26 @@ export const STALE_AFTER_SECONDS = 300;
  *
  * Found by running the loop against a real relay rather than by reading the spec, which is
  * why this function takes an age it cannot infer for itself.
+ *
+ * **A disagreeing clock is Dark too**, and that one is asymmetric in a way worth naming.
+ * A device clock running *fast* makes a live watch look old, so it reads Dark — wrong, and
+ * wrong in the safe direction. A device clock running *slow* makes a dead watch look fresh,
+ * and tells an operator somebody is watching when nobody is. That is the direction invariant
+ * 4 exists to prevent, and it is detectable: an event stamped in this device's future can
+ * only mean the clocks disagree.
+ *
+ * The other direction is not reliably detectable and does not need to be. `10910` is
+ * replaceable, so a genuinely old event legitimately arrives now — "stale" and "our clock is
+ * fast" look identical from one event, and both already render Dark.
  */
 export function readWatchStateAt(
   content: string | null | undefined,
-  opts: { createdAt?: number | null; now?: number; staleAfterSeconds?: number } = {}
+  opts: {
+    createdAt?: number | null;
+    now?: number;
+    staleAfterSeconds?: number;
+    clockToleranceSeconds?: number;
+  } = {}
 ): WatchStateRead {
   const parsed = readWatchState(content);
 
@@ -244,6 +279,14 @@ export function readWatchStateAt(
   }
 
   const ageSeconds = now - opts.createdAt;
+
+  // Stamped in our future by more than delivery could explain. We cannot tell whose clock
+  // is wrong, and it does not matter: an age computed from disagreeing clocks is a number
+  // with no meaning, so no claim about a live watch can rest on it.
+  if (ageSeconds < -(opts.clockToleranceSeconds ?? CLOCK_TOLERANCE_SECONDS)) {
+    return { state: darkState(), dark: true, reason: 'clock', ageSeconds };
+  }
+
   if (ageSeconds > staleAfter) {
     return { state: darkState(), dark: true, reason: 'stale', ageSeconds };
   }

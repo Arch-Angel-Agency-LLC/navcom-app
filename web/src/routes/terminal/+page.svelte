@@ -246,6 +246,27 @@
       working.
     </p>
   </section>
+{:else if watch.read.reason === 'clock'}
+  <!--
+    A wrong clock needs different advice from a dead watch. "Nobody is watching" sends an
+    operator out relying on themselves, which is safe. "Your phone's clock is wrong" is
+    fixable in thirty seconds and gets the watch back.
+  -->
+  <section class="notyet" data-clock-skew>
+    <h2>This phone's clock is wrong</h2>
+    <p>
+      The watch is stamping its messages ahead of this phone's time, which means one of the
+      two clocks is off — almost certainly this one.
+    </p>
+    <p>
+      <strong>Until it agrees, nothing here can tell a live watch from a dead one</strong>,
+      so it shows Dark. That is the safe answer rather than the true one.
+    </p>
+    <p class="cost">
+      Turn on automatic date and time in the phone's settings. It usually corrects within a
+      minute of having signal.
+    </p>
+  </section>
 {:else if watch.read.reason === 'stale'}
   <section class="notyet">
     <h2>Last word was {watch.read.ageSeconds ?? '?'}s ago</h2>

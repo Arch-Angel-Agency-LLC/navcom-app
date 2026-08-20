@@ -266,6 +266,55 @@ describe('on-call is a list of statements, not a number', () => {
   });
 });
 
+describe('a clock this device cannot trust', () => {
+  // Asymmetric, and the asymmetry is the whole point. A device clock running FAST makes a
+  // live watch look old and reads Dark -- wrong, in the safe direction. A device clock
+  // running SLOW makes a dead watch look fresh and tells an operator somebody is watching
+  // when nobody is, which is invariant 4 failing exactly as written.
+  const live = JSON.stringify({ state: 'automated', holder_kind: 'agent' });
+  const NOW = 1_755_300_000;
+
+  it('renders Dark when the event is stamped in this device\'s future', () => {
+    // Only the clocks disagreeing can produce this. Which one is wrong does not matter --
+    // an age computed from disagreeing clocks is a number with no meaning.
+    const read = readWatchStateAt(live, { createdAt: NOW + 4000, now: NOW });
+    expect(read.dark).toBe(true);
+    expect(read.reason).toBe('clock');
+  });
+
+  it('tolerates the skew that delivery and a sleeping phone actually produce', () => {
+    // Seconds of lead are ordinary: relay delivery, a handset that has not resynced since
+    // it woke. Treating those as a fault would render Dark constantly and teach an operator
+    // to ignore the state entirely.
+    const read = readWatchStateAt(live, { createdAt: NOW + 30, now: NOW });
+    expect(read.dark).toBe(false);
+    expect(read.reason).toBeNull();
+  });
+
+  it('catches a phone that is hours behind, which is ordinary on a cheap handset', () => {
+    const read = readWatchStateAt(live, { createdAt: NOW + 6 * 3600, now: NOW });
+    expect(read.reason).toBe('clock');
+  });
+
+  it('still calls a genuinely old event stale rather than a clock problem', () => {
+    // The other direction is not distinguishable from one event and does not need to be:
+    // 10910 is replaceable, so a genuinely old event legitimately arrives now, and both
+    // readings are already Dark.
+    const read = readWatchStateAt(live, { createdAt: NOW - 4000, now: NOW });
+    expect(read.dark).toBe(true);
+    expect(read.reason).toBe('stale');
+  });
+
+  it('never reports a live watch on a clock it cannot trust', () => {
+    // The property that matters, stated as a property: across every skew, a device whose
+    // clock disagrees never tells an operator somebody is watching.
+    for (const lead of [200, 600, 3600, 86_400, 30 * 86_400]) {
+      const read = readWatchStateAt(live, { createdAt: NOW + lead, now: NOW });
+      expect(read.dark, `lead ${lead}s`).toBe(true);
+    }
+  });
+});
+
 describe('the accountability log', () => {
   const actor = { kind: 'human' as const, callsign: 'Raven' };
   const wren = { kind: 'human' as const, callsign: 'Wren', pubkey: 'a'.repeat(64) };
