@@ -43,10 +43,23 @@ every test passes.
 
 ---
 
-## Move 1 — Browser-level tests
+## Move 1 — Browser-level tests — **done**
 
-Playwright against the built static site. This is the missing layer, and it is the only one
-of these that is architectural rather than clever.
+Playwright against the built static site, 28 tests in about fifteen seconds. This is the
+missing layer, and it is the only one of these that is architectural rather than clever.
+
+**It found a real bug on its first complete run.** Area pages are cached on request rather
+than precached, and the mechanism relied on the document being fetched. SvelteKit navigates
+on the client, so tapping through to an area fetches its *data* and never its HTML — the
+document was never cached, and *"opening an area is what saves it"* was false for the only
+path anybody actually takes. Reloading by hand cached it; nobody reloads by hand. The page
+now asks the worker to save it, explicitly, once it has rendered.
+
+It also found two failures in itself, which is worth recording because a harness that
+quietly undoes the thing under test is worse than no harness. `addInitScript` runs on
+**every** navigation, so seeding storage unconditionally erased a patrol between recording
+it and navigating to look at it — and the failure looked exactly like the app not saving
+patrols. It now seeds once and gets out of the way.
 
 ### Shape
 

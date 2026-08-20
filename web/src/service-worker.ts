@@ -66,6 +66,32 @@ sw.addEventListener('activate', (event) => {
   );
 });
 
+/**
+ * A page asking to be saved.
+ *
+ * Area pages are cached on request rather than precached — there are dozens and an operator
+ * works in one. The obvious mechanism, caching whatever gets fetched, **does not work here**:
+ * SvelteKit navigates on the client, so clicking through to an area fetches its data and
+ * never its HTML document. The document was therefore never cached, and "opening an area is
+ * what saves it" was false for the only path anybody actually takes.
+ *
+ * So the page asks, explicitly, once it has rendered.
+ */
+sw.addEventListener('message', (event) => {
+  const data = event.data as { cache?: string } | null;
+  const path = data?.cache;
+  if (typeof path !== 'string' || !path.startsWith('/terminal/')) return;
+
+  event.waitUntil(
+    caches
+      .open(CACHE)
+      .then((c) => c.add(new Request(path, { credentials: 'same-origin' })))
+      // A failure here is an area not saved, which the page reports on its own terms. It
+      // must not take down the worker that is also serving Distress.
+      .catch(() => undefined)
+  );
+});
+
 sw.addEventListener('fetch', (event) => {
   const request = event.request;
   if (request.method !== 'GET') return;

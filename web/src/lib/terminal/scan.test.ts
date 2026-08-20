@@ -45,8 +45,10 @@ describe('whether a camera is offered at all', () => {
   });
 
   it('says no when there is a detector but no camera API', () => {
+    // Node supplies a `navigator` from v21 and it is read-only, so this cannot replace it —
+    // an earlier version did, passed on Node 18, and failed on 22. Node's navigator has no
+    // `mediaDevices` in any version, which is exactly the condition under test.
     (globalThis as Record<string, unknown>)['BarcodeDetector'] = function () {};
-    (globalThis as Record<string, unknown>)['navigator'] = {};
     expect(canScan()).toBe(false);
     delete (globalThis as Record<string, unknown>)['BarcodeDetector'];
   });

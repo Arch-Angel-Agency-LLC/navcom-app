@@ -5,3 +5,7 @@ build/
 .env.*
 !.env.example
 .DS_Store
+
+# Playwright: traces and screenshots from failures. Artefacts, not source.
+test-results/
+playwright-report/

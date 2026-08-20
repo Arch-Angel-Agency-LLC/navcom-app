@@ -55,9 +55,17 @@ jobs:
             npm run seed --workspace @navcom/seeder -- audit "$slug"
           done
 
-      # Type check, data check, build, tests (unit + against the built HTML), bundle budget.
-      # The budget fails the job rather than warning: the device floor is a real target,
-      # and the data check fails it rather than letting an invalid region reach a deploy.
+      # The browser the e2e tests drive. Chromium only -- WebKit would be closer to the
+      # iPhone truth and doubles both install size and runtime, and no Safari-specific
+      # failure has appeared yet to justify paying for it.
+      - name: browser
+        working-directory: web
+        run: npx playwright install --with-deps chromium
+
+      # Type check, data check, build, unit tests, tests against the built HTML, tests in a
+      # real browser, bundle budget. The budget fails the job rather than warning: the
+      # device floor is a real target, and the data check fails it rather than letting an
+      # invalid region reach a deploy.
       - name: navcom.app
         working-directory: web
         run: npm run verify
@@ -66,6 +74,15 @@ jobs:
         with:
           name: navcom-app-build
           path: web/build
+          retention-days: 7
+
+      # Traces from a failed browser test. Only on failure, because a passing run has
+      # nothing to look at and these are not small.
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: browser-test-traces
+          path: web/test-results
           retention-days: 7
 
   # The daily rebuild has to actually redeploy, or it is not a rebuild.

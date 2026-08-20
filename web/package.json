@@ -15,10 +15,12 @@
     "pretest": "npm run core",
     "preview": "vite preview",
     "test": "vitest run",
+    "test:browser": "node scripts/browser-tests.mjs",
     "test:watch": "vitest",
-    "verify": "npm run check && npm run check:data && npm run build && npm run test && npm run budget"
+    "verify": "npm run check && npm run check:data && npm run build && npm run test && npm run test:browser && npm run budget"
   },
   "devDependencies": {
+    "@playwright/test": "^1.62.1",
     "@sveltejs/adapter-static": "^3.0.6",
     "@sveltejs/kit": "^2.8.0",
     "@sveltejs/vite-plugin-svelte": "^4.0.0",

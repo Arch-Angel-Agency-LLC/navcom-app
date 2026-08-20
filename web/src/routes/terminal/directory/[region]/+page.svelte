@@ -54,6 +54,14 @@
 
   onMount(() => {
     hydrated = true;
+
+    // Ask to be saved for offline.
+    //
+    // Opening an area is what saves it -- but arriving here by tapping a link is a
+    // client-side navigation, which fetches this page's DATA and never its HTML. Without
+    // this the document was never cached, and an operator who browsed to their area and
+    // then lost signal found nothing. Reloading by hand cached it; nobody reloads by hand.
+    navigator.serviceWorker?.controller?.postMessage({ cache: location.pathname });
   });
 
   const byType = $derived(
