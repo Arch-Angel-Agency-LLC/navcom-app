@@ -16,6 +16,7 @@
   import { onMount } from 'svelte';
   import { goto } from '$app/navigation';
   import { burnCaches, burnConfirmed, panicWipe, tierSummary } from '$lib/terminal/storage';
+  import { destroyPool } from '$lib/terminal/pool';
   import { loadIdentity } from '$lib/terminal/identity';
   import { operator } from '$lib/terminal/session.svelte';
 
@@ -65,6 +66,10 @@
     // The gate is enforced in storage, not here — this button being disabled is a courtesy.
     if (!burnConfirmed(typed, callsign)) return;
     operator.forget();
+    // Every relay connection, not just the subscriptions. A burned device that is still
+    // holding sockets open to relays is a live signal from a phone that is supposed to be
+    // finished.
+    destroyPool();
     // Awaited: an operator must not be shown a finished screen while bytes are still there.
     await burnCaches();
     goto('/terminal/');

@@ -19,20 +19,20 @@
  * nothing, and let the sender fall back to classical. That is why the fallback is reported.
  */
 
-import { SimplePool } from 'nostr-tools/pool';
 import type { Event } from 'nostr-tools/core';
 import { buildKeyBundle, KIND_KEY_BUNDLE, readKeyBundle } from '@navcom/core';
 import { loadIdentity } from './identity';
 import { loadConfig } from './config';
+import { contactPubkey } from './card';
 import { peerPubkeys } from './peers';
 import { relays } from './relays';
+import { pool } from './pool';
 import { get, set } from './storage';
 
 const FIELD = 'kem_keys';
 
 let known = $state<Record<string, string>>({});
 let closer: { close(): void } | null = null;
-const pool = new SimplePool();
 
 /** Published keys this device has collected, by pubkey. */
 export function kemKeys(): Record<string, string> {
@@ -77,20 +77,36 @@ export const pq = {
     const urls = relays();
     if (!identity || urls.length === 0) return;
 
-    // Ours, so anybody who pairs with us can cover their messages from the first one.
-    void Promise.allSettled(
-      pool.publish(urls, buildKeyBundle(identity.secretKey, Math.floor(Date.now() / 1000)))
-    );
-
     const config = loadConfig();
     const wanted = [
       ...peerPubkeys(),
       ...(config ? [config.pubkey, ...config.holders] : [])
     ].filter((k, i, all) => all.indexOf(k) === i);
+
+    /**
+     * Nobody to talk to means nothing is published.
+     *
+     * An earlier version published the bundle unconditionally, so an operator who had paired
+     * with nobody and configured no watch still put a signed event carrying their pubkey onto
+     * two strangers' relays every time they opened the app. **That operator is the common
+     * case**, and the design's whole position is that they generate nothing.
+     *
+     * A key bundle is only ever useful to somebody who might send to us, so it goes up when
+     * such a person exists: a peer, a watch, or a published card that lets a stranger ask.
+     * Caught by a browser test counting sockets, which is the only way this would ever have
+     * been noticed.
+     */
+    if (wanted.length === 0 && !contactPubkey()) return;
+
+    // Ours, so anybody who can reach us can cover their messages from the first one.
+    void Promise.allSettled(
+      pool().publish(urls, buildKeyBundle(identity.secretKey, Math.floor(Date.now() / 1000)))
+    );
+
     if (wanted.length === 0) return;
 
     closer?.close();
-    closer = pool.subscribeMany(
+    closer = pool().subscribeMany(
       urls,
       { kinds: [KIND_KEY_BUNDLE], authors: wanted },
       {

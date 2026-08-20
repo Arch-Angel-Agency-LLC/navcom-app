@@ -11,9 +11,9 @@
  * cannot infer for itself.
  */
 
-import { SimplePool } from 'nostr-tools/pool';
 import { KIND_WATCH_STATE, readWatchStateAt, type WatchStateRead } from '@navcom/core';
 import type { WatchtowerConfig } from './config';
+import { pool } from './pool';
 
 export interface Connection {
   close(): void;
@@ -35,12 +35,11 @@ export function watchWatchtower(
 ): Connection {
   onRead(readWatchStateAt(null));
 
-  const pool = new SimplePool();
   let closed = false;
 
   let sawEvent = false;
 
-  const sub = pool.subscribeMany(
+  const sub = pool().subscribeMany(
     config.relays,
     { kinds: [KIND_WATCH_STATE], authors: [config.pubkey], limit: 1 },
     {
@@ -67,7 +66,9 @@ export function watchWatchtower(
       closed = true;
       try {
         sub.close();
-        pool.close(config.relays);
+        // The subscription, not the connection. Closing the connection here used to be
+        // harmless because this module owned its own pool; against the shared one it would
+        // drop the socket every other module is still reading from.
       } catch {
         // Closing a pool that never opened is not an error worth surfacing.
       }

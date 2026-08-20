@@ -30,7 +30,6 @@
  * answers and watch state, which is a separate job [`watch-key.ts`].
  */
 
-import { SimplePool } from 'nostr-tools/pool';
 import { finalizeEvent } from 'nostr-tools/pure';
 import type { Event } from 'nostr-tools/core';
 import {
@@ -49,6 +48,7 @@ import {
 import { loadIdentity } from './identity';
 import { loadConfig } from './config';
 import { relays } from './relays';
+import { pool } from './pool';
 import { watchKey, watchPubkey } from './watch-key';
 
 /** How often watch state is republished. A stale state reads Dark, which is the point. */
@@ -69,7 +69,6 @@ let onStation = $state(false);
 let since = $state(0);
 let closer: { close(): void } | null = null;
 let beat: ReturnType<typeof setInterval> | null = null;
-const pool = new SimplePool();
 
 /** Anything sealed to us that we could not open is dropped, never guessed at. */
 function readSignal(event: Event): { from: string; payload: Record<string, unknown> } | null {
@@ -121,7 +120,7 @@ export const board = {
     if (!identity || !address || urls.length === 0) return;
 
     closer?.close();
-    closer = pool.subscribeMany(
+    closer = pool().subscribeMany(
       urls,
       { kinds: [KIND_SIGNAL, KIND_DISTRESS], '#p': [address] },
       {
@@ -181,7 +180,7 @@ export const board = {
       { ...buildWatchStateEvent(darkInput(), Math.floor(Date.now() / 1000)), content: JSON.stringify(darkState()) },
       secret
     );
-    await Promise.allSettled(pool.publish(urls, event));
+    await Promise.allSettled(pool().publish(urls, event));
   },
 
   /**
@@ -227,7 +226,7 @@ export const board = {
       ),
       secret
     );
-    await Promise.allSettled(pool.publish(urls, event));
+    await Promise.allSettled(pool().publish(urls, event));
 
     // A Distress stays until a human has actually ended it, which is not something this
     // screen can know. Acknowledging is telling them somebody is awake, not that it is over.
@@ -278,7 +277,7 @@ async function publishState(secret: Uint8Array, callsign: string, at: number): P
     ),
     secret
   );
-  await Promise.allSettled(pool.publish(urls, event));
+  await Promise.allSettled(pool().publish(urls, event));
 }
 
 /** Folds one signal into the board. */

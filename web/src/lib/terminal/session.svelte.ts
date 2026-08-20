@@ -5,7 +5,6 @@
  * not watched, and the terminal must never decide otherwise on their behalf.
  */
 
-import { SimplePool } from 'nostr-tools/pool';
 import {
   capabilitySentence,
   checkReview,
@@ -31,6 +30,7 @@ import { presence } from './presence.svelte';
 import { kemKeys } from './pq.svelte';
 import { announceListed, beatListed, stopListed } from './public.svelte';
 import { position } from './position.svelte';
+import { pool } from './pool';
 
 export interface SignOn {
   at: number;
@@ -56,7 +56,6 @@ let distressPhases = $state<DistressPhase[]>([]);
 let distressRunning = $state(false);
 let distressController: AbortController | null = null;
 
-const pool = new SimplePool();
 
 /**
  * Two different absences, and conflating them was the wall.
@@ -81,10 +80,10 @@ function ctx() {
 async function send(type: SignalType, payload: object, timeoutMs = 10_000) {
   const { config, identity } = ctx();
   const sent = await sendSignal(
-    pool, config.relays, identity.secretKey, watchAddress(config), type, payload as never
+    pool(), config.relays, identity.secretKey, watchAddress(config), type, payload as never
   );
   return waitForResponse(
-    pool, config.relays, identity.secretKey, identity.pubkey, config.pubkey, sent, timeoutMs
+    pool(), config.relays, identity.secretKey, identity.pubkey, config.pubkey, sent, timeoutMs
   );
 }
 
@@ -352,7 +351,7 @@ export const operator = {
     distressController = new AbortController();
     try {
       await sendDistressUntilAcknowledged(
-        pool, config.relays, identity.secretKey, identity.pubkey, watchAddress(config),
+        pool(), config.relays, identity.secretKey, identity.pubkey, watchAddress(config),
         // A Distress carries the last known fix where one exists, and the declared area
         // where it does not. Somewhere to start beats nothing to go on.
         {

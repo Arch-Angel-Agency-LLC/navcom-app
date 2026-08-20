@@ -149,6 +149,54 @@ It cost two bugs worth recording:
   Operators with no contact saw an empty *"Your person"* heading, which reads as a safety net
   that exists and is broken rather than one never set up
 
+## The optimisations that turned out not to be worth doing
+
+Three were proposed off the back of this measurement. Measuring each one first killed two of
+them, which is the point of measuring.
+
+Marginal cost of each dependency, on top of what is already loaded:
+
+| | gzipped |
+|---|---|
+| `nostr-tools/pure` — signing and verifying | 11.0 kB |
+| **+ NIP-44** — sealing and opening | **+26.3 kB** |
+| + `SimplePool` — relay connections | **+5.4 kB** |
+| + ML-KEM-768 | +6.9 kB |
+
+- **Deferring the relay client** was estimated at 30–40 kB and is actually **5.4 kB**. It
+  shares nearly all its dependencies with code that is already loaded. Not worth an async
+  boot path
+- **Lazy-loading ML-KEM** would save 6.9 kB, and cannot be done cleanly anyway: it is needed
+  to *read* incoming events, not only to send, so deferring it makes subscription callbacks
+  async. Async crypto on the path that receives a `Distress` is a bad trade for 7 kB
+- **A minimal `Distress` bundle** has nothing to strip. Distress is 107.8 kB against a
+  framework floor of 58.5 kB (`terminal/setup`), and the difference is the crypto every
+  screen needs
+
+The one genuinely large item, NIP-44 at 26.3 kB, is the least deferrable thing in the app —
+nothing can be read without it.
+
+## What measuring found instead
+
+**Seven `SimplePool` instances.** The watch, peer presence, key bundles, the board, invites,
+signals and the watch-state reader each constructed their own. A pool deduplicates
+connections within itself and knows nothing about the other six, so a single configured relay
+got **three sockets on the Status screen alone**, and more as the operator moved through the
+app.
+
+Not a bundle problem — a phone problem, and a manners problem. Every extra socket is another
+handshake, another thing held open in the background, and another connection counted against
+whatever per-IP limit a volunteer-run relay has set. A relay that rate-limits us is a relay
+that drops a `Distress`.
+
+Now one shared pool: three sockets became one, with a browser test that counts them.
+
+**And a leak the same test caught:** an operator with no peers and no watch was publishing
+their post-quantum key bundle to two public relays every time they opened the app — a signed
+event carrying their pubkey, sent to strangers, by somebody who had opted into nothing. That
+operator is the common case. It now publishes only when somebody exists who could send to
+them: a peer, a watch, or a published card.
+
 ## The part the data does not decide
 
 [`principles.md`](../principles.md) says *"some of the most valuable operators have the

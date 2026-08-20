@@ -18,7 +18,6 @@
  * - Nobody appears here by being paired with somebody, and pairing never publishes anything
  */
 
-import { SimplePool } from 'nostr-tools/pool';
 import type { Event } from 'nostr-tools/core';
 import {
   buildCard,
@@ -32,6 +31,7 @@ import {
 import { contactKey, ensureContactKey, listed, myCard, saveCard, type MyCard } from './card';
 import { loadIdentity } from './identity';
 import { relays } from './relays';
+import { pool } from './pool';
 
 /**
  * How often *"out tonight"* is republished.
@@ -58,7 +58,6 @@ let outNow = $state<Record<string, number>>({});
 let loading = $state(false);
 let closer: { close(): void } | null = null;
 let beat: ReturnType<typeof setInterval> | null = null;
-const pool = new SimplePool();
 
 export const board = {
   /**
@@ -94,7 +93,7 @@ export const board = {
     outNow = {};
     loading = true;
 
-    closer = pool.subscribeMany(
+    closer = pool().subscribeMany(
       urls,
       // One filter, not two: both kinds are tagged with the region, so a single
       // subscription fetches the board and who is on it in one round trip.
@@ -150,7 +149,7 @@ export async function publishCard(card: MyCard): Promise<void> {
     Math.floor(Date.now() / 1000)
   );
   saveCard(card);
-  await Promise.allSettled(pool.publish(urls, event));
+  await Promise.allSettled(pool().publish(urls, event));
 }
 
 /**
@@ -168,7 +167,7 @@ export async function announceListed(): Promise<void> {
   if (!secret || !card || urls.length === 0) return;
 
   const event = buildPublicPresence(secret, card.region, Math.floor(Date.now() / 1000));
-  await Promise.allSettled(pool.publish(urls, event));
+  await Promise.allSettled(pool().publish(urls, event));
 }
 
 /**

@@ -9,7 +9,6 @@
  * saying anything more than "I do not know" would be inventing a fact [invariant 3].
  */
 
-import { SimplePool } from 'nostr-tools/pool';
 import type { Event } from 'nostr-tools/core';
 import {
   buddyState,
@@ -22,6 +21,7 @@ import {
 import { loadIdentity } from './identity';
 import { buddies, peerPubkeys, peers } from './peers';
 import { relays } from './relays';
+import { pool } from './pool';
 import { kemKeys } from './pq.svelte';
 
 /** How often presence is republished, and therefore how quickly a peer appears. */
@@ -49,7 +49,6 @@ let seen = $state<Record<string, PeerPresence>>({});
 let connected = $state(false);
 let closer: { close(): void } | null = null;
 let beat: ReturnType<typeof setInterval> | null = null;
-const pool = new SimplePool();
 
 export const presence = {
   /** Everyone heard from recently enough to say anything about. */
@@ -87,7 +86,7 @@ export const presence = {
     if (!identity || urls.length === 0 || peerPubkeys().length === 0) return;
 
     closer?.close();
-    closer = pool.subscribeMany(
+    closer = pool().subscribeMany(
       urls,
       { kinds: [KIND_PEER_PRESENCE], '#p': [identity.pubkey] },
       {
@@ -155,7 +154,7 @@ export const presence = {
       kemKeys()
     );
     // Settled, not raced: one peer's relay failing must not stop the others being told.
-    await Promise.allSettled(events.flatMap((e) => pool.publish(urls, e)));
+    await Promise.allSettled(events.flatMap((e) => pool().publish(urls, e)));
   },
 
   /** Republishes on a heartbeat, because relays store none of this. */

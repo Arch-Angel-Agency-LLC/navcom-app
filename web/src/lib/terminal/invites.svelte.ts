@@ -27,13 +27,13 @@
  * there is no local queue to expire, migrate, or leak into a wipe.
  */
 
-import { SimplePool } from 'nostr-tools/pool';
 import type { Event } from 'nostr-tools/core';
 import { buildInvite, KIND_INVITE, readInvite, type Invite } from '@navcom/core';
 import { contactKey, contactPubkey } from './card';
 import { loadIdentity } from './identity';
 import { pair, peerPubkeys } from './peers';
 import { relays } from './relays';
+import { pool } from './pool';
 import { kemKeys } from './pq.svelte';
 
 export interface Waiting extends Invite {
@@ -43,7 +43,6 @@ export interface Waiting extends Invite {
 
 let waiting = $state<Record<string, Waiting>>({});
 let closer: { close(): void } | null = null;
-const pool = new SimplePool();
 
 export const invites = {
   /**
@@ -70,7 +69,7 @@ export const invites = {
     const addresses = contact ? [identity.pubkey, contact] : [identity.pubkey];
 
     closer?.close();
-    closer = pool.subscribeMany(urls, { kinds: [KIND_INVITE], '#p': addresses }, {
+    closer = pool().subscribeMany(urls, { kinds: [KIND_INVITE], '#p': addresses }, {
       onevent: (event: Event) => {
         // Tried against both keys, because the two inboxes are the same kind and a relay
         // does not say which address matched.
@@ -106,7 +105,7 @@ export const invites = {
       Math.floor(Date.now() / 1000),
       kemKeys()[invite.from]
     );
-    await Promise.allSettled(pool.publish(urls, back));
+    await Promise.allSettled(pool().publish(urls, back));
   },
 
   /**
@@ -144,5 +143,5 @@ export async function invite(contact: string, note: string): Promise<void> {
     Math.floor(Date.now() / 1000),
     kemKeys()[contact]
   );
-  await Promise.allSettled(pool.publish(urls, event));
+  await Promise.allSettled(pool().publish(urls, event));
 }
