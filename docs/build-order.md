@@ -618,87 +618,106 @@ visible as one rather than a line in a watch-mode commit.
 
 ## Milestones 6–10 — what would make this a network rather than a tool
 
-Drafted 2026-08-20, after reviewing the app against its own twelve archetypes.
+Drafted 2026-08-20. **Rewritten the same day after critique**, which found a load-bearing gap
+in each of the first two milestones and one indictment of the whole thing.
 
-**The honest summary of where 0–5 got to:** NavCom is a very good instrument for *one
-operator's night*. Going out, being watched, getting help, coming home and being counted —
-all of that is built to a standard worth defending.
+**47 items became 42**, and that is a smaller reduction than it should be. Seven were cut
+outright — listed at the end, under *What the rewrite removed* — and five were added
+that the critique showed were simply missing: the write-back path without which Milestone 6
+reaches nobody, a genesis route so the watch gate does not brick a new squad, a decision
+about a wire that does not fit, a spec and a price for a thing being sold, and somebody other
+than one person able to deploy.
 
-What it is not yet is an instrument for **the thing the project says it is for**. Five states
-stand between here and that, and each is a state you are in or not:
+**Where 0–5 got to:** NavCom is a very good instrument for *one operator's night*. Going out,
+being watched, getting help, coming home and being counted are built to a standard worth
+defending. What it is not yet is an instrument for the thing the project says it is for.
 
-| | | |
+| | | Depends on |
 |---|---|---|
-| **6** | Knowledge gets in | The ninth tribe gets its instrument |
-| **7** | Standing without permission | Credibility that needs no institution — and the watch gets the gate it was specified with |
-| **8** | The directory serves whoever opens it | Not only operators |
-| **9** | Nobody is a single point of failure | Including the person reading this |
+| **6** | Knowledge gets in | — |
+| **7** | Standing without permission | 6, partly |
+| **8** | The directory serves whoever opens it | **6** — see below |
+| **9** | Nobody is a single point of failure | — |
+| **10** | Off-grid, and the hardware gets funded | — |
 
-**47 items.** Roughly two thirds are agent work; the rest are decisions or things only a
-person can do, and they are marked. Three gates matter more than the rest:
-
-- **6.3 — where a correction goes.** Blocks the rest of 6, and 7.2 and 7.9 wait on 6
-- **10.1 — try Meshtastic before building hardware.** May remove the blocking item from the
-  only layer that is not standing
-- **10.12 — what happens if the pre-orders fail**, written before anybody is upset. Not
-  agent work, and not optional
-| **10** | Off-grid | The fourth layer stands — and the hardware gets funded |
+**6 → 7 → 8 is a chain, not three independent tracks.** 9 and 10 are independent of it and of
+each other. If only one thing happens, it should be Milestone 6.
 
 ---
 
 ## Milestone 6 — Knowledge gets in
 
 **Done when:** an operator who was on that block last night can put what they learned into
-the directory, from the phone in their hand, without a git account.
+the directory from the phone in their hand, and the next operator to look sees it.
 
-[`lineage.md`](lineage.md) states the thesis: Steele's eight tribes are all institutions, and
-**there is a ninth he did not name — people with local ground truth and no institution at
-all.** NavCom is tooling for them. The directory is the instrument for that claim, and today
-knowledge only comes **out**.
+*"And the next operator sees it"* is the half the first draft missed entirely. It listed nine
+ways to capture a correction and **no way for one to reach anybody**. The directory is a CSV
+in git, prerendered into the site at build time; a correction from a phone is a nostr event.
+All nine could have shipped and changed nothing anybody reads.
+
+### 6.0 — The decision that shapes the rest
+
+**Two directories, not one, and that is the answer rather than a compromise:**
+
+- **Live corrections** travel as attestations and are **merged over the cached directory at
+  read time, on the device**. No build, no deploy, no maintainer, no server. An operator sees
+  their squad's corrections immediately and offline. This is the one that needs no human
+- **The published directory** stays a curated artifact — stable, prerendered, the thing a
+  stranger gets on `navcom.app`. Corrections are promoted into it periodically **by a person**
+
+That split is already how everything else here works: live data expires and is derived per
+device; durable data is an artifact somebody stands behind. **Build the live half first** —
+it delivers the whole milestone's value without waiting on anybody.
 
 | | Item | Owner | Cost |
 |---|---|---|---|
-| 6.1 | **Flag a record in one tap** | agent | Display rule 4 is **half-built**: the app renders a flag and cannot set one. Its own words are *"reporting must always be easier than fixing"*, and today reporting is impossible while fixing needs a pull request |
-| 6.2 | **Correct a record from the phone** | agent | The Convert has the best directory knowledge in the network and the most reason to be unlinkable. She cannot add a line without a laptop |
-| 6.3 | **Where corrections go** | **decision** | A correction is an attestation by a keypair — the primitive exists. Whether it travels to a watch, to peers, or to a maintainer decides whether the directory is per-squad or shared. **Gate: nothing else here can be built until this is answered** |
-| 6.4 | **A correction is reviewable, not authoritative** | agent | An operator asserting a shelter closed must not silently delete it for everyone. Corrections carry their author and their age like every other attestation |
-| 6.5 | **The directory says what it does not know** | agent | *"Contribute something"* is paralysing; *"you are passing St Pat's tonight, ask them one thing"* is an errand. A **needs-checking list**, derived from blank fields and stale ones — the schema already knows both. The highest-leverage item in this milestone |
-| 6.6 | **Capture cold, correct warm** | agent | You learn a shelter shut intake at 20:30 while standing outside in the rain, and you cannot type a schema field. A **local note pinned to a record** — never transmitted — that becomes a correction at home. Solves the real friction rather than the imagined one |
-| 6.7 | **Visit attestations** | agent | *"I went at 21:05 and the door was locked"* is worth as much as published hours and has nowhere to go. Lower-stakes to submit than a schema edit, and often more useful |
-| 6.8 | **Corroboration, never adjudication** | agent | Two independent operators saying the same thing is stronger, and the attestation model already weights by method and age. This gets that **without anybody judging anybody** |
-| 6.9 | Intake rules from the people who know them | **human, local** | Was 1.2. It stays human; 6.1–6.8 are what make it possible from a phone rather than a text editor |
+| 6.1 | **Corrections merge over the cached directory at read time** | agent | The spine. Without it nothing else in this milestone reaches a reader |
+| 6.2 | **Flag a record in one tap** | agent | Display rule 4 is **half-built**: the app renders a flag and cannot set one. Its own words are *"reporting must always be easier than fixing"*, and today reporting is impossible while fixing needs a pull request |
+| 6.3 | **Correct a field from the phone** | agent | The Convert has the best directory knowledge in the network and the most reason to be unlinkable. She cannot add a line without a laptop |
+| 6.4 | **Corrections are additive and never delete** | agent | **This is also the abuse answer.** A hostile flag adds a claim with an author and an age; it removes nothing. The reader sees both and weighs by provenance, which the display rules already do — so no adjudication is needed, and [`declined.md`](declined.md) does not have to be contradicted |
+| 6.5 | **The directory says what it does not know** | agent | *"Contribute something"* is paralysing; *"you are passing St Pat's tonight, ask them one thing"* is an errand. A needs-checking list from blank and stale fields — the schema already knows both |
+| 6.6 | **Capture cold, correct warm** | agent | You learn a shelter shut intake at 20:30 standing outside in the rain and cannot type a schema field. A local note pinned to a record, never transmitted, that becomes a correction at home |
+| 6.7 | **Nothing about a person, guided at the point of writing** | agent | Free text captured in the field is the likeliest place in the whole system for invariant 1 to be broken. Same pattern as the `Query` screen, which already does this |
+| 6.8 | **Promotion into the published directory** | **human, periodic** | Somebody reads the live corrections and writes the good ones into the CSV. Minutes a week. **The bottleneck is deliberate** — a public artifact that anybody can rewrite is not an artifact anybody can rely on |
+| 6.9 | Intake rules from the people who know them | **human, local** | Was 1.2. It stays human; 6.1–6.7 are what make it possible from a phone rather than a text editor |
 
-**Never:** a mechanism that resolves disagreements between operators. [`declined.md`](declined.md)
-declines adjudication, and a correction system that grows a review queue with a decider has
-become one. Corroboration adds weight; it never overrules.
+**Never:** a review queue with a decider. Corrections stack, they do not compete, and nobody
+adjudicates between two operators [`declined.md`](declined.md).
 
 ---
 
 ## Milestone 7 — Standing without permission
 
 **Done when:** an operator with no social history and no institution can become visibly
-credible through contribution alone — and holding the watch means something.
+credible through contribution alone — and holding somebody else's watch means something.
 
-[`product/identity.md`](product/identity.md) designs this in full and none of it is built.
-Two axes, and the second is the one that matters: **contribution requires nobody's approval,
-and it shows.** A single-axis reputation system ranks the person with the deepest lived
-experience as untrusted, which is exactly backwards.
+### The genesis problem, and the fix
+
+The first draft gated the watch on a `can take watch` endorsement. **That bricks a new
+squad**: nobody has standing, so nobody can take watch, so Milestone 4 stops working.
+
+**Founding is self-evident.** Whoever created a watch can always hold it — no endorsement, no
+permission, nothing to bootstrap. Everybody *else* needs `can take watch` from somebody who
+already holds it. The gate is real, the first holder needs nobody, and a squad grows from
+one person outward.
 
 | | Item | Owner | Cost |
 |---|---|---|---|
-| 7.1 | **Endorsements with scope tags** | agent | `worked with`, `reliable`, `medic`, `can take watch` — never free text. An endorser explaining *why* somebody is credible is how an operator's history leaks |
-| 7.2 | **Standing lives in the artifacts, not a profile** | agent | The obvious build is a reputation page, which is a leaderboard with extra steps. `verified_by` already exists on every record: **your standing is that your callsign is on records people rely on.** Distributed, nothing to total, nothing to game |
-| 7.3 | **`can take watch` actually gates the watch** | agent | **Found in review: it does not.** [`watch/the-watch.md`](watch/the-watch.md) specifies the qualification; Milestone 4 shipped a watch anybody can take |
-| 7.4 | **The gate says what it does not prove** | agent | Three endorsers do not mean somebody will stay awake tonight. Same discipline as the capability receipt: state the claim and its limit together |
-| 7.5 | **Endorsements expire** | agent | Somebody endorsed `medic` five years ago who has not patrolled since. Every other attestation here shows its age; this one must not be the exception |
-| 7.6 | **Revocation by silence** | agent | Falls out of 7.5. You cannot un-say an endorsement — nothing here is retroactive — but you can let it lapse, which gives withdrawal **without the appeals process `declined.md` refuses** |
-| 7.7 | **`trained with me` as an event** | either | `identity.md` calls it the cleanest route to first standing. A training session producing mutual endorsements is a real thing that happened generating real standing — how a newcomer gets past zero without anyone's patronage |
-| 7.8 | **The trade, stated where it is made** | agent | *"You can contribute without a persistent identity, or build standing that travels. Not both"* [`declined.md`](declined.md). The pattern already exists on the setup screen |
-| 7.9 | Contribution credit across the knowledge layer | agent | Answered questions and playbook additions, not only directory rows. **Needs Milestone 6** |
+| 7.1 | **Endorsements with scope tags, and an expiry inside the signature** | agent | `worked with`, `medic`, `can take watch` — never free text, because an endorser explaining *why* is how an operator's history leaks. Expiry is signed, not asserted by the holder, or a lapsed endorsement is one you simply keep presenting |
+| 7.2 | **The founder of a watch can always hold it** | agent | Genesis. Without this, 7.3 is a gate on a door with no key cut for it |
+| 7.3 | **`can take watch` gates joining somebody else's watch** | agent | **Found in review: nothing gates it.** [`watch/the-watch.md`](watch/the-watch.md) specifies the qualification; Milestone 4 shipped a watch anybody can take |
+| 7.4 | **The gate says what it does not prove** | agent | Three endorsers do not mean somebody will stay awake tonight. Same discipline as the capability receipt: the claim and its limit in one breath |
+| 7.5 | **Revocation by silence** | agent | Falls out of 7.1. You cannot un-say an endorsement — nothing here is retroactive — but you can let it lapse, which gives withdrawal **without the appeals process `declined.md` refuses** |
+| 7.6 | **Standing lives in the artifacts, not a profile** | agent | **Needs Milestone 6.** The obvious build is a reputation page, which is a leaderboard with extra steps. `verified_by` is already on every record: your standing is that your callsign is on records people rely on. Nothing to total, nothing to game |
+| 7.7 | **The trade, stated where it is made** | agent | *"Contribute without a persistent identity, or build standing that travels. Not both"* [`declined.md`](declined.md) |
 
-**Never:** a score, a total, a rank, or a comparison between two operators. Provenance by
-name. And never an onboarding flow that manufactures standing — `declined.md` declines a
-flow that replaces a person.
+**Never:** a score, a rank, or a comparison between two operators. Provenance by name.
+
+**Declined, not deferred — resistance to forged endorsements.** A gate creates an incentive
+to mint keys that did not exist while endorsements were decoration. We are not building
+against it, for the same reason counter-signing is gated: **the circle is people vetted in
+person.** When that stops being true this becomes urgent, and it is written here so that
+somebody notices the day it changes.
 
 ---
 
@@ -707,102 +726,136 @@ flow that replaces a person.
 **Done when:** somebody looking for a bed tonight can use `navcom.app` themselves, in their
 own language, without being an operator or installing anything.
 
-The public site is already a zero-JavaScript document that works on any phone. It is built
-for the operator looking something up. **The person who needs the bed is not currently a user
-of this system, and no invariant says they cannot be** — a directory records nothing about
-anybody who reads it.
+**Gated on Milestone 6.** A person-facing path over 479 scraped skeletons is *worse* than
+none: the operator who gets bad data is inconvenienced, and the person who gets it is turned
+away at 11pm with nowhere else to be. The first draft listed these as independent, which was
+the most dangerous mistake in it.
+
+**8.1 is the exception and can ship today.**
 
 | | Item | Owner | Cost |
 |---|---|---|---|
-| 8.1 | **A path shaped for the person, not the helper** | agent | *"Somewhere tonight"*, *"somewhere with my dog"*, *"somewhere that will not ask for ID"*. Every one is a filter over fields the schema already has. The entry point is what is missing, not the data |
-| 8.2 | **Print it** | agent | The site is already prerendered and scriptless. A print stylesheet is nearly free and means an operator can hand somebody **paper** — which works with a dead phone, no phone, or a phone they do not want to hand over. Cheapest high-value item in 6–10 |
-| 8.3 | **Lead with what gets you turned away** | agent | A real record says *"Intake closes hard at 21:00 — arriving 21:05 means turned away."* That is the most valuable sentence in the file and it is buried in `notes` |
-| 8.4 | **No dead ends** | agent | An empty result must say what to do instead. Never a blank list |
-| 8.5 | **Language, because somebody is waiting** | agent | This unblocks 5.9. `languages.md` deferred the catalogue until *"somebody is waiting for one"* — a Spanish speaker looking for a bed in St. Louis is somebody waiting. The deferral was right and its condition is met |
-| 8.6 | **Image-first navigation** | either | Buttons crafted from images more than words, so the taxonomy assumes neither a language nor a reading level. **Tested with people, not designed at them** |
-| 8.7 | **Leave no trace, and say so** | agent | Already true — nothing is stored, no account, no session. For somebody on a library computer or a borrowed phone that is the property that matters, and it is worth stating rather than leaving to inference |
-| 8.8 | Regional taxonomy that is not a US assumption | **human, local** | `warming` and `cooling` assume a temperate climate and a particular emergency response. `directory-schema.md` already flags it |
+| 8.1 | **Print it** | agent | **No dependency on anything.** The site is already prerendered and scriptless, so a print stylesheet means an operator can hand somebody paper — which works with a dead phone, no phone, or a phone they will not hand over. Cheapest useful thing in 6–10 |
+| 8.2 | **A path shaped for the person, not the helper** | agent | *"Somewhere tonight"*, *"somewhere with my dog"*, *"somewhere that will not ask for ID"* — every one a filter over fields the schema already has |
+| 8.3 | **Lead with what gets you turned away** | agent | A real record says *"Intake closes hard at 21:00 — arriving 21:05 means turned away."* The most valuable sentence in the file, buried in `notes` |
+| 8.4 | **No dead ends** | agent | An empty result says what to do instead. Never a blank list — the reader has nowhere else to go |
+| 8.5 | **Language, and say which half** | agent | Unblocks 5.9: `languages.md` deferred the catalogue until *"somebody is waiting"*, and a Spanish speaker looking for a bed in St. Louis is somebody waiting. **The interface translates; the records do not.** Translated buttons over English `notes` is half a feature and the page must not imply otherwise |
+| 8.6 | **Leave no trace, and say so** | agent | Already true — no account, no session, nothing stored. On a library computer or a borrowed phone that is the property that matters |
+| 8.7 | Regional taxonomy that is not a US assumption | **human, local** | `warming` and `cooling` assume a temperate climate and a particular emergency response |
 
-**Never:** anything recorded about a reader. No accounts, no analytics, no *"recently
-viewed"*, no session. A document cannot watch you back, and that is the whole reason the
-public surface delivers zero JavaScript.
+**Never:** anything recorded about a reader. A document cannot watch you back, which is the
+whole reason the public surface ships zero JavaScript.
 
 ---
 
 ## Milestone 9 — Nobody is a single point of failure
 
-**Done when:** the network keeps working for a month with its most active person entirely
-absent.
+**Done when:** the network keeps working for a month with its most active person absent.
 
-The uncomfortable one. Today: **one** person on call, **one** box, **one** relay list run by
-strangers, **one** directory maintainer, **one** possible log reviewer. Every one of those is
-the same person.
+Today: one person on call, one box, one directory maintainer, one possible log reviewer, one
+deploy account. All the same person.
 
 | | Item | Owner | Cost |
 |---|---|---|---|
-| 9.1 | **Identity recovery** | agent | Key loss is far likelier than seizure, and panic wipe and burn are both built for the dramatic case. `identity.md` designs three options — a printed code, social recovery through endorsers, or **nothing, stated plainly as a real choice**. Today it is silently the third |
-| 9.2 | **Publish the fragility, not only the capability** | agent | The watch state already publishes what escalation exists. Extend it: *"On call: Jono. Log last reviewed: never. Relay operators: none."* **By name, never as a score.** A network that cannot see its own single points will not fix them |
-| 9.3 | **Move to a new phone** | agent | Identity, peers, standing and card, carried across deliberately. Without it, an upgrade is indistinguishable from a burn |
-| 9.4 | **RelayNode** | either | Public relays are volunteers who owe nobody uptime, and one can withhold a key bundle to force a classical fallback. Self-hosting removes a stranger from the path |
-| 9.5 | **The work is paid for** | agent | [`funding.md`](product/funding.md), designed and unbuilt. *"Operators buy supplies out of pocket, and the person doing the most is often the one who can least afford it."* Lightning, pseudonymous receipt, outside every visibility preset |
-| 9.6 | **A restore drill** | **human** | The paging drill proves the pager works. Nothing proves a *second person* can stand up a Watchtower from the docs. **It will probably fail the first time, and that is the finding** |
-| 9.7 | **Succession, named in advance** | **human** | Not *"somebody will pick it up"* but who. Per role, published, unsurprising when it happens |
-| 9.8 | A roster, not a person | **human** | More than one on-call, and a way to hand the role over. 2.1 gets to one; this gets past one |
-| 9.9 | The log reviewer | **human** | Named in `CLAUDE.md` as a role that *"cannot be the agent or verification is theatre"*. Minutes a week, and nobody does it |
+| 9.1 | **Identity recovery** | agent | Key loss is far likelier than seizure, and both wipe paths are built for the dramatic case. `identity.md` designs three options — printed code, social recovery through endorsers, or **nothing, stated plainly as a real choice.** Today it is silently the third |
+| 9.2 | **Move to a new phone** | agent | Identity, peers, standing and card carried across deliberately. Without it an upgrade is indistinguishable from a burn |
+| 9.3 | **Tell operators what is thin — do not publish it** | agent | The first draft proposed publishing *"on call: Jono"*, which hands an adversary the one name worth targeting. **It rides on the capability sentence instead**, which already goes to the operator at sign-on and nowhere else. They are the person who needs it; the world is not |
+| 9.4 | **Somebody else can deploy** | **human** | Named for people and infrastructure in the first draft and missed for shipping. One Vercel account is a single point of failure for the artifact everybody reads |
+| 9.5 | **The work is paid for** | agent | [`funding.md`](product/funding.md). *"Operators buy supplies out of pocket, and the person doing the most is often the one who can least afford it."* Interacts with 9.1 — self-custody means a lost phone can mean lost funds, so recovery comes first |
+| 9.6 | **A restore drill** | **human** | The paging drill proves the pager works. Nothing proves a *second person* can stand a Watchtower up from the docs. **It will probably fail the first time, and that is the finding** |
+| 9.7 | More than one on-call, and a way to hand it over | **human** | 2.1 gets to one; this gets past one |
+| 9.8 | The log reviewer | **human** | Named in `CLAUDE.md` as a role that *"cannot be the agent or verification is theatre"* |
 
-**This milestone is mostly not code**, and that is the finding rather than an excuse.
+**Mostly not code**, which is the finding rather than an excuse.
+
+**Deferred — RelayNode.** It was in the first draft as a way to remove strangers from the
+path. It also **adds** a single point of failure to the milestone about removing them: a relay
+only one person runs is worse than two public ones. Revisit when a public relay actually
+fails us, or when there is a second person to run it.
 
 ---
 
-## Milestone 10 — Off-grid
+## Milestone 10 — Off-grid, and the hardware gets funded
 
 **Done when:** a `Distress` reaches somebody with no cell network involved.
 
-The fourth layer, and the only one not standing. It has always been written down as blocked
-on hardware — **and the first three items below are software, need no hardware at all, and
-should be tried before anybody builds anything.**
+### 10.0 — The wire does not fit, and that is measured
 
-### The cheap path first
+| | bytes | LoRa frames at ~222 B |
+|---|---|---|
+| `Distress`, classical, one holder | 467 | ~3 |
+| `Distress`, **hybrid** | **2,644** | **~12** |
+| Peer presence | 1,192 | ~6 |
+
+The first draft said *"the link is a relay you can carry, so nothing about the protocol
+changes."* **That is false and the numbers say so.** With duty-cycle limits, a hybrid
+`Distress` does not fit an off-grid link in any comfortable sense.
+
+So the first decision is not hardware:
+
+**10.1 — Compact frame, or classical off-grid?** *(decision, gates everything below)*
+A compact wire format is a protocol change and real work. Classical-only off-grid is a
+**security downgrade that must be reported the way the existing fallback is** — a note, in
+the operator's language, saying what the link does and does not cover. Neither is free and
+one must be chosen before anything is built.
 
 | | Item | Owner | Cost |
 |---|---|---|---|
-| 10.1 | **Question the cyberdeck before building one** | agent | [Meshtastic](https://meshtastic.org) is an existing open LoRa mesh with phone apps and boards under $30. Bridging to it may collapse the blocking item entirely and make this milestone reachable **now** rather than after a hardware project |
-| 10.2 | **A protest is inside LoRa range** | agent | Kilometres of range, and a squad at a demonstration is a few hundred metres apart. **Peer presence over LoRa needs no infrastructure at all** — arguably the first thing to try, before any bridge |
-| 10.3 | **The link is a relay you can carry** | agent | If the device runs a nostr relay, nothing about the protocol changes and off-grid becomes a transport question rather than a second system. This is the difference between a milestone and a rewrite |
-| 10.4 | **The link's state is visible, like the watch's** | agent | A device showing *"link up"* with a dead radio is **invariant 4 in a different costume**. Same honesty the watch state already gets |
-| 10.5 | **Store and forward, with honest age** | agent | A signal raised out of range must arrive when range returns, and must say how old it is on arrival |
-| 10.6 | Scope discipline | — | `Distress` and presence only. Not the directory, not queries. The failure mode of carrying everything is a link that carries nothing when it matters |
+| 10.2 | **Peer presence over LoRa, before any bridge** | agent | A squad at a protest is a few hundred metres apart and already inside LoRa range. **Needs no infrastructure and no cyberdeck** — the cheapest possible test of whether any of this works |
+| 10.3 | **Try Meshtastic before building hardware** | agent | An existing open LoRa mesh, phone apps, boards under $30. May remove the blocking item from the only layer that is not standing |
+| 10.4 | **The link's state is visible, like the watch's** | agent | A device showing *"link up"* with a dead radio is **invariant 4 in a different costume** |
+| 10.5 | **Store and forward, with honest age** | agent | A signal raised out of range arrives when range returns, and says how old it is on arrival |
+| 10.6 | Scope discipline | — | `Distress` and presence only. The failure mode of carrying everything is a link carrying nothing when it matters |
 
 ### Funding the hardware — NavCom Communicators
 
-A cyberdeck cannot be built without money, and there is no institution to ask. **Pre-orders
-are how hardware gets funded without one**, and they are also the sharpest version of the
-risk this project spends most of its effort avoiding: a claim about the future, backed by
-somebody else's money, with no chargeback.
+Pre-orders are how hardware gets funded without an institution, and they are the sharpest
+version of the risk this project spends most of its effort avoiding: a claim about the
+future, backed by somebody else's money, with no chargeback.
 
-So it is built the way everything else here is built — as an attestation, with its limits
-stated in the same breath as its promise.
+**Nothing below may be built until 10.7 and 10.8 exist.** The first draft put the page above
+the safeguards in the table, which implied the opposite.
 
 | | Item | Owner | Cost |
 |---|---|---|---|
-| 10.7 | **A pre-order is a commitment in both directions** | agent | The buyer commits funds. The builder commits — **signed, published, and dated** — to a spec, a batch floor, a ship window and a refund rule. Same structure as the capability receipt: a claim, its author, checkable afterwards against what actually happened |
-| 10.8 | **A batch floor, published** | agent | *"Nothing is built and no money is spent until N orders exist. If the floor is not reached by D, everything is returned."* The number and the date are stated up front, not decided later |
-| 10.9 | **A public address whose balance anybody can check** | agent | **Escrow without an escrow agent.** Funds sit at a published Bitcoin address, so anyone can verify the money has not moved. It proves the money is unspent — it does **not** prove it will not be spent, and the page must say exactly that |
-| 10.10 | **Payment in crypto, pseudonymous both ways** | agent | Lightning for the deposit, on-chain for the balance. Builds directly on 9.5, and a buyer never has to give a legal name to a project whose whole point is that nobody has to |
-| 10.11 | **The site never says the deck exists** | agent | The status page states what is built. A pre-order page is the one place where the temptation to imply otherwise is strongest, and where the Skeptic — *"watched three apps come and go"* — is won or lost permanently |
-| 10.12 | **What happens if it fails, written before it can** | **human** | Refund mechanics, who holds the key, what a buyer does if the builder goes quiet. Written while nobody is upset |
+| 10.7 | **What happens when it fails, written first** | **human** | Refunds, who holds the key, what a buyer does if the builder goes quiet. **Written while nobody is upset.** Not agent work and not optional |
+| 10.8 | **A spec and a price** | **human** | You cannot take orders for an unspecified thing at an unknown cost. The first draft promised to publish both and had no item to decide either |
+| 10.9 | **A pre-order is a commitment in both directions** | agent | The buyer commits funds; the builder commits — signed, published, dated — to the spec, a batch floor, a ship window and a refund rule. Checkable afterwards against what happened, like the capability receipt |
+| 10.10 | **A batch floor, published** | agent | *"Nothing is built and no money is spent until N orders exist. If the floor is not reached by D, everything is returned."* Stated up front, not decided later |
+| 10.11 | **A public address anybody can check** | agent | Escrow without an escrow agent. It proves the money is **unspent** — not that it is safe — and the page must say exactly that |
+| 10.12 | **The site never says the deck exists** | agent | Where the Skeptic — *"watched three apps come and go"* — is won or lost permanently |
 
-**Say plainly, on the page, in the buyer's language:**
-
-- **Crypto payments cannot be reversed.** There is no chargeback and no card issuer
-- A published address proves the money is **unspent**, not that it is safe
-- **Nobody has one of these yet.** Not a prototype, not a photograph of a finished unit
-- Taking money for a thing creates obligations — tax, consumer protection — that no amount
-  of cryptography addresses. **10.12 is not optional and is not agent work**
+**Say plainly, in the buyer's language:** crypto payments cannot be reversed; a published
+address proves the money is unspent, not safe; **nobody has one of these yet**; and taking
+money creates obligations — tax, consumer protection, shipping across borders to allies in
+the UK and Australia — that no amount of cryptography addresses.
 
 **Never:** a countdown, a scarcity claim, a tier system, or a photograph of something that
-does not exist. Every pattern that makes a crowdfunder convert is a pattern this project
-already bans on the install prompt, and for the same reason.
+does not exist. Every pattern that makes a crowdfunder convert is one this project already
+bans on the install prompt, for the same reason.
+
+---
+
+## What the rewrite removed
+
+`CLAUDE.md`: *"an obligation list that only grows is how a volunteer network drowns"*, and
+*"prefer deleting a rule to adding one."* The first draft added 47 obligations to a network
+with one active person and deleted nothing. **It failed the project's own test of a plan.**
+
+Cut, and why:
+
+| Cut | Why |
+|---|---|
+| Visit attestations | Folded into 6.3. A visit *is* a correction with a method of `in_person` — the schema already carries that |
+| Corroboration weighting | 6.4 makes corrections additive, so a second operator agreeing already shows as two attestations. A weighting system on top would be inventing a consensus rule nobody asked for |
+| `trained with me` as an event | Folded into 7.1. It is a scope tag, not a mechanism |
+| Contribution credit across the knowledge layer | 7.6 covers the directory, which is where contribution actually happens. Playbooks are permanently human |
+| Image-first navigation | Deferred until 8.2 exists and there is somebody to test it *with*. Designing icons at people we have not met is how a taxonomy ends up assuming exactly what it meant to avoid |
+| RelayNode | Deferred — it adds a single point of failure to the milestone about removing them |
+| A bespoke cyberdeck as the starting point | 10.2 and 10.3 may make it unnecessary. Build hardware last, if at all |
+
+**One standing rule for this section, going forward: nothing joins 6–10 without something
+leaving.** The bundle budget has a ratchet; the obligation list should have one too.
 
 ## Deferred, with reasons
 
