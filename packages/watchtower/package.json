@@ -9,7 +9,8 @@
   "bin": {
     "watchtower-daemon": "./dist/daemon/index.js",
     "watchtower-cli": "./dist/client/index.js",
-    "navcom-escalation": "dist/escalation/index.js"
+    "navcom-escalation": "dist/escalation/index.js",
+    "navcom-pager": "./dist/pager/index.js"
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",

@@ -59,6 +59,20 @@ navcom-escalation --drill escalation.toml
 A pass requires a human acknowledgement inside the window. Once this passes, `last_drill` on
 the published watch state stops being `null` and every operator who signs on can see it.
 
+### Cheap redundancy, once that works
+
+The keyed executor runs on one box that somebody has to keep alive. A **keyless pager** does
+the *wake somebody up* half from anywhere — a friend's Raspberry Pi, a $4 VPS, a spare laptop:
+
+```bash
+cp packages/watchtower/pager.example.toml pager.toml   # add the Watchtower pubkey
+navcom-pager pager.toml
+```
+
+It holds **no key**, so it sees that a Distress arrived and nothing inside one, and whoever
+runs it is trusted with nothing. Run several. Duplicate pages are a nuisance; a missed page
+is not.
+
 > **A note on ntfy:** it is a third party, and your paging metadata passes through their
 > server. Disclose that to anyone else you put on the roster. If you have anything of your
 > own — a script, a bot, a gateway — prefer it, because it puts nobody else in the one path

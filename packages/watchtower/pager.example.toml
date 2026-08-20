@@ -1,0 +1,47 @@
+# A keyless pager.
+#
+#   navcom-pager /etc/navcom/pager.toml
+#
+# This process wakes somebody up when a Distress arrives. It holds NO KEY, and there is no
+# field here to give it one.
+#
+# What that means:
+#
+#   - It can see THAT a Distress arrived, and who signed it. Both are on the wire in the
+#     clear for anybody already watching the relay
+#   - It cannot read the Distress. Not the position, not the text, not the area
+#   - It cannot answer one, because answering means signing as the Watchtower and it has
+#     nothing to sign with. It can never become the thing that closes a Distress
+#   - It cannot tell the operator anything, and the operator MUST be told. That reporting
+#     stays with the keyed executor
+#
+# So it is a SUPPLEMENT, never a replacement. Run several, on different machines, operated
+# by different people. Duplicate pages are a nuisance; a missed page is not.
+#
+# The point is redundancy without trust: whoever runs this has to be trusted with nothing,
+# because they learn nothing.
+
+[watchtower]
+# The only thing this process needs to know, and it is public. The daemon prints it on
+# first run.
+pubkey = "REPLACE_WITH_WATCHTOWER_PUBKEY"
+
+[relays]
+# Its own subscription. It does not talk to the daemon and does not need to be near it.
+urls = ["wss://relay.damus.io", "wss://nos.lol"]
+
+[page]
+# argv, never a shell string, so nothing on the wire can become a command.
+# {{message}} and {{at}} are substituted per argument.
+command = ["curl", "-fsS", "-d", "{{message}}", "https://ntfy.sh/pick-something-unguessable"]
+
+# A Distress retries until a human answers, so one emergency is a stream of events. This is
+# how long to stay quiet after paging for the same operator.
+#
+# It is NOT a way to page less. A Distress still running after this window means nobody
+# answered the first page, and it pages again -- which is the behaviour you want and the
+# reason this is not simply "page once".
+#
+# Setting it to 0 does not page on every retry; the floor is one second. A configuration
+# that produces alarm fatigue is a configuration that disables the alarm.
+repage_after_seconds = 300

@@ -427,7 +427,7 @@ Nothing here needs a watch, a box, a peer or a network.
 | 2.1 | **One human on-call with a proven channel** | **human — you** | The ladder pages nobody and everything under it is theatre. One config entry and `navcom-escalation --check` |
 | 2.2 | ~~Drills~~ | **done** | Randomised weekly, `--drill` fires one now. **Fails every time until 2.1**, which is the finding rather than a gap |
 | 2.3 | **Web push as a paging channel** | agent | The one native-grade capability a web app already has on both platforms. How somebody gets woken without an app store |
-| 2.4 | Keyless pagers | either | Redundancy without trust. Cheap, and it decouples always-on from trusted |
+| 2.4 | ~~Keyless pagers~~ | **done** | `navcom-pager`. **No key anywhere in the file or the config** — not an optional field, not a commented-out one. Run several, anywhere, by anyone: whoever runs one is trusted with nothing because they learn nothing |
 
 **2.1 is not code and nothing in this milestone is real without it.** Drills run and fail
 weekly until somebody is on-call — which is the finding, published, rather than a gap.
