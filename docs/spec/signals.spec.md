@@ -197,6 +197,23 @@ exists — so the separation is about who *receives* it, not about tidiness.
 
 - **Nobody holds this.** There is no server-side list. Each device keeps what it can decrypt
   and computes its own view, which expires on its own. It MUST NOT be persisted [C27]
+- **One event per peer, each signed by a throwaway key.** A single event `p`-tagged to
+  everybody is a **social graph published to a public relay** — anyone watching sees that
+  this key sends presence to those keys, every minute, forever, which is exactly the
+  Doxxer's material. Signing separate events with the real key is no better: a relay
+  correlates them by author and rebuilds the same graph.
+
+  So each peer gets an event signed by a fresh key that is discarded immediately, and the
+  real sender rides inside the ciphertext. A relay sees unrelated one-off keys publishing to
+  unrelated recipients and can link none of them — not across peers, and not across
+  heartbeats
+- **The inner content is a complete signed event**, not a payload naming its author. A
+  payload that merely *says* who it is from can say anything; an inner signature is checked
+  with the same function used everywhere else. The wrapper hides who is talking, the
+  signature proves it. This is NIP-59's shape, built from primitives already here
+- A client MUST refuse presence from a pubkey that is not on its own peer list. Without
+  that, anybody who learns a pubkey can put themselves on somebody's screen — and a stranger
+  in the list of who is out makes a real peer easy to miss
 - **Republished on a heartbeat**, at the same interval as `10910`. Relays do not store
   ephemeral events, so a peer whose app was closed has missed everything sent meanwhile —
   a heartbeat means they see the truth within one interval of opening, and nothing is left

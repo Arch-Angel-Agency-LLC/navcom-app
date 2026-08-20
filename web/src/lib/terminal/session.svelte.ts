@@ -26,6 +26,7 @@ import { get, set, clearField } from './storage';
 import { watch } from './watch.svelte';
 import { seenRoots } from './roots';
 import { recordPatrol } from './patrol';
+import { presence } from './presence.svelte';
 
 export interface SignOn {
   at: number;
@@ -159,6 +160,22 @@ export const operator = {
     };
     // Wipeable: tonight's data. Panic wipe removes it; identity survives.
     set('wipeable', 'signon', session);
+
+    // Peers hear about it too, and they hear about it from nobody else -- there is no
+    // watch in this path and no server holding a list. Republished on a heartbeat because
+    // relays store none of it.
+    void presence.announce(operator.presencePayload());
+    presence.beat(() => (session ? operator.presencePayload() : null));
+  },
+
+  /** What peers are told. Coarse by construction, and nothing they did not agree to receive. */
+  presencePayload() {
+    return {
+      callsign: loadIdentity()?.callsign ?? 'unnamed',
+      status: (session ? 'out' : 'stood-down') as 'out' | 'stood-down',
+      area: session?.area ?? null,
+      until: session?.expectedUntil ?? Math.floor(Date.now() / 1000)
+    };
   },
 
   async routine() {
@@ -222,6 +239,15 @@ export const operator = {
         ...(closedBy ? { closedBy } : {})
       });
     }
+
+    // Told explicitly rather than by going quiet: silence is what a flat battery looks
+    // like, and a peer should not have to guess which one it was.
+    void presence.announce({
+      callsign: loadIdentity()?.callsign ?? 'unnamed',
+      status: 'stood-down',
+      area: current?.area ?? null,
+      until: Math.floor(Date.now() / 1000)
+    });
 
     session = null;
     clearField('wipeable', 'signon');

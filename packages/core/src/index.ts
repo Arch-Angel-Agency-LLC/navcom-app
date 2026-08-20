@@ -4,6 +4,7 @@ export * from './crypto/envelope.js';
 export * from './events/kinds.js';
 export * from './events/watch-state.js';
 export * from './events/signal.js';
+export * from './events/presence.js';
 export * from './events/response.js';
 export * from './board.js';
 export * from './log.js';

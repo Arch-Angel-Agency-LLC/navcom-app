@@ -412,7 +412,7 @@ no box and no leader.
 
 | | Item | Owner | Cost |
 |---|---|---|---|
-| 3.1 | **Peer pairing and presence** — QR, sealed to peers, heartbeat | agent | Two of the seven ways people work get *nothing* today |
+| 3.1 | ~~Peer pairing and presence~~ | **done** | Wrapped in throwaway keys so no relay can see who talks to whom. Pairing is by code or link; **QR is still to do** — it needs an encoder worth adding rather than hand-rolling |
 | 3.2 | **Findable profiles and invites** | agent | The actual fix for cold start: pairing at a distance rather than only in person |
 | 3.3 | **Public presence** — a name, never a pin | agent | Gives the network a pulse |
 | 3.4 | **Live position sharing** — watch and peers only | agent | Never publicly optable. See [`product/visibility.md`](product/visibility.md) |
@@ -464,8 +464,8 @@ ships** — the status page states what is built.
 | | Today | Fixed by |
 |---|---|---|
 | Solo on patrol | Works — callsign, directory, own person one tap away | Milestone 1 completes it |
-| Team on patrol, no leader | **Nothing.** No way to see each other | 3.1 |
-| Team on patrol with a leader | **Nothing**, and there is no concept of a team | 3.1, 4.1 |
+| Team on patrol, no leader | **Served.** Pair, and each phone draws its own picture | — |
+| Team on patrol with a leader | **Served** for seeing each other. No concept of a team, and no dispatch verb — deliberately | 4.1 for a shared watch |
 | Solo on watch | Well served. This is what got built first | — |
 | Team on patrol, watcher at home | Served; the watcher sees a flat list with no grouping | 4.1 |
 | **Agent on watch** | Holds the board, answers questions, and **cannot close a `Distress`** — an agent is never the sole responder. A 24/7 agent watch is a query desk, not a safety net | Nothing fixes this, by design. Say it plainly to anyone setting one up |

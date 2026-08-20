@@ -3,6 +3,7 @@
   import { capabilitySentence } from '@navcom/core';
   import { watch } from '$lib/terminal/watch.svelte';
   import { operator } from '$lib/terminal/session.svelte';
+  import { presence } from '$lib/terminal/presence.svelte';
   import { loadConfig } from '$lib/terminal/config';
   import { loadIdentity } from '$lib/terminal/identity';
 
@@ -14,7 +15,11 @@
     configured = loadConfig() !== null;
     identity = loadIdentity();
     watch.start();
-    return () => watch.stop();
+    presence.start();
+    return () => {
+      watch.stop();
+      presence.stop();
+    };
   });
 
   const session = $derived(operator.session);
@@ -193,6 +198,32 @@
   <p class="error">{operator.error}</p>
 {/if}
 
+{#if presence.out.length > 0 || presence.unknown.length > 0}
+  <!--
+    Peers, with no watch anywhere in the path. Each device drew this itself from what it
+    could decrypt; nothing holds it and nothing persists it.
+  -->
+  <section class="peers" data-peers>
+    <h2>Your peers</h2>
+    {#each presence.out as p (p.pubkey)}
+      <p class="peer out">
+        <strong>{p.callsign}</strong> is out{p.payload.area ? ` — ${p.payload.area}` : ''}
+      </p>
+    {/each}
+    {#each presence.unknown as p (p.pubkey)}
+      <!-- Named rather than hidden. Leaving them off would read as "not out", which is a
+           claim nobody made. -->
+      <p class="peer unknown"><strong>{p.callsign}</strong> — nothing heard</p>
+    {/each}
+    {#if presence.unknown.length > 0}
+      <p class="cost">
+        <strong>Nothing heard is not the same as home.</strong> A quiet phone is a flat
+        battery, no signal, or a pocket, and this will never guess which.
+      </p>
+    {/if}
+  </section>
+{/if}
+
 <!-- The consequence, not the label. A word like "Automated" is not enough on its own. -->
 <section class="consequence" data-capability>
   <p>{capabilitySentence(s)}</p>
@@ -282,6 +313,7 @@
   <!-- Two taps from anywhere in the terminal. Not buried, and not a button large enough to
        hit while putting the phone in a pocket. -->
   <nav class="quiet">
+    <a href="/terminal/peers/">Peers</a>
     <a href="/terminal/directory/">Directory</a>
     <a href="/terminal/patrols/">Your patrols</a>
     <a href="/terminal/log/">What the watch wrote</a>
@@ -360,6 +392,12 @@
   .home { border: 2px solid var(--t-station); background: var(--t-raised); padding: 1rem 1.1rem; }
   .home h2 { color: var(--t-station); }
   .home p { color: var(--t-ink); font-size: 1.05rem; margin: 0; }
+
+  .peers { border: 2px solid var(--t-line-strong); padding: .9rem 1rem; gap: .3rem; }
+  .peer { margin: 0; }
+  .peer.out { color: var(--t-ink); }
+  .peer.unknown { color: var(--t-faint); }
+  .peer.unknown strong { color: var(--t-muted); }
 
   .quiet { display: flex; gap: 1.2rem; flex-wrap: wrap; }
   .quiet a { color: var(--t-faint); font-size: .9rem; text-decoration: none; border-bottom: 1px solid var(--t-line); }

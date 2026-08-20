@@ -10,6 +10,9 @@
 /** Replaceable. Watch state — a cold client MUST be able to read this before signing on. */
 export const KIND_WATCH_STATE = 10910;
 
+/** Ephemeral. Peer-to-peer presence, wrapped so no relay can see who talks to whom. */
+export const KIND_PEER_PRESENCE = 20913;
+
 /** Ephemeral. Signals: on-station, routine, query, assist, stood-down. */
 export const KIND_SIGNAL = 20910;
 

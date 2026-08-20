@@ -347,7 +347,7 @@ describe('the field terminal', () => {
 
   it('has built every screen the loop needs', () => {
     const built = screens().map((p) => p.path);
-    for (const screen of ['sign-on', 'query', 'assist', 'distress', 'setup', 'wipe', 'log', 'directory', 'patrols']) {
+    for (const screen of ['sign-on', 'query', 'assist', 'distress', 'setup', 'wipe', 'log', 'directory', 'patrols', 'peers']) {
       expect(
         built.some((p) => p.includes(`/terminal/${screen}/`)),
         `${screen} screen is not built`
@@ -581,6 +581,24 @@ describe('the field terminal', () => {
     expect(theirs.doc.querySelector('h1')?.structuredText).toMatch(/your record/i);
     // And the one that belongs to the watch says whose account it is.
     expect(theirs.bodyText).toMatch(/the watch writes down what it does/i);
+  });
+
+  it('proposes nobody on the peers screen', () => {
+    // There is no discovery, no suggestion and no ranking. A list of operators who might
+    // know each other is the thing this design refuses to build, and its absence is the
+    // feature -- so the page must not grow one by accident.
+    const peers = screens().find((p) => p.path.includes('/terminal/peers/'))!;
+    for (const banned of ['nearby', 'suggested', 'people you may know', 'discover']) {
+      expect(peers.bodyText.toLowerCase(), `peers page suggests: ${banned}`).not.toContain(banned);
+    }
+    expect(peers.bodyText).toMatch(/best done face to face/i);
+  });
+
+  it('says unpairing is silent and cannot be undone', () => {
+    // Somebody who has to justify unpairing, or whose unpairing sends a notification, is
+    // somebody who stays paired with a person they would rather not be.
+    const peers = screens().find((p) => p.path.includes('/terminal/peers/'))!;
+    expect(peers.bodyText).toMatch(/they are not told|not told/i);
   });
 
   it('carries a manifest so it can be installed', () => {
