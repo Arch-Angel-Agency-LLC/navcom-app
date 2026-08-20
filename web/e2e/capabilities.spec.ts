@@ -48,6 +48,12 @@ for (const capability of CAPABILITIES) {
 }
 
 test('a capability that declares no watch does not quietly need one', async ({ browser }) => {
+  // One test, one fresh browser context per capability, and there are now seventeen. That
+  // is a minute of real work under parallel load and it outgrew the default 30s timeout as
+  // the manifest filled up -- surfacing as a flake rather than as "this test got bigger".
+  // Scaled off the manifest so it keeps up on its own.
+  test.setTimeout(20_000 + CAPABILITIES.length * 8_000);
+
   // Stated as one assertion over the whole set, because the failure it guards was not
   // specific to a screen -- it was a shared module reaching for the Watchtower config, and
   // every capability that touched it inherited the dependency.

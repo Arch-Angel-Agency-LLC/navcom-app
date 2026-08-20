@@ -13,6 +13,9 @@
 import { describe, expect, it } from 'vitest';
 import { generateSecretKey, getPublicKey } from 'nostr-tools/pure';
 import {
+  buildDistress,
+  buildSignal,
+  watchtowerAt,
   buildKeyBundle,
   coverOf,
   COVER_NOTE,
@@ -156,5 +159,68 @@ describe('falling back', () => {
     expect(COVER_NOTE).toMatch(/unreadable now/i);
     expect(COVER_NOTE).toMatch(/quantum/i);
     expect(COVER_NOTE).not.toMatch(/insecure|unsafe|danger|warning|error|risk/i);
+  });
+});
+
+describe('the join between an address and its envelope', () => {
+  /**
+   * The bug this section exists for.
+   *
+   * `sealToGroup` took KEM keys and used them. `WatchtowerAddress` carried them. Every call
+   * site passed `to.holders` and silently dropped `to.kem`, so **every signal and every
+   * Distress to a watch was sealed classically**, always — while the operator's Status
+   * screen, computing cover from the keys it had fetched, showed no notice and therefore
+   * implied hybrid.
+   *
+   * Both sides were tested. The join was not, which is where seam bugs live. Worse than a
+   * missing feature: the app claimed a property it did not have, which is the exact failure
+   * class the capability manifest exists to prevent — and no test could see it, because
+   * nothing checked the envelope against the claim.
+   */
+  const wren = generateSecretKey();
+  const wrenPub = getPublicKey(wren);
+  const holderA = generateSecretKey();
+  const holderB = generateSecretKey();
+  const address = (holders: Uint8Array[], withKeys: boolean) =>
+    watchtowerAt(
+      wrenPub,
+      holders.map(getPublicKey),
+      withKeys ? Object.fromEntries(holders.map((h) => [getPublicKey(h), kemPublicHex(h)])) : undefined
+    );
+
+  it('seals a signal to the KEM keys the address carries', () => {
+    const event = buildSignal(wren, address([holderA], true), 'query', { text: 'bed tonight' }, 1_755_300_000);
+    const wraps = (JSON.parse(event.content) as { k: string[] }).k;
+    expect(wraps.every((w) => w.startsWith('q:')), 'every wrap is hybrid').toBe(true);
+    expect(openFromGroup(holderA, wrenPub, event.content)).toMatchObject({ text: 'bed tonight' });
+  });
+
+  it('seals a Distress to them too', () => {
+    // The message that matters most, and the one most worth recording today to open later.
+    const event = buildDistress(wren, address([holderA], true), { position: null, area: 'north' }, 1_755_300_000);
+    const wraps = (JSON.parse(event.content) as { k: string[] }).k;
+    expect(wraps.every((w) => w.startsWith('q:'))).toBe(true);
+  });
+
+  it('reports classical when it seals classically, and never the other way round', () => {
+    // The claim and the envelope have to agree. This is the assertion whose absence let the
+    // bug ship: cover was computed from one thing and the sealing done from another.
+    for (const withKeys of [true, false]) {
+      const to = address([holderA, holderB], withKeys);
+      const event = buildSignal(wren, to, 'routine', {}, 1_755_300_000);
+      const wraps = (JSON.parse(event.content) as { k: string[] }).k;
+      const actuallyHybrid = wraps.every((w) => w.startsWith('q:'));
+      expect(coverOf(to.holders, to.kem ?? {}) === 'hybrid', `withKeys=${withKeys}`).toBe(actuallyHybrid);
+    }
+  });
+
+  it('still reaches a holder who has published no key, in a mixed squad', () => {
+    const to = watchtowerAt(wrenPub, [getPublicKey(holderA), getPublicKey(holderB)], {
+      [getPublicKey(holderA)]: kemPublicHex(holderA)
+    });
+    const event = buildSignal(wren, to, 'routine', {}, 1_755_300_000);
+    expect(openFromGroup(holderA, wrenPub, event.content)).toEqual({});
+    expect(openFromGroup(holderB, wrenPub, event.content)).toEqual({});
+    expect(coverOf(to.holders, to.kem ?? {})).toBe('classical');
   });
 });

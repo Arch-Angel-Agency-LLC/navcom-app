@@ -46,7 +46,7 @@ export async function sendSignal(
       // Type unencrypted so a client can filter without decrypting; payload sealed to
       // whoever holds the watch.
       tags: [['p', watchtower.pubkey], ['t', type]],
-      content: sealToGroup(secret, watchtower.holders, payload),
+      content: sealToGroup(secret, watchtower.holders, payload, watchtower.kem),
       created_at: Math.floor(Date.now() / 1000)
     },
     secret
@@ -67,7 +67,7 @@ export async function sendDistress(
       kind: KIND_DISTRESS,
       // No `t` tag: identified by kind, so a subscriber filtering signal types cannot miss it.
       tags: [['p', watchtower.pubkey]],
-      content: sealToGroup(secret, watchtower.holders, payload),
+      content: sealToGroup(secret, watchtower.holders, payload, watchtower.kem),
       created_at: Math.floor(Date.now() / 1000)
     },
     secret

@@ -159,7 +159,7 @@ export function buildSignal(
     // for a squad. Always the group envelope, even for one holder -- two shapes would let
     // anyone watching a relay sort Watchtowers into "box" and "squad" without decrypting.
     tags: [tagRecipient(to.pubkey), tagSignalType(type)],
-    content: sealToGroup(secret, to.holders, payload)
+    content: sealToGroup(secret, to.holders, payload, to.kem)
   };
 }
 
@@ -182,6 +182,6 @@ export function buildDistress(
     // No `t` tag: distress is identified by its kind, not by a filterable label, so it
     // cannot be missed by a subscriber filtering on signal types.
     tags: [tagRecipient(to.pubkey)],
-    content: sealToGroup(secret, to.holders, payload)
+    content: sealToGroup(secret, to.holders, payload, to.kem)
   };
 }
