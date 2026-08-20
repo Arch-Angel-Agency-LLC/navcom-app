@@ -8,7 +8,13 @@
 
 import { describe, expect, it } from 'vitest';
 import { generateSecretKey, getPublicKey } from 'nostr-tools/pure';
-import { buildPresence, readPresence, KIND_PEER_PRESENCE, type PresencePayload } from '../src/index.js';
+import {
+  buddyState,
+  buildPresence,
+  readPresence,
+  KIND_PEER_PRESENCE,
+  type PresencePayload
+} from '../src/index.js';
 
 const wren = generateSecretKey();
 const wrenPub = getPublicKey(wren);
@@ -114,5 +120,68 @@ describe('what a peer refuses', () => {
     expect(event!.kind).toBe(KIND_PEER_PRESENCE);
     expect(KIND_PEER_PRESENCE).toBeGreaterThanOrEqual(20_000);
     expect(KIND_PEER_PRESENCE).toBeLessThan(30_000);
+  });
+});
+
+describe('watching for somebody', () => {
+  it('tells only the peer it concerns, so nobody learns who watches whom', () => {
+    // The whole reason `watching` is per-recipient. Telling every peer you are watching
+    // them when you are watching one would be a lie told to several people at once.
+    const events = buildPresence(
+      wren,
+      [ravenPub, owlPub],
+      (peer) => out({ watching: peer === ravenPub }),
+      T
+    );
+    expect(readPresence(raven, events[0]!, [wrenPub])?.payload.watching).toBe(true);
+    expect(readPresence(owl, events[1]!, [wrenPub])?.payload.watching).toBe(false);
+  });
+
+  it('still accepts one payload for everybody, since most of it is the same', () => {
+    const [event] = buildPresence(wren, [ravenPub], out(), T);
+    expect(readPresence(raven, event!, [wrenPub])?.payload.callsign).toBe('Wren');
+  });
+});
+
+describe('what a buddy is told', () => {
+  const later = T + 7200;
+
+  it('is out while inside the time they gave', () => {
+    expect(buddyState(out({ until: later }), T, T + 60)).toBe('out');
+  });
+
+  it('is home when they said so, rather than when they went quiet', () => {
+    // Standing down is announced. Simply stopping is what a flat battery looks like.
+    expect(buddyState(out({ status: 'stood-down' }), T, T + 60)).toBe('home');
+  });
+
+  it('is overdue only past their time AND the grace', () => {
+    // People are late for ordinary reasons far more often than dangerous ones.
+    //
+    // `heardAt` tracks `now` here because that is the real case: a phone still sending
+    // heartbeats, past the time its owner gave. Somebody past their time whose phone ALSO
+    // went quiet is unheard, and the test below covers that -- an earlier version of this
+    // one conflated the two and asserted overdue for a peer nothing had been heard from
+    // in half an hour.
+    expect(buddyState(out({ until: later }), later, later + 60)).toBe('out');
+    expect(buddyState(out({ until: later }), later + 1800, later + 1801)).toBe('overdue');
+  });
+
+  it('is unheard rather than overdue when the phone went quiet first', () => {
+    // Somebody whose battery died an hour into a four-hour patrol is unheard. Calling that
+    // overdue would invent a fact from an absence.
+    expect(buddyState(out({ until: later }), T, T + 3600)).toBe('unheard');
+  });
+
+  it('reports home even after their time, when they said they were home', () => {
+    expect(buddyState(out({ status: 'stood-down', until: T }), T, T + 86_400)).toBe('home');
+  });
+
+  it('never returns anything that reads as an emergency', () => {
+    // Nothing here escalates. There is no state meaning "in trouble", because silence is
+    // never duress and this function only ever sees silence.
+    const states = ['out', 'overdue', 'home', 'unheard'];
+    expect(states).not.toContain('distress');
+    expect(states).not.toContain('emergency');
   });
 });

@@ -51,6 +51,18 @@ export interface PresencePayload {
   until: number;
   /** Present only where the operator chose to share it, at the precision they chose. */
   position?: Position;
+  /**
+   * *"I am watching for you tonight."*
+   *
+   * Sent **only to the peer it concerns**, which is what keeps it from becoming a graph —
+   * nobody else learns who watches whom, not even another peer.
+   *
+   * It exists because the alternative is worse than nothing. A buddy arrangement kept as a
+   * private note on one phone means somebody can believe they are being watched while
+   * nobody is, which is invariant 4 failing at the scale of two people instead of a
+   * network. Saying it out loud is the only version that is honest.
+   */
+  watching?: boolean;
 }
 
 /**
@@ -61,10 +73,20 @@ export interface PresencePayload {
 export function buildPresence(
   secret: SecretKey,
   peers: string[],
-  payload: PresencePayload,
+  /**
+   * The payload, per peer.
+   *
+   * A function rather than one shared object, because `watching` differs by recipient —
+   * telling every peer you are watching them when you are watching one would be a lie told
+   * to several people at once, which is a worse failure than the one it replaced.
+   */
+  payloadFor: PresencePayload | ((peer: string) => PresencePayload),
   createdAt: number
 ): Event[] {
+  const forPeer = typeof payloadFor === 'function' ? payloadFor : () => payloadFor;
+
   return peers.map((peer) => {
+    const payload = forPeer(peer);
     // The real message, signed by the real key. Never published as-is.
     const inner = finalizeEvent(
       {
@@ -135,4 +157,53 @@ export function readPresence(
   } catch {
     return null;
   }
+}
+
+/**
+ * How long past their declared time before a buddy is told.
+ *
+ * The same grace the watch uses for an overdue board entry, and for the same reason:
+ * **people are late for ordinary reasons far more often than dangerous ones.** A number
+ * short enough to be useful and long enough that a slow walk home is not an event.
+ */
+export const BUDDY_GRACE_SECONDS = 1800;
+
+export type BuddyState =
+  /** Out, and inside the time they said. */
+  | 'out'
+  /** Past their declared time. **A nudge, never an alarm** — see below. */
+  | 'overdue'
+  /** They said they were home. */
+  | 'home'
+  /** Nothing heard lately. Not home, not in trouble — unknown [invariant 3]. */
+  | 'unheard';
+
+/**
+ * What a buddy's phone should say about them.
+ *
+ * `overdue` is the only new judgement here and it is deliberately weak. **Nothing escalates
+ * from it**: no page, no ladder, no contact, and no rung of anything. It tells a person who
+ * asked to be told that somebody is past the time they gave, and that person decides what
+ * it means.
+ *
+ * That restraint is the point rather than caution. Escalating on a missed window would make
+ * false alarms routine, and alarm fatigue destroys the one mechanism where failure means
+ * somebody is actually hurt [C4, invariant 3]. Duress is always deliberate; silence is
+ * never duress.
+ */
+export function buddyState(
+  payload: PresencePayload,
+  heardAt: number,
+  now: number,
+  opts: { graceSeconds?: number; unheardAfterSeconds?: number } = {}
+): BuddyState {
+  if (payload.status === 'stood-down') return 'home';
+
+  // Silence first. Somebody whose phone died an hour into a four-hour patrol is unheard,
+  // not overdue -- calling that overdue would invent a fact from an absence.
+  const unheardAfter = opts.unheardAfterSeconds ?? 180;
+  if (now - heardAt > unheardAfter) return 'unheard';
+
+  const grace = opts.graceSeconds ?? BUDDY_GRACE_SECONDS;
+  return now > payload.until + grace ? 'overdue' : 'out';
 }

@@ -12,13 +12,15 @@
 import { SimplePool } from 'nostr-tools/pool';
 import type { Event } from 'nostr-tools/core';
 import {
+  buddyState,
   buildPresence,
   KIND_PEER_PRESENCE,
   readPresence,
+  type BuddyState,
   type PresencePayload
 } from '@navcom/core';
 import { loadIdentity } from './identity';
-import { peerPubkeys, peers } from './peers';
+import { buddies, peerPubkeys, peers } from './peers';
 import { relays } from './relays';
 
 /** How often presence is republished, and therefore how quickly a peer appears. */
@@ -114,6 +116,26 @@ export const presence = {
     connected = true;
   },
 
+  /**
+   * Who has told you they are watching for you tonight.
+   *
+   * Only what they said — never inferred from you watching them. Two people can each think
+   * they are the one keeping an eye out, and the app must not paper over that by assuming
+   * symmetry nobody agreed to.
+   */
+  get watchingYou(): string[] {
+    const cutoff = Math.floor(Date.now() / 1000) - HEARTBEAT_SECONDS * MISSES_BEFORE_UNKNOWN;
+    return Object.values(seen)
+      .filter((p) => p.payload.watching === true && p.heard >= cutoff)
+      .map((p) => p.callsign)
+      .sort();
+  },
+
+  /** What a buddy's phone should say about them. Never anything that reads as an alarm. */
+  stateOf(p: PeerPresence, now = Math.floor(Date.now() / 1000)): BuddyState {
+    return buddyState(p.payload, p.heard, now);
+  },
+
   /** Publishes where you are to the peers you paired with, and to nobody else. */
   async announce(payload: PresencePayload): Promise<void> {
     const identity = loadIdentity();
@@ -121,10 +143,13 @@ export const presence = {
     const to = peerPubkeys();
     if (!identity || urls.length === 0 || to.length === 0) return;
 
+    // `watching` differs by recipient. Telling every peer you are watching them when you
+    // are watching one would be a lie told to several people at once.
+    const watched = new Set(buddies().map((b) => b.pubkey));
     const events = buildPresence(
       identity.secretKey,
       to,
-      payload,
+      (peer) => ({ ...payload, watching: watched.has(peer) }),
       Math.floor(Date.now() / 1000)
     );
     // Settled, not raced: one peer's relay failing must not stop the others being told.

@@ -135,7 +135,12 @@ export const CAPABILITIES: Capability[] = [
     claims: [
       'No watch is involved, no server holds it',
       'Best done face to face',
-      'they are not told'
+      'they are not told',
+      // The commitment and its limit together. Watching for somebody is a nudge, and they
+      // are told you are doing it -- a private note means somebody can believe they are
+      // watched while nobody is.
+      'they are told you are doing it',
+      'nothing escalates, nobody is paged'
     ],
     control: '#code',
     requires: ['identity']

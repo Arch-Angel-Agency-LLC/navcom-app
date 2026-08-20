@@ -160,6 +160,29 @@ test.describe('peers', () => {
   });
 });
 
+test.describe('watching for somebody', () => {
+  test('is taken on and put down in one tap, from the peer list', async ({ page }) => {
+    await seedDevice(page, OUT);
+    await page.goto('/terminal/peers/');
+
+    await page.locator('#code').fill('b'.repeat(64));
+    await page.locator('#name').fill('Raven');
+    await page.getByRole('button', { name: /^pair$/i }).click();
+
+    // Pairing alone does not make you responsible for anybody.
+    await expect(page.getByText('watching', { exact: true })).toHaveCount(0);
+
+    await page.getByRole('button', { name: /watch for them/i }).click();
+    await expect(page.getByText('watching', { exact: true })).toBeVisible();
+
+    // Putting it down is as unceremonious as taking it up. Somebody who has to justify
+    // stopping keeps a commitment they cannot keep, which is worse for the person relying
+    // on it than an honest end.
+    await page.getByRole('button', { name: /stop watching/i }).click();
+    await expect(page.getByText('watching', { exact: true })).toHaveCount(0);
+  });
+});
+
 test.describe('patrols', () => {
   test('whether the history survives a wipe is a control, not a setting somebody has to find', async ({ page }) => {
     await seedDevice(page, OUT);

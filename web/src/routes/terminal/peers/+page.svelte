@@ -8,7 +8,7 @@
    */
   import { onMount } from 'svelte';
   import { page } from '$app/state';
-  import { PairError, pair, peers, unpair, type Peer } from '$lib/terminal/peers';
+  import { PairError, pair, peers, setBuddy, unpair, type Peer } from '$lib/terminal/peers';
   import { loadIdentity } from '$lib/terminal/identity';
   import { relays, usingDefaults } from '$lib/terminal/relays';
   import encodeQR from '@paulmillr/qr';
@@ -98,6 +98,11 @@
     mine = peers();
   }
 
+  function toggleBuddy(peer: Peer) {
+    setBuddy(peer.pubkey, !peer.buddy);
+    mine = peers();
+  }
+
   async function copy() {
     try {
       await navigator.clipboard.writeText(link);
@@ -133,6 +138,18 @@
          already know how ending it works. -->
     Ending it is one tap, immediate, and <strong>they are not told</strong>. It stops what
     you send them from then on; it cannot recall what they already have.
+  </p>
+  <p class="cost">
+    <!--
+      Before the pairing form, where somebody deciding actually reads it. Sixth time this
+      session an important sentence sat behind a conditional — and the first time it was
+      caught the moment it was written rather than after it shipped.
+    -->
+    <strong>Watching for somebody</strong> is a separate thing you can take on: your phone
+    tells you when they are past the time they gave, and <strong>they are told you are doing
+    it</strong> — a private note would let somebody believe they are watched while nobody
+    is. It is a nudge and nothing else: nothing escalates, nobody is paged, and going quiet
+    is never treated as trouble.
   </p>
 </section>
 
@@ -208,15 +225,18 @@
     <h2>Paired</h2>
     <ul class="paired">
       {#each mine as p (p.pubkey)}
-        <li>
+        <li class:watching={p.buddy}>
           <span class="name">{p.callsign}</span>
-          <span class="key">{p.pubkey.slice(0, 12)}…</span>
+          {#if p.buddy}<span class="badge">watching</span>{/if}
+          <button class="drop" onclick={() => toggleBuddy(p)}>
+            {p.buddy ? 'Stop watching' : 'Watch for them'}
+          </button>
           <button class="drop" onclick={() => drop(p)}>Remove</button>
         </li>
       {/each}
     </ul>
     <p class="cost">
-      Immediate, and they are not told.
+      Removing somebody is immediate, and they are not told.
     </p>
   </section>
 {/if}
@@ -245,7 +265,12 @@
     display: flex; align-items: center; gap: .8rem;
     border-bottom: 1px solid var(--t-line); min-height: 3.2rem;
   }
+  .paired li.watching { border-inline-start: 2px solid var(--t-station); padding-inline-start: .5rem; }
   .name { color: var(--t-ink); font-weight: 650; flex: 1; }
-  .key { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .74rem; color: var(--t-faint); }
+  .badge {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: .62rem; letter-spacing: .1em; text-transform: uppercase;
+    color: var(--t-station); border: 1px solid var(--t-station); padding: .1rem .3rem;
+  }
   .drop { min-height: 2.2rem; font-size: .8rem; padding: 0 .7rem; border-color: var(--t-line); color: var(--t-faint); }
 </style>

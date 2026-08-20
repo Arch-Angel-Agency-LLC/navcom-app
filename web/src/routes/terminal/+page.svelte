@@ -222,8 +222,19 @@
   <section class="peers" data-peers>
     <h2>Your peers</h2>
     {#each presence.out as p (p.pubkey)}
-      <p class="peer out">
-        <strong>{p.callsign}</strong> is out{p.payload.area ? ` — ${p.payload.area}` : ''}
+      {@const state = presence.stateOf(p)}
+      <p class="peer" class:out={state === 'out'} class:overdue={state === 'overdue'}>
+        <strong>{p.callsign}</strong>
+        {#if state === 'overdue'}
+          <!--
+            A nudge, and the wording says so. Nothing escalates from this: no page, no
+            ladder, no contact. People are late for ordinary reasons far more often than
+            dangerous ones, and an alarm here would make false alarms routine.
+          -->
+          is past the time they gave{p.payload.area ? ` — ${p.payload.area}` : ''}
+        {:else}
+          is out{p.payload.area ? ` — ${p.payload.area}` : ''}
+        {/if}
       </p>
     {/each}
     {#each presence.unknown as p (p.pubkey)}
@@ -235,6 +246,18 @@
       <p class="cost">
         <strong>Nothing heard is not the same as home.</strong> A quiet phone is a flat
         battery, no signal, or a pocket, and this will never guess which.
+      </p>
+    {/if}
+
+    <!--
+      Only what somebody actually said. Never inferred from you watching them -- two people
+      can each assume the other is keeping an eye out, and assuming symmetry nobody agreed
+      to is exactly how somebody ends up watched by nobody.
+    -->
+    {#if presence.watchingYou.length > 0}
+      <p class="peer watched" data-watching-you>
+        <strong>{presence.watchingYou.join(', ')}</strong>
+        {presence.watchingYou.length === 1 ? 'is' : 'are'} watching for you tonight
       </p>
     {/if}
   </section>
@@ -419,6 +442,10 @@
   .peer { margin: 0; }
   .peer.out { color: var(--t-ink); }
   .peer.unknown { color: var(--t-faint); }
+  .peer.overdue { color: var(--t-oncall); }
+  .peer.overdue strong { color: var(--t-oncall); }
+  .peer.watched { color: var(--t-station); margin-top: .4rem; }
+  .peer.watched strong { color: var(--t-station); }
   .peer.unknown strong { color: var(--t-muted); }
 
   .quiet { display: flex; gap: 1.2rem; flex-wrap: wrap; }

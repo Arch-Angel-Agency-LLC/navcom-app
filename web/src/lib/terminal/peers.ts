@@ -18,6 +18,17 @@ export interface Peer {
   callsign: string;
   /** Unix seconds you paired. */
   since: number;
+  /**
+   * You have taken on noticing when this person is past their time.
+   *
+   * A commitment you make, not a status they have. Two people who patrol alone on
+   * different nights watching each other is probably the commonest real arrangement after
+   * pure solo, and it needs no team, no shared callsign and no watch.
+   *
+   * **They are told**, in the presence you send them and nowhere else. A buddy arrangement
+   * kept as a private note means somebody can believe they are watched while nobody is.
+   */
+  buddy?: boolean;
 }
 
 const FIELD = 'peers';
@@ -67,4 +78,24 @@ export function unpair(pubkey: string): void {
 
 export function peerPubkeys(): string[] {
   return peers().map((p) => p.pubkey);
+}
+
+/**
+ * Takes on, or puts down, watching for somebody.
+ *
+ * Putting it down is as unceremonious as taking it up. Somebody who has to justify
+ * stopping is somebody who keeps a commitment they cannot keep, which is worse for the
+ * person relying on it than an honest end.
+ */
+export function setBuddy(pubkey: string, buddy: boolean): void {
+  set(
+    'accruing',
+    FIELD,
+    peers().map((p) => (p.pubkey === pubkey ? { ...p, buddy } : p))
+  );
+}
+
+/** Who you are watching for. */
+export function buddies(): Peer[] {
+  return peers().filter((p) => p.buddy === true);
 }
