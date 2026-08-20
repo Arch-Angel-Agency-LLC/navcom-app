@@ -9,7 +9,7 @@ before signing on [C23, invariant 4].
 
 ```json
 {
-  "v": 2,
+  "v": 4,
   "state": "station | automated-oncall | automated | dark",
   "holder": "callsign | null",
   "holder_kind": "human | agent | null",
@@ -25,6 +25,17 @@ before signing on [C23, invariant 4].
   }
 }
 ```
+
+**There is no field for how many operators are overdue, and there must not be one.** A
+daemon once published an aggregate `overdue_count` here, because it was the only way to tell
+whoever held watch. `10910` is unencrypted, so that announced *that* somebody was overdue to
+anybody subscribed — it named nobody, but a watcher correlating timing learns something, and
+that is the Doxxer's method. Removed in v4, once the watch became a mode of the app that
+reads the board directly.
+
+Version history, since v4 is the first **subtractive** change: a v3 reader defaulted a
+missing `overdue_count` to 0 and would render *"nobody overdue"* for a watch that had simply
+stopped saying — a claim nobody made. v2 added `log_root`; v3 made it required-or-null.
 
 - `on-station` MUST carry `callsign`. The board has no other way to learn a human-readable
   name from a bare pubkey, and DoD check 3 requires the board entry to show one. Optional on
@@ -123,8 +134,13 @@ a stand-down — the log records expiry, not a completed op.
 On crossing overdue grace, the node MUST:
 
 1. Mark `status = overdue`
-2. Notify whoever holds watch
+2. Make it visible to whoever holds watch
 3. Attempt contact with the operator
+
+**"Make it visible", not "notify".** Whoever holds watch reads the board itself and derives
+overdue from the entries they already have. The node MUST NOT publish anything about an
+overdue operator — not a name, not an area, not a count. The transition is written to the
+accountability log, where the operator it concerns can read it.
 
 It MUST NOT escalate, page, or trigger any part of the ladder [C4, invariant 3]. Only a
 human reviewing an overdue may raise it. An agent MUST NOT close an overdue.
@@ -140,9 +156,30 @@ station → automated        explicit drop; agent assumes the board
 any     → dark             node down or agent down with no human
 ```
 
-Handover MUST transfer: all board entries, all unanswered signals, all overdue entries.
 Watch MUST NOT be silently abandoned — a holder going offline without handover transitions
-to `automated`, or to `dark` if the agent is unavailable.
+to `automated`, or to `dark` if the agent is unavailable. Standing down MUST publish `dark`
+rather than going quiet: a stale `station` left on a relay tells every operator reading it
+that a human is present.
+
+### Nothing is transferred, and that is the change
+
+An earlier version of this section required handover to transfer all board entries, all
+unanswered signals and all overdue entries. **It does not, and must not.**
+
+A board that was handed to you is a board you were *told*, not one you derived — and the
+property this whole system rests on is that nobody holds anybody else's picture. Each device
+draws its own from what it can decrypt.
+
+So the incoming watch starts empty and fills from the operators themselves:
+
+- A field terminal that sees the holder change **MUST re-announce** `on-station` if it is
+  signed on. This is what populates the new board, and it comes from the operator rather
+  than from the outgoing watch
+- The re-announce MUST state the duration **remaining**, not the duration originally
+  declared. Restating the original moves the operator's due-back time forward by however
+  long they have already been out
+- Until it arrives, an empty board means *"nothing heard yet"*, and a client MUST NOT
+  present it as *"nobody is out"*
 
 ## Shared watch [C28]
 

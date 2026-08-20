@@ -1,7 +1,9 @@
 # Funding
 
 Operators buy supplies out of pocket. This is about making support possible without
-costing them their anonymity.
+costing them their persona — which is pseudonymity, not anonymity, and the distinction is
+load-bearing here: a callsign that receives support is linkable across everything it
+signs, and that is exactly what makes the support attributable.
 
 ## The capability that matters
 

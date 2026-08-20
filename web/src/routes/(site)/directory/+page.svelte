@@ -114,8 +114,8 @@
   .built-at {
     font-size: 0.88rem;
     color: var(--muted);
-    border-left: 2px solid var(--line-strong);
-    padding-left: 0.8rem;
+    border-inline-start: 2px solid var(--line-strong);
+    padding-inline-start: 0.8rem;
     margin: 1.25rem 0 0;
     max-width: var(--measure);
   }

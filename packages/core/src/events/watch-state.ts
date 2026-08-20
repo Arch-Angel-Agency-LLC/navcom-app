@@ -70,23 +70,6 @@ export interface WatchStatePayload {
   /** Null when no drill has ever run — itself a fact worth publishing. */
   last_drill: DrillResult | null;
   /**
-   * How many operators are currently overdue. **A count, never a list.**
-   *
-   * The spec requires the node to notify whoever holds watch when someone crosses into
-   * overdue, and `10910` already is the mechanism by which anyone watching sees the board
-   * needs attention. Added by the daemon implementation for exactly that reason.
-   *
-   * The cost, stated rather than implied: `10910` is unencrypted, so this announces *that*
-   * an operator is overdue to anyone subscribed. It never says who — no callsign, no
-   * pubkey, no area — but a watcher correlating timing learns something. That is the
-   * [Doxxer's](../../../docs/research/ecosystem-roster.md) method.
-   *
-   * Kept because the alternative today is not notifying at all: the Console, which reads
-   * the board directly and needs no public field, does not exist yet. **Drop this once it
-   * does.**
-   */
-  overdue_count: number;
-  /**
    * A commitment to the accountability log as it stands right now.
    *
    * Published here rather than as a new kind: `10910` is already node-published, already
@@ -113,9 +96,16 @@ export interface WatchStatePayload {
   log_root: LogRoot | null;
 }
 
-// Bumped for log_root. Additive, so a v2 reader ignoring the field still works, but a v3
-// reader can tell a node that publishes no root from one too old to know about them.
-export const WATCH_STATE_VERSION = 3;
+// v4 removes `overdue_count`. Subtractive rather than additive, so it is a real bump: a v3
+// reader defaulted the missing field to 0 and would render "nobody overdue" for a watch that
+// simply stopped saying — which is a claim nobody made.
+//
+// Why it went: `10910` is unencrypted, so publishing a count announced *that* somebody was
+// overdue to anyone subscribed. It never said who, but a watcher correlating timing learns
+// something, and that is the Doxxer's method. It existed only because there was no way to
+// tell whoever held watch, and the watch is now a mode of the app that reads the board
+// directly. The note on this field said to drop it once that existed. It does.
+export const WATCH_STATE_VERSION = 4;
 
 /** Reachable now: not expired, and not console-open standing alone [C40]. */
 export function pageableNow(oncall: OnCall[], nowSeconds: number): OnCall[] {
@@ -135,7 +125,6 @@ export interface WatchStateInput {
   since: number;
   agent_health: AgentHealth;
   last_drill: DrillResult | null;
-  overdue_count: number;
   /** Absent when the node keeps no accountability log, which is published as null. */
   log_root?: LogRoot | null;
   /** Unix seconds, supplied rather than read from a clock this module does not own. */
@@ -173,7 +162,6 @@ export function publishableWatchState(input: WatchStateInput): WatchStatePayload
     since: input.since,
     agent_health: input.agent_health,
     last_drill: input.last_drill,
-    overdue_count: input.overdue_count,
     log_root: input.log_root ?? null
   };
 }
@@ -312,7 +300,6 @@ export function readWatchState(content: string | null | undefined): WatchStatePa
       since: p.since ?? 0,
       agent_health: p.agent_health ?? 'down',
       last_drill: p.last_drill ?? null,
-      overdue_count: p.overdue_count ?? 0,
       // A v2 node publishes no root. Null reads as "this watch commits to no log", which is
       // the honest reading of its absence rather than a shape to paper over.
       log_root: p.log_root ?? null
@@ -331,7 +318,6 @@ export const darkState = (): WatchStatePayload => ({
   since: 0,
   agent_health: 'down',
   last_drill: null,
-  overdue_count: 0,
   // Dark commits to nothing. There is no watch to hold accountable right now.
   log_root: null
 });

@@ -310,7 +310,7 @@ describe("Board", () => {
     });
   });
 
-  describe("overdueCount (found in review -- feeds kind 10910's overdue_count)", () => {
+  describe("overdueCount (local only -- nothing about an overdue operator is published)", () => {
     it("is zero on an empty board", () => {
       expect(new Board().overdueCount).toBe(0);
     });

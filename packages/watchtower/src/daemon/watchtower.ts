@@ -209,7 +209,6 @@ export class WatchtowerDaemon {
       // state -- the correct failure, arrived at structurally rather than by anybody
       // remembering to handle it.
       last_drill: this.lastDrill(),
-      overdue_count: this.board.overdueCount,
       // A commitment to the log, republished on every heartbeat so an operator holding an
       // older root can tell whether history moved under them. Null when no log is open --
       // "this watch commits to nothing" is a fact worth publishing, not a gap to hide.
@@ -480,12 +479,13 @@ export class WatchtowerDaemon {
       });
     }, this.config.watch.heartbeatIntervalSeconds * 1000);
     this.sweepHandle = setInterval(() => {
-      // The onOverdue callback triggers an immediate out-of-band
-      // publishWatchState() -- "notify whoever holds watch" (per
-      // review) shouldn't wait up to a full heartbeatIntervalSeconds
-      // (60s default) after the actual transition. This is deliberately
-      // still just the aggregate overdue_count, same as the regular
-      // heartbeat -- no operator identity in this path either.
+      // Overdue is written to the accountability log and published nowhere.
+      //
+      // This used to trigger an out-of-band watch-state publish, because the aggregate
+      // count on 10910 was the only way to tell whoever held watch. It was also an
+      // unencrypted announcement that *somebody* was overdue, to anyone subscribed. The
+      // watch is now a mode of the app and reads the board directly, so the channel is
+      // gone and so is the leak.
       this.board.sweep(now(), this.config.watch.overdueGrace, this.config.watch.hardExpiry, (entry) => {
         this.note("marked-overdue", entry.operator, "marked-overdue", entry.callsign);
         // agents.md: log inaction. The spec says the node MUST attempt contact with an

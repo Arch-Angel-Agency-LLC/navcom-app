@@ -118,6 +118,6 @@
 </form>
 
 <style>
-  .told { border-left: 3px solid var(--t-line-strong); padding-left: .9rem; }
+  .told { border-inline-start: 3px solid var(--t-line-strong); padding-inline-start: .9rem; }
   .told p { font-size: 1.05rem; color: var(--t-ink); }
 </style>

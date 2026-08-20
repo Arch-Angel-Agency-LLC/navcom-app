@@ -406,8 +406,8 @@
   }
 
   .consequence {
-    border-left: 3px solid var(--t-line-strong);
-    padding-left: .9rem;
+    border-inline-start: 3px solid var(--t-line-strong);
+    padding-inline-start: .9rem;
   }
   .consequence p { margin: 0; font-size: 1.08rem; line-height: 1.5; }
 

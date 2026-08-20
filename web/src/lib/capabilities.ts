@@ -59,6 +59,10 @@ export const CAPABILITIES: Capability[] = [
     screen: 'terminal/setup/',
     claims: [
       'Never a legal name',
+      // 5.7. An operator reading "no account, no legal name" could reasonably conclude
+      // they are anonymous. They are not, and it is said where the key is generated.
+      'This is a pseudonym, not anonymity',
+      'everything you sign with it links together',
       // The watch section must read as optional, or an operator who knows nobody believes
       // their setup is unfinished.
       'the section below is optional'

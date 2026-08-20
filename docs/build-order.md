@@ -477,10 +477,28 @@ ships** — the status page states what is built.
 | 5.4 | Weather-activated warming and cooling centres | agent |
 | 5.5 | Battery state | agent |
 | 5.6 | Supplies | either |
-| 5.7 | Never write "anonymous" where "pseudonymous" is true | agent |
-| 5.8 | **Logical CSS properties** so right-to-left scripts are not broken | agent |
-| 5.9 | **Message catalogue**, one locale shipped, English fallback | agent |
-| 5.10 | **Drop `overdue_count` from `10910`** — bump to v4 | agent |
+| 5.7 | ~~Never write "anonymous" where "pseudonymous" is true~~ | **done** | Said on the setup screen where the key is generated, not in a policy — the trade is stated at the moment it is made |
+| 5.8 | ~~Logical CSS properties~~ so right-to-left scripts are not broken | **done** | Plus `dir` on the document, without which they are inert. Guarded by a test that scans the **built** CSS, since Svelte rewrites styles and a dependency can emit physical properties nothing in `src/` contains |
+| 5.9 | ~~Message catalogue~~, one locale shipped, English fallback | **deferred** | See below. It contradicted a decision already recorded in [`product/languages.md`](product/languages.md) |
+| 5.10 | ~~Drop `overdue_count` from `10910`~~ — v4 | **done** | The first subtractive version bump. A v3 reader defaulted the missing field to 0 and would render "nobody overdue" for a watch that had stopped saying |
+
+### 5.9 was listed by mistake, and is deferred
+
+[`languages.md`](product/languages.md) sets the order of this work, and step 2 is *"message
+catalogue and one-locale bundling, **when there is a second language to hold**"*. Step 3 is
+*"a second language chosen because somebody is waiting for it, **not to prove the mechanism
+works**"*. Nobody is waiting for one. Building the catalogue now is the mechanism proving
+itself, which is the thing that entry exists to forbid.
+
+It would also cost something real. The [capability manifest](verification.md) checks that
+claims appear in the **built HTML**, in English. Behind a catalogue, every claim becomes a
+key, and the check either follows the copy into one locale — proving nothing about the
+others — or it goes. That trade is worth making for a language somebody actually reads, and
+not before.
+
+What was genuinely due now was the half of it that belongs to 5.8: `lang` and `dir` on the
+document. Without those, logical properties resolve to the left-hand layout regardless of
+language, and the work is inert. That shipped.
 
 ### 5.10, because the condition it waited on has been met
 

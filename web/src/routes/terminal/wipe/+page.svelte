@@ -179,6 +179,6 @@
   /* Burn is typed, not held: no fill, and it stays inert until the callsign matches. */
   .burn::before { content: none; }
 
-  .limits { border-left: 3px solid var(--t-line-strong); padding-left: .9rem; }
+  .limits { border-inline-start: 3px solid var(--t-line-strong); padding-inline-start: .9rem; }
   .burnsec { border-top: 1px solid var(--t-line); padding-top: 1.1rem; }
 </style>

@@ -385,43 +385,26 @@ describe("WatchtowerDaemon.start()", () => {
     // oncall is a list of authored declarations now, so a count can never exceed
     // its evidence. Empty is the honest value: nobody has declared themselves on-call.
     expect(payload.oncall).toEqual([]);
-    expect(payload.overdue_count).toBe(0);
   });
 });
 
-describe("overdue notification (found in review)", () => {
-  // External review caught that "notify whoever holds watch" on the
-  // overdue transition is a real, already-specified requirement, not a
-  // deferred escalation feature -- and that reusing a third-party
-  // channel (e.g. Discord) for it would leak operator activity
-  // (callsign + timing) to that third party. The fix: republish the
-  // aggregate overdue_count on the existing kind 10910 channel, which
-  // is already public/aggregate-only by construction. These tests pin
-  // both halves: the count is accurate, and no operator identity ever
-  // appears in that payload.
-  it("republishes watch-state immediately when an entry crosses into overdue, with an accurate count", async () => {
-    vi.useFakeTimers();
-    try {
-      const { daemon, publishedEvents } = await started({ overdueGrace: 1, sweepIntervalSeconds: 1 });
-      const operatorPubkey = getPublicKey(generateSecretKey());
-      daemon.board.onStation({
-        operator: operatorPubkey, callsign: "OP-1", area: "d",
-        expectedDurationSeconds: 1, routineIntervalSeconds: null, position: null, now: Math.floor(Date.now() / 1000),
-      });
+describe("what an overdue operator costs them, publicly", () => {
+  // This suite used to pin the opposite behaviour, and the change is deliberate.
+  //
+  // External review had caught that "notify whoever holds watch on the overdue transition"
+  // is an already-specified requirement, and that routing it through a third-party channel
+  // would leak operator activity to that third party. The answer at the time was an
+  // aggregate `overdue_count` on kind 10910 -- public, but identity-free.
+  //
+  // It was still an unencrypted announcement that *somebody* was overdue, to anybody
+  // subscribed, and the field's own comment said to drop it once a Console existed, because
+  // a Console reads the board and needs no public field. The watch is now a mode of the app
+  // and does exactly that. So the requirement is met by whoever holds watch looking at their
+  // own board, and nothing about an overdue operator is published at all.
+  // That the transition IS written to the log is asserted in "what the watch writes down",
+  // which has a real log file to check against. This suite is about what leaves the box.
 
-      const watchStatesBefore = publishedEvents.filter((e) => e.kind === KIND_WATCH_STATE).length;
-      await vi.advanceTimersByTimeAsync(5000); // past expected_duration(1s) + overdueGrace(1s) + a sweep tick
-
-      const watchStates = publishedEvents.filter((e) => e.kind === KIND_WATCH_STATE);
-      expect(watchStates.length).toBeGreaterThan(watchStatesBefore); // an out-of-band publish happened
-      const latest = JSON.parse(watchStates[watchStates.length - 1]!.content) as WatchStatePayload;
-      expect(latest.overdue_count).toBe(1);
-    } finally {
-      vi.useRealTimers();
-    }
-  });
-
-  it("never includes callsign, pubkey, or any operator-identifying field in the watch-state payload", async () => {
+  it("publishes nothing at all about them -- not a name, not an area, not a count", async () => {
     vi.useFakeTimers();
     try {
       const { daemon, publishedEvents } = await started({ overdueGrace: 1, sweepIntervalSeconds: 1 });
@@ -438,6 +421,9 @@ describe("overdue notification (found in review)", () => {
         expect(e.content).not.toContain("a-very-identifying-callsign");
         expect(e.content).not.toContain("very-specific-district");
         expect(e.content).not.toContain(operatorPubkey);
+        // The count is gone with the rest. A watcher correlating timing learned something
+        // from it, and that is the Doxxer's method.
+        expect(e.content).not.toContain("overdue");
       }
     } finally {
       vi.useRealTimers();

@@ -164,10 +164,14 @@ export class Board {
   }
 
   /**
-   * Aggregate-only, no operator identity -- the count is what kind
-   * 10910's overdue_count is built from. This is how "notify whoever
-   * holds watch" happens without a new outbound channel: anyone
-   * watching the board sees the count change.
+   * How many entries on this board are overdue. **Local only.**
+   *
+   * This used to feed an aggregate `overdue_count` on kind 10910, which was how "notify
+   * whoever holds watch" happened without a new outbound channel. That field is gone as of
+   * watch-state v4: it was an unencrypted announcement that *somebody* was overdue, to
+   * anybody subscribed, and whoever holds watch now reads this board directly.
+   *
+   * Nothing about an overdue operator leaves this process.
    */
   get overdueCount(): number {
     let count = 0;
@@ -190,14 +194,17 @@ export class Board {
    * requirement (watch-state spec), not a deferred nice-to-have. Calling
    * it escalation invited exactly the scope creep it was trying to
    * avoid -- the next person to touch it would reasonably go looking for
-   * where the heavier ladder plugs in. It doesn't. This callback is the
-   * notification itself (WatchtowerDaemon wires it to republish the
-   * aggregate overdue_count on kind 10910 -- no operator identity in
-   * that path), called exactly once per entry at the moment it
-   * transitions into "overdue," not on every sweep of an already-overdue
-   * entry. The actual escalation ladder -- paging, a contact chain -- is
-   * a genuinely different, heavier thing, still out of scope until it
-   * has its own spec and seven failure-mode tests.
+   * where the heavier ladder plugs in. It doesn't. The callback fires exactly once per
+   * entry, at the moment it transitions into "overdue," not on every sweep of an
+   * already-overdue entry.
+   *
+   * What it does now is write the transition to the accountability log. It used to also
+   * republish watch state, because the published count was the only way to tell whoever
+   * held watch; the watch is now a mode of the app and reads this board itself.
+   *
+   * The actual escalation ladder -- paging, a contact chain -- is a genuinely different,
+   * heavier thing, still out of scope until it has its own spec and seven failure-mode
+   * tests.
    */
   sweep(
     now: number,

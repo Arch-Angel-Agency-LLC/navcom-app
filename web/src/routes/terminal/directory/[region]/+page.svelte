@@ -186,8 +186,8 @@
 </section>
 
 <style>
-  .snapshot { border-left: 3px solid var(--t-line-strong); padding-left: .9rem; }
-  .snapshot.old { border-left-color: var(--t-oncall); }
+  .snapshot { border-inline-start: 3px solid var(--t-line-strong); padding-inline-start: .9rem; }
+  .snapshot.old { border-inline-start-color: var(--t-oncall); }
   .snapshot.old strong { color: var(--t-oncall); }
 
   .group { border-top: 1px solid var(--t-line); }
@@ -213,5 +213,5 @@
     color: var(--t-faint); margin: 0 0 .4rem;
   }
 
-  .limit { border-left: 3px solid var(--t-line-strong); padding-left: .9rem; }
+  .limit { border-inline-start: 3px solid var(--t-line-strong); padding-inline-start: .9rem; }
 </style>

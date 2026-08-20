@@ -36,13 +36,13 @@
   .prose :global(h3) { font-size: 1.12rem; margin: 1.75rem 0 0.5rem; }
   .prose :global(p) { margin: 0.9rem 0; }
   .prose :global(ul), .prose :global(ol) {
-    margin: 0.9rem 0; padding-left: 1.3rem; list-style: revert;
+    margin: 0.9rem 0; padding-inline-start: 1.3rem; list-style: revert;
     display: flex; flex-direction: column; gap: 0.35rem;
   }
   .prose :global(li)::marker { color: var(--faint); }
   .prose :global(blockquote) {
     margin: 1.1rem 0; padding: 0.1rem 0 0.1rem 1rem;
-    border-left: 3px solid var(--line-strong); color: var(--muted);
+    border-inline-start: 3px solid var(--line-strong); color: var(--muted);
   }
   .prose :global(code) {
     font-family: var(--font-mono); font-size: 0.86em;
@@ -63,7 +63,7 @@
     margin: 1.1rem 0; display: block; overflow-x: auto;
   }
   .prose :global(th) {
-    text-align: left; font-size: 0.7rem; letter-spacing: 0.08em; text-transform: uppercase;
+    text-align: start; font-size: 0.7rem; letter-spacing: 0.08em; text-transform: uppercase;
     color: var(--muted); padding: 0.6rem 0.8rem; border-bottom: 1px solid var(--line-strong);
     white-space: nowrap;
   }

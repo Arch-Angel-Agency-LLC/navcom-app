@@ -104,6 +104,19 @@
         How you are known. Never a legal name. Once this exists the app is ready — the
         section below is optional and most operators will not have one at first.
       </p>
+      <p class="note">
+        <!--
+          5.7, stated at the moment the trade is made rather than in a policy nobody reads.
+          There is no account here and no legal name anywhere, and an operator could
+          reasonably read that as anonymity. It is not, and the difference matters most to
+          the people with the most reason to care.
+        -->
+        <strong>This is a pseudonym, not anonymity.</strong> It is a key generated on this
+        phone, and <strong>everything you sign with it links together</strong> — patrols,
+        answers, anything you add to the directory. That is what lets your work count as
+        yours. If you need something genuinely unlinkable, it has to be a separate identity,
+        and nothing here can retroactively unlink what this one has already signed.
+      </p>
       <input id="callsign" bind:value={callsign} autocomplete="off" spellcheck="false" />
       <button type="submit">Generate keypair</button>
     </form>

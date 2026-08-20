@@ -182,8 +182,8 @@
 
   ol { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: .55rem; }
   li { display: grid; grid-template-columns: auto 1fr; gap: .1rem .7rem; align-items: baseline;
-       border-left: 2px solid var(--t-line); padding-left: .7rem; }
-  li.unproven { border-left-color: var(--t-dark); }
+       border-inline-start: 2px solid var(--t-line); padding-inline-start: .7rem; }
+  li.unproven { border-inline-start-color: var(--t-dark); }
   .at { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .78rem;
         color: var(--t-faint); grid-row: 1 / span 2; }
   .what { color: var(--t-ink); }
@@ -191,5 +191,5 @@
   .flag { grid-column: 2; font-size: .72rem; letter-spacing: .1em; text-transform: uppercase;
           color: var(--t-dark); }
 
-  .limit { border-left: 3px solid var(--t-line-strong); padding-left: .9rem; }
+  .limit { border-inline-start: 3px solid var(--t-line-strong); padding-inline-start: .9rem; }
 </style>

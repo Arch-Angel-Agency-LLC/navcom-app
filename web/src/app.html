@@ -1,5 +1,14 @@
 <!doctype html>
-<html lang="en">
+<!--
+  `dir` is stated rather than left to default, and it is what makes logical CSS properties
+  mean anything: `border-inline-start` resolves to the left in `ltr` and the right in `rtl`,
+  so a document with no direction gets the left-hand layout whatever the language.
+
+  Hard-coded to English today because English is the only language shipped. When there is a
+  second, both attributes come from the locale — and this is the one place that changes.
+  Writing them out now, wrong-but-explicit, beats an omission somebody has to notice.
+-->
+<html lang="en" dir="ltr">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />

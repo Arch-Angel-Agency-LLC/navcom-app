@@ -79,8 +79,8 @@
 
   .rules { display: flex; flex-direction: column; gap: 0.75rem; max-width: var(--measure); }
   .rules li {
-    padding-left: 1rem;
-    border-left: 2px solid var(--line-strong);
+    padding-inline-start: 1rem;
+    border-inline-start: 2px solid var(--line-strong);
     color: var(--muted);
   }
   .rules strong { color: var(--ink); }

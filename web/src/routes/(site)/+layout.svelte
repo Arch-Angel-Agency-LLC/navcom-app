@@ -40,11 +40,12 @@
 <style>
   .skip {
     position: absolute;
-    left: -9999px;
+    /* Off-screen on the side the script starts from, so it is off-screen in Arabic too. */
+    inset-inline-start: -9999px;
   }
   .skip:focus {
-    left: 0.5rem;
-    top: 0.5rem;
+    inset-inline-start: 0.5rem;
+    inset-block-start: 0.5rem;
     z-index: 10;
     background: var(--surface);
     padding: 0.5rem 0.8rem;

@@ -242,7 +242,6 @@ function darkInput() {
     since: Math.floor(Date.now() / 1000),
     agent_health: 'down' as const,
     last_drill: null,
-    overdue_count: 0,
     log_root: null,
     now: Math.floor(Date.now() / 1000)
   };
@@ -262,7 +261,6 @@ async function publishState(secret: Uint8Array, callsign: string, at: number): P
         since: at,
         agent_health: 'down',
         last_drill: null,
-        overdue_count: 0,
         log_root: null,
         now: Math.floor(Date.now() / 1000)
       },
