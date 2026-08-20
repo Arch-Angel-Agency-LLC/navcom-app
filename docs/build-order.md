@@ -479,7 +479,7 @@ ships** — the status page states what is built.
 | 5.3 | ~~Saying no to an `Assist`~~ | **done** | A `declined` response — *"nobody is coming"*. Refused for `Distress` in core, so no client can offer a button that ends one with a tap [invariant 2] |
 | 5.4 | ~~Weather-activated warming and cooling centres~~ | **done** | **Display rule 7**, not a weather API. The case rules 1–2 miss: the data is fresh and the answer is still wrong. No network call, no third party, no content generated |
 | 5.5 | ~~Battery state~~ | **done** | Told to the operator, published to nobody — see [`declined.md`](declined.md). Chromium-only, so absent on iOS, and absent rather than estimated |
-| 5.6 | Supplies | either |
+| 5.6 | Supplies | **needs a decision** | Not underspecified by accident — it collides with an invariant and an anti-pattern. See below |
 | 5.7 | ~~Never write "anonymous" where "pseudonymous" is true~~ | **done** | Said on the setup screen where the key is generated, not in a policy — the trade is stated at the moment it is made |
 | 5.8 | ~~Logical CSS properties~~ so right-to-left scripts are not broken | **done** | Plus `dir` on the document, without which they are inert. Guarded by a test that scans the **built** CSS, since Svelte rewrites styles and a dependency can emit physical properties nothing in `src/` contains |
 | 5.9 | ~~Message catalogue~~, one locale shipped, English fallback | **deferred** | See below. It contradicted a decision already recorded in [`product/languages.md`](product/languages.md) |
@@ -526,6 +526,38 @@ is a real afternoon's work and is the likely path — it is deferred, not declin
 Until then the log root is still published and clients still keep the roots they have seen,
 which is what closes rewriting **since somebody looked**. Backdating a window nobody watched
 stays open, and [`declined.md`](declined.md) already says so.
+
+### 5.6 needs a decision before it can be built
+
+The Quartermaster wants *"to know what we handed out so I know what to restock"*, and
+[`archetypes.md`](research/archetypes.md) asks for **supply signals that tolerate several
+people editing offline at once and resolve without a merge UI**.
+
+The merge problem has a clean answer: **a shared count is the wrong shape.** Each operator
+records their own handouts, the total is a sum of independent records, and sums commute — so
+there is no conflict and therefore no merge UI to design. Making the conflict unrepresentable
+rather than resolving it is the move this project reaches for everywhere else.
+
+**What is not clean is where the numbers go**, and there are two rules in the way:
+
+- *"Show a count of anything"* is an anti-pattern here — **a number invites gaming**. Socks
+  handed out is inventory rather than a leaderboard, but a per-operator total published to a
+  squad is a leaderboard whatever it is called
+- The patrol record is **local by default and by design.** Nothing in it reaches a watch, a
+  relay or a peer. Aggregating across people means transmitting it, which is a change to
+  that promise rather than a feature on top of it
+
+Two versions, and they are genuinely different products:
+
+| | |
+|---|---|
+| **Local only** | *"What I handed out tonight"* in the patrol record, which is already local. Useful to the operator, tells them what they need to restock, publishes nothing, invites no comparison. **Does not solve the Quartermaster's problem at all** — they still have to ask people |
+| **Shared** | Handouts travel to whoever holds the storage unit. Solves the actual problem, and means the patrol record stops being purely local and a per-person number exists somewhere |
+
+The local version is buildable today and is what would be built by default. It is recorded
+here rather than done, because shipping it would quietly settle the larger question by making
+the smaller one look finished — and the Quartermaster is a named archetype whose problem
+would then be marked done without being touched.
 
 ### 5.9 was listed by mistake, and is deferred
 
