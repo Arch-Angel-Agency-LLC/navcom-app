@@ -38,7 +38,7 @@ function fakeConfig(overrides: Partial<DaemonConfig["watch"]> = {}, allowedPubke
     authorization: { allowedPubkeys },
     // Tests that care about the log inject an AccountabilityLog directly; this path is
     // never opened, so a daemon built from fakeConfig records nothing.
-    log: { path: "/dev/null", retentionDays: 90 },
+    log: { path: "/dev/null", retentionDays: 90, drillStatePath: "/dev/null/nope" },
   };
 }
 
@@ -278,6 +278,16 @@ describe("what the watch writes down", () => {
     });
     // The new entry exists, and the published checkpoint does not yet cover it.
     expect(publishedRoot.log_root!.size).toBe(sizeAtStart);
+  });
+
+  it("publishes no drill when the executor has never written one", async () => {
+    // Null, a missing file and an unreadable one all mean the same thing to a client: this
+    // watch has not demonstrated that it can raise anyone. publishableWatchState then
+    // demotes automated-oncall, without anything here having to decide it.
+    const { publishedEvents } = await started();
+    const state = publishedEvents.find((e) => e.kind === KIND_WATCH_STATE)!;
+    const payload = JSON.parse(state.content) as WatchStatePayload;
+    expect(payload.last_drill).toBeNull();
   });
 
   it("publishes a null root when it keeps no log, rather than omitting the field", async () => {

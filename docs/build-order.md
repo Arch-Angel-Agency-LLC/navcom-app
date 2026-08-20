@@ -402,7 +402,8 @@ Nothing here needs a watch, a box, a peer or a network.
 | 2.3 | **Web push as a paging channel** | agent | The one native-grade capability a web app already has on both platforms. How somebody gets woken without an app store |
 | 2.4 | Keyless pagers | either | Redundancy without trust. Cheap, and it decouples always-on from trusted |
 
-**2.1 is not code and nothing in this milestone is real without it.**
+**2.1 is not code and nothing in this milestone is real without it.** Drills run and fail
+weekly until somebody is on-call — which is the finding, published, rather than a gap.
 
 ## Milestone 3 — Two people who met once
 

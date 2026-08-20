@@ -54,6 +54,13 @@ export interface DaemonConfig {
     path: string;
     /** Entries older than this are dropped on rotation. Spec default is 90 days. */
     retentionDays: number;
+    /**
+     * Where the escalation executor writes its drill results.
+     *
+     * Read, never written, by the daemon. The two processes share one file and nothing
+     * else, which is what keeps a hung executor from being able to hang the watch.
+     */
+    drillStatePath: string;
   };
 }
 
@@ -76,6 +83,7 @@ const DEFAULTS = {
   // is the only number that says how long "retained" means.
   logRetentionDays: 90,
   logPath: "/var/lib/navcom/accountability.jsonl",
+  drillStatePath: "/var/lib/navcom/drill.json",
 };
 
 interface RawToml {
@@ -95,6 +103,7 @@ interface RawToml {
   log?: {
     path?: string;
     retention_days?: number;
+    drill_state_path?: string;
   };
 }
 
@@ -190,6 +199,7 @@ export function loadDaemonConfig(path: string): DaemonConfig {
       // Same fail-loud rule as every other timing value: a quoted number in TOML is a
       // string, and a string retention would make every age comparison nonsense.
       retentionDays: positiveNumber(raw.log?.retention_days, "retention_days", DEFAULTS.logRetentionDays, path),
+      drillStatePath: raw.log?.drill_state_path ?? DEFAULTS.drillStatePath,
     },
   };
 }

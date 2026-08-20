@@ -43,11 +43,17 @@ export interface EscalationConfig {
   escalation: {
     pagingWindowSeconds: number;
     contactWindowSeconds: number;
+    /** Days the next drill is randomised within. Spec default is weekly. */
+    drillWindowDays: number;
+    /** How long a drill waits for a human. Shorter than a ladder -- nobody is in danger. */
+    drillAckWindowSeconds: number;
+    /** Where results are written for the daemon to read when it publishes `10910`. */
+    drillStatePath: string;
     oncall: OnCallEntry[];
   };
 }
 
-const DEFAULTS = { pagingWindowSeconds: 300, contactWindowSeconds: 300 };
+const DEFAULTS = { pagingWindowSeconds: 300, contactWindowSeconds: 300, drillWindowDays: 7, drillAckWindowSeconds: 600, drillStatePath: "/var/lib/navcom/drill.json" };
 const CHANNELS = ["sms", "voice", "push", "console-open"] as const;
 const RELAY_URL = /^wss?:\/\/.+/;
 
@@ -118,6 +124,9 @@ export function loadEscalationConfig(path: string): EscalationConfig {
     escalation?: {
       paging_window_seconds?: number;
       contact_window_seconds?: number;
+      drill_window_days?: number;
+      drill_ack_window_seconds?: number;
+      drill_state_path?: string;
       oncall?: unknown;
     };
   };
@@ -138,6 +147,9 @@ export function loadEscalationConfig(path: string): EscalationConfig {
     escalation: {
       pagingWindowSeconds: positiveNumber(raw.escalation?.paging_window_seconds, "paging_window_seconds", DEFAULTS.pagingWindowSeconds, path),
       contactWindowSeconds: positiveNumber(raw.escalation?.contact_window_seconds, "contact_window_seconds", DEFAULTS.contactWindowSeconds, path),
+      drillWindowDays: positiveNumber(raw.escalation?.drill_window_days, "drill_window_days", DEFAULTS.drillWindowDays, path),
+      drillAckWindowSeconds: positiveNumber(raw.escalation?.drill_ack_window_seconds, "drill_ack_window_seconds", DEFAULTS.drillAckWindowSeconds, path),
+      drillStatePath: raw.escalation?.drill_state_path ?? DEFAULTS.drillStatePath,
       oncall: parseOnCall(raw.escalation?.oncall, path),
     },
   };

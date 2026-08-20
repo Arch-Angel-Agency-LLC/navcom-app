@@ -3,6 +3,7 @@ import { loadEscalationConfig } from "./config.js";
 import { loadOrCreateKeypair } from "../shared/identity.js";
 import { EscalationExecutor } from "./executor.js";
 import { testPage } from "./pager.js";
+import { readDrillState } from "./drills.js";
 
 /**
  * The escalation executor, as its own process.
@@ -87,10 +88,40 @@ function load(path: string) {
   }
 }
 
+/**
+ * Fires one drill now and reports it.
+ *
+ *   navcom-escalation --drill /etc/navcom/escalation.toml
+ *
+ * The scheduled ones are randomised inside a week, deliberately, so an operator setting up
+ * a roster would otherwise wait days to find out whether it works. This is the same code
+ * path a scheduled drill takes -- a "test mode" that exercised something else would be
+ * testing something nobody depends on.
+ */
+async function drillNow(path: string): Promise<never> {
+  const config = load(path);
+  const { secretKey, pubkey } = loadOrCreateKeypair(config.identity.privkeyPath);
+  const executor = new EscalationExecutor({
+    config, secretKey, pubkey,
+    drillStatePath: config.escalation.drillStatePath,
+  });
+
+  await executor.fireDrill();
+  await executor.stop();
+
+  const state = readDrillState(config.escalation.drillStatePath);
+  console.log(JSON.stringify({ command: "drill", at: new Date().toISOString(), result: state?.last ?? null }, null, 2));
+  process.exit(state?.last?.result === "pass" ? 0 : 1);
+}
+
 function main(): void {
   const path = configPath();
   if (process.argv.includes("--check")) {
     void check(path);
+    return;
+  }
+  if (process.argv.includes("--drill")) {
+    void drillNow(path);
     return;
   }
   const config = load(path);
@@ -117,8 +148,15 @@ function main(): void {
     console.log(`[executor] on-call: ${wakeable.map((e) => `${e.declaration.author.callsign} (${e.declaration.channel})`).join(", ")}`);
   }
 
-  const executor = new EscalationExecutor({ config, secretKey, pubkey });
+  const executor = new EscalationExecutor({
+    config, secretKey, pubkey,
+    drillStatePath: config.escalation.drillStatePath,
+  });
   executor.start();
+  console.log(
+    "[executor] drills every " + config.escalation.drillWindowDays + "d (randomised), " +
+      "results -> " + config.escalation.drillStatePath,
+  );
   console.log("[executor] listening for 20911. The agent is not in this path.");
 
   let shuttingDown = false;

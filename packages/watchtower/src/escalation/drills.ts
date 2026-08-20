@@ -1,0 +1,90 @@
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { dirname } from "node:path";
+import { evaluateDrill, nextDrillAt, type Author, type Drill } from "@navcom/core";
+import { TEST_PREFIX, type pageAll } from "./pager.js";
+import type { OnCallEntry } from "./config.js";
+
+/**
+ * Running drills, and getting the result somewhere an operator will see it.
+ *
+ * The executor runs them because the executor owns paging -- a drill that exercised a
+ * different code path from a real `Distress` would be testing the wrong thing.
+ *
+ * The result lands in a file that the daemon reads when it publishes `10910`. **One
+ * direction only**: the daemon reads what the executor wrote, and never the reverse. So an
+ * executor that is down leaves the daemon publishing a stale or absent drill, which demotes
+ * the watch state -- the correct failure, arrived at by the structure rather than by
+ * anybody remembering to handle it.
+ */
+
+export interface DrillState {
+  last: Drill | null;
+  /** Unix seconds. Persisted so a restart does not reroll the schedule and page everybody. */
+  nextAt: number;
+}
+
+export function readDrillState(path: string): DrillState | null {
+  if (!existsSync(path)) return null;
+  try {
+    return JSON.parse(readFileSync(path, "utf8")) as DrillState;
+  } catch {
+    // A corrupt file reads as "no drill has ever run", which is the safe direction: it
+    // demotes the watch state rather than letting an unreadable pass stand.
+    return null;
+  }
+}
+
+export function writeDrillState(path: string, state: DrillState): void {
+  mkdirSync(dirname(path), { recursive: true });
+  writeFileSync(path, JSON.stringify(state, null, 2) + "\n", { mode: 0o600 });
+}
+
+export interface RunDrillOptions {
+  roster: OnCallEntry[];
+  /** How long to wait for a human. Shorter than a real ladder: nobody is in danger. */
+  ackWindowMs: number;
+  now: () => number;
+  /** Resolves with whoever acknowledged this drill inside the window. */
+  collectAcks: (drillId: string, windowMs: number) => Promise<{ by: Author; atMs: number }[]>;
+  page: typeof pageAll;
+}
+
+/**
+ * Fires one drill and reports what happened.
+ *
+ * Pages exactly the way a real `Distress` does, with a message that opens
+ * `[NAVCOM TEST -- NOT AN EMERGENCY]`. The distinction has to be in the words somebody reads
+ * at 3am, not in a field the page does not carry.
+ */
+export async function runDrill(id: string, opts: RunDrillOptions): Promise<Drill> {
+  const at = opts.now();
+  const wakeable = opts.roster.filter((e) => e.declaration.channel !== "console-open");
+
+  const startedMs = Date.now();
+  // The prefix is built here rather than taken from the caller, so a drill cannot be sent
+  // without it. A drill indistinguishable from a real Distress produces alarm fatigue,
+  // which destroys the one mechanism where failure means somebody is hurt.
+  const results = await opts.page(
+    wakeable,
+    TEST_PREFIX + " drill " + id.slice(0, 8) + " -- reply to acknowledge",
+  );
+  const paged = results.filter((r) => r.dispatched).map((r) => r.callsign);
+
+  // Nobody to wait for. Recording it immediately as a failure is the honest answer, and a
+  // watch with no roster should find that out weekly rather than on the night it matters.
+  if (paged.length === 0) return evaluateDrill(at, [], [], null);
+
+  const acks = await opts.collectAcks(id, opts.ackWindowMs);
+  const first = acks.length > 0 ? Math.min(...acks.map((a) => a.atMs)) - startedMs : null;
+  return evaluateDrill(at, paged, acks.map((a) => a.by), first);
+}
+
+/** Whether a drill is due, and when the one after it should be. */
+export function due(state: DrillState | null, now: number, windowDays: number): boolean {
+  if (!state) return false;
+  return now >= state.nextAt;
+}
+
+export function schedule(last: Drill | null, now: number, windowDays: number): DrillState {
+  return { last, nextAt: nextDrillAt(last?.at ?? null, now, windowDays) };
+}

@@ -3,9 +3,11 @@ import { finalizeEvent, verifyEvent } from "nostr-tools/pure";
 import type { Event, EventTemplate } from "nostr-tools/core";
 import { installNodeWebSocket } from "../shared/nostr-node.js";
 import { encryptPayload, decryptPayload } from "../shared/crypto.js";
-import { WATCH_STATE_VERSION, type LogAction, type LogOutcome, type LogReviewPayload } from "@navcom/core";
+import { existsSync, readFileSync } from "node:fs";
+import { WATCH_STATE_VERSION, type Drill, type LogAction, type LogOutcome, type LogReviewPayload } from "@navcom/core";
 import { KIND_WATCH_STATE, KIND_SIGNAL, KIND_DISTRESS, KIND_RESPONSE } from "../shared/kinds.js";
 import type {
+  DrillResult,
   AssistPayload,
   QueryPayload,
   ResponsePayload,
@@ -126,6 +128,34 @@ export class WatchtowerDaemon {
   }
 
   /**
+   * The last drill, as the executor recorded it.
+   *
+   * Null when no drill has ever run, when the file is unreadable, or when there is no
+   * executor -- and all three mean the same thing to a client: **this watch has not
+   * demonstrated that it can raise anyone.** `publishableWatchState` demotes
+   * `automated-oncall` to `automated` on exactly that, so the honest answer arrives without
+   * anything here having to decide it.
+   */
+  private lastDrill(): DrillResult | null {
+    const path = this.config.log.drillStatePath;
+    if (!path || !existsSync(path)) return null;
+    try {
+      const state = JSON.parse(readFileSync(path, "utf8")) as { last?: Drill | null };
+      const drill = state.last;
+      if (!drill) return null;
+      return {
+        at: drill.at,
+        result: drill.result,
+        author: { kind: "node", callsign: this.agentName },
+        // Who actually woke up, each named. Empty on a failed drill, which is the point.
+        acknowledged: drill.acknowledged,
+      };
+    } catch {
+      return null;
+    }
+  }
+
+  /**
    * Records a watch action.
    *
    * The actor is always this node, identified as an agent -- `agents.md` requires an agent
@@ -174,7 +204,11 @@ export class WatchtowerDaemon {
       oncall: [],
       since: this.since,
       agent_health: AGENT_HEALTH_OK,
-      last_drill: null,
+      // Read from where the escalation executor wrote it, never asked for. One direction
+      // only: an executor that is down leaves this null or stale, which DEMOTES the watch
+      // state -- the correct failure, arrived at structurally rather than by anybody
+      // remembering to handle it.
+      last_drill: this.lastDrill(),
       overdue_count: this.board.overdueCount,
       // A commitment to the log, republished on every heartbeat so an operator holding an
       // older root can tell whether history moved under them. Null when no log is open --

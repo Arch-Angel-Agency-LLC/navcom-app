@@ -1,8 +1,10 @@
 import { SimplePool } from "nostr-tools/pool";
 import { finalizeEvent, verifyEvent } from "nostr-tools/pure";
 import type { Event, EventTemplate } from "nostr-tools/core";
+import { randomBytes } from "node:crypto";
 import {
   acknowledge,
+  drillSentence,
   LadderRegistry,
   ladderReport,
   type Author,
@@ -14,6 +16,7 @@ import { installNodeWebSocket } from "../shared/nostr-node.js";
 import { encryptPayload, decryptPayload } from "../shared/crypto.js";
 import { KIND_SIGNAL, KIND_DISTRESS, KIND_RESPONSE } from "../shared/kinds.js";
 import { pageAll } from "./pager.js";
+import { due, readDrillState, runDrill, schedule, writeDrillState, type DrillState } from "./drills.js";
 import type { EscalationConfig } from "./config.js";
 
 /**
@@ -44,6 +47,8 @@ export interface ExecutorOptions {
   pool?: SimplePool;
   /** Injected for tests. Real paging shells out; a test must not. */
   page?: typeof pageAll;
+  /** Where drill results are kept, and where the daemon reads them from. */
+  drillStatePath?: string;
 }
 
 export class EscalationExecutor {
@@ -53,6 +58,10 @@ export class EscalationExecutor {
   private readonly secretKey: Uint8Array;
   private readonly pubkey: string;
   private readonly page: typeof pageAll;
+  private readonly drillStatePath: string | undefined;
+  private drills: DrillState | null = null;
+  /** Acknowledgements arriving for a drill rather than a real Distress. */
+  private drillAcks = new Map<string, { by: Author; atMs: number }[]>();
   private readonly since = now();
   private sweepHandle: ReturnType<typeof setInterval> | undefined;
   private subCloser: { close: (reason?: string) => void } | undefined;
@@ -63,7 +72,13 @@ export class EscalationExecutor {
     this.secretKey = opts.secretKey;
     this.pubkey = opts.pubkey;
     this.page = opts.page ?? pageAll;
+    this.drillStatePath = opts.drillStatePath;
     this.pool = opts.pool ?? new SimplePool({ enableReconnect: true });
+    if (this.drillStatePath) {
+      this.drills =
+        readDrillState(this.drillStatePath) ??
+        schedule(null, now(), this.config.escalation.drillWindowDays);
+    }
   }
 
   private sign(template: EventTemplate): Event {
@@ -150,6 +165,22 @@ export class EscalationExecutor {
   }
 
   private async handleAck(event: Event, payload: DistressAckPayload): Promise<void> {
+    // A drill uses the same acknowledgement a real Distress does, deliberately: an ack path
+    // that only gets exercised by drills is an ack path that has never been tested.
+    const forDrill = this.drillAcks.get(payload.distress_id);
+    if (forDrill) {
+      const entry = this.config.escalation.oncall.find(
+        (e) => e.declaration.author.pubkey === event.pubkey,
+      );
+      if (entry?.declaration.author.callsign) {
+        forDrill.push({
+          by: { kind: "human", callsign: entry.declaration.author.callsign, pubkey: event.pubkey },
+          atMs: Date.now(),
+        });
+      }
+      return;
+    }
+
     const ladder = this.ladders.get(payload.distress_id);
     if (!ladder) {
       console.log(`[ack] ${event.pubkey.slice(0, 8)} acked an unknown distress -- ignored`);
@@ -205,11 +236,50 @@ export class EscalationExecutor {
     await this.handleAck(event, payload);
   }
 
+  /**
+   * Fires a drill and records what happened.
+   *
+   * Exercises the same paging code a real `Distress` does. A drill that took a different
+   * path would be testing something nobody depends on.
+   */
+  async fireDrill(id = randomBytes(16).toString("hex")): Promise<void> {
+    if (!this.drillStatePath) return;
+
+    this.drillAcks.set(id, []);
+    try {
+      const result = await runDrill(id, {
+        page: this.page,
+        roster: this.config.escalation.oncall,
+        ackWindowMs: this.config.escalation.drillAckWindowSeconds * 1000,
+        now,
+        collectAcks: async (drillId, windowMs) => {
+          await new Promise((r) => setTimeout(r, windowMs));
+          return this.drillAcks.get(drillId) ?? [];
+        },
+      });
+
+      this.drills = schedule(result, now(), this.config.escalation.drillWindowDays);
+      writeDrillState(this.drillStatePath, this.drills);
+      console.log("[drill] " + drillSentence(result));
+    } finally {
+      this.drillAcks.delete(id);
+    }
+  }
+
   start(): void {
     this.listen();
     // The ladder advances on a clock the executor owns. This is not a trigger -- no timer
     // in this process can START a ladder, only move one that a 20911 already began.
     this.sweepHandle = setInterval(() => {
+      // Unannounced and randomised inside its window. A drill on a fixed cadence tests
+      // whether the path works at that moment, and an operator who learned the schedule is
+      // being reminded rather than tested.
+      if (this.drillStatePath && due(this.drills, now(), this.config.escalation.drillWindowDays)) {
+        this.fireDrill().catch((err: unknown) => {
+          console.error("[drill] failed: " + String(err));
+        });
+      }
+
       for (const ladder of this.ladders.tickAll(now(), this.windows)) {
         this.report(ladder, ladder.distressId).catch((err: unknown) => {
           console.error(`[ladder] report failed: ${String(err)}`);

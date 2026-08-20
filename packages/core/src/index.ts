@@ -7,6 +7,7 @@ export * from './events/signal.js';
 export * from './events/response.js';
 export * from './board.js';
 export * from './log.js';
+export * from './drill.js';
 export * from './escalation.js';
 export * from './merkle.js';
 export * from './review.js';

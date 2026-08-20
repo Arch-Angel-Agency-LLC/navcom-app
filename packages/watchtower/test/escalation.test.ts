@@ -11,6 +11,9 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import type { SimplePool } from "nostr-tools/pool";
 import { finalizeEvent, generateSecretKey, getPublicKey } from "nostr-tools/pure";
 import type { Event } from "nostr-tools/core";
+import { mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import type { ResponsePayload } from "@navcom/core";
 import { EscalationExecutor } from "../src/escalation/executor.js";
 import type { EscalationConfig, OnCallEntry } from "../src/escalation/config.js";
@@ -35,7 +38,11 @@ function fakeConfig(oncall: OnCallEntry[] = []): EscalationConfig {
   return {
     identity: { privkeyPath: "/dev/null" },
     relays: { urls: ["wss://fake.relay"] },
-    escalation: { pagingWindowSeconds: 300, contactWindowSeconds: 300, oncall },
+    escalation: {
+      pagingWindowSeconds: 300, contactWindowSeconds: 300,
+      drillWindowDays: 7, drillAckWindowSeconds: 1, drillStatePath: "/dev/null/nope",
+      oncall,
+    },
   };
 }
 
@@ -292,6 +299,77 @@ describe("proving a channel works before relying on it", () => {
 
     const [result] = await pageAll([entry], "; rm -rf /");
     expect(result!.dispatched, "the message was altered or re-parsed").toBe(true);
+  });
+});
+
+describe("drills", () => {
+  it("pages the roster with a message a woken person can tell from an emergency", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "navcom-drill-"));
+    try {
+      const page = noopPager();
+      const secretKey = generateSecretKey();
+      const { pool } = fakePool();
+      const executor = new EscalationExecutor({
+        config: fakeConfig([onCallEntry("Wren")]),
+        secretKey, pubkey: getPublicKey(secretKey), pool, page,
+        drillStatePath: join(dir, "drill.json"),
+      });
+      executors.push(executor);
+
+      await executor.fireDrill("drill-1");
+
+      const message = String(page.mock.calls[0]?.[1] ?? "");
+      expect(message).toMatch(/NOT AN EMERGENCY/);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("records a failure when nobody answers, and says so on disk", async () => {
+    // The result the daemon reads when it publishes 10910. A watch that cannot demonstrate
+    // a passing drill is presumed broken, and this is how it finds that out weekly rather
+    // than on the night it matters.
+    const dir = mkdtempSync(join(tmpdir(), "navcom-drill-"));
+    const statePath = join(dir, "drill.json");
+    try {
+      const secretKey = generateSecretKey();
+      const { pool } = fakePool();
+      const executor = new EscalationExecutor({
+        config: fakeConfig([onCallEntry("Wren")]),
+        secretKey, pubkey: getPublicKey(secretKey), pool, page: noopPager(),
+        drillStatePath: statePath,
+      });
+      executors.push(executor);
+
+      await executor.fireDrill("drill-2");
+
+      const state = JSON.parse(readFileSync(statePath, "utf8")) as { last: { result: string } };
+      expect(state.last.result).toBe("fail");
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("fails immediately with an empty roster rather than waiting out the window", async () => {
+    // Nothing to wait for. Ten minutes of window with nobody on the other end is ten
+    // minutes, and the answer was known at the start.
+    const dir = mkdtempSync(join(tmpdir(), "navcom-drill-"));
+    try {
+      const secretKey = generateSecretKey();
+      const { pool } = fakePool();
+      const executor = new EscalationExecutor({
+        config: fakeConfig([]),
+        secretKey, pubkey: getPublicKey(secretKey), pool, page: noopPager(),
+        drillStatePath: join(dir, "drill.json"),
+      });
+      executors.push(executor);
+
+      const started = Date.now();
+      await executor.fireDrill("drill-3");
+      expect(Date.now() - started).toBeLessThan(500);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
   });
 });
 

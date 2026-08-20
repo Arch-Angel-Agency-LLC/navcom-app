@@ -24,6 +24,24 @@ urls = ["wss://relay.damus.io", "wss://nos.lol"]
 paging_window_seconds = 300
 contact_window_seconds = 300
 
+# Drills. Unannounced, randomised inside the window, and published -- a watch that cannot
+# demonstrate a passing drill is presumed broken, and 10910 carries the last result so a
+# client sees it before signing on.
+#
+# A pass requires a HUMAN acknowledgement. A command exiting zero says a message left a
+# machine; somebody whose phone buzzed is not somebody who woke up. An empty roster is a
+# FAIL rather than a skip, because "nobody is on-call" is exactly what a weekly drill is
+# for.
+drill_window_days = 7
+drill_ack_window_seconds = 600
+drill_state_path = "/var/lib/navcom/drill.json"
+
+# Don't wait a week to find out whether your roster works:
+#
+#     navcom-escalation --drill escalation.toml
+#
+# Same code path a scheduled drill takes. Exits non-zero when nobody answers.
+
 # Everyone here is paged AT ONCE. In an emergency you want everyone, and walking a roster in
 # order spends the only resource that matters.
 #
