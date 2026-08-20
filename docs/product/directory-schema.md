@@ -149,6 +149,15 @@ somewhere that turns them away.
 6. **Seeded entries look visibly different from operator-verified ones.** A confidence
    tag in the data model doesn't help someone scanning a list at 10pm. Low-confidence
    data that *looks* authoritative is more dangerous than no data at all
+7. **A place whose opening depends on something the app cannot check never shows its
+   hours** — `weather_activated`, or `winter_only`/`summer_only` read out of season. This
+   is the case rules 1 and 2 do not cover: **the data is perfectly fresh and the answer is
+   still wrong.** A warming centre verified this morning still has a locked door on a mild
+   night, because the city has not called it. The reason shown must be the real one —
+   *"last check is too old"* on a record verified today is a lie, and it points the reader
+   at a fix that would not help. Out of season is claimed only where the season can be
+   determined: a record with no latitude, or one in the tropics, is left alone rather than
+   guessed at
 
 ---
 

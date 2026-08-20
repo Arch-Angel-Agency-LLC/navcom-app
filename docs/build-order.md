@@ -477,7 +477,7 @@ ships** — the status page states what is built.
 | 5.1 | ~~Post-quantum hybrid sealing~~ — ML-KEM-768 beside the classical exchange | **done** | Key distribution solved by a published `10912` bundle, so the pairing QR is unchanged. Fallback allowed and reported as a note rather than a warning. **Bundle now at 99% of budget** |
 | 5.2 | **Anchor the log root to Bitcoin** — OpenTimestamps, daily | **deferred** | Blocked on a trustworthy implementation. See below |
 | 5.3 | ~~Saying no to an `Assist`~~ | **done** | A `declined` response — *"nobody is coming"*. Refused for `Distress` in core, so no client can offer a button that ends one with a tap [invariant 2] |
-| 5.4 | Weather-activated warming and cooling centres | agent |
+| 5.4 | ~~Weather-activated warming and cooling centres~~ | **done** | **Display rule 7**, not a weather API. The case rules 1–2 miss: the data is fresh and the answer is still wrong. No network call, no third party, no content generated |
 | 5.5 | ~~Battery state~~ | **done** | Told to the operator, published to nobody — see [`declined.md`](declined.md). Chromium-only, so absent on iOS, and absent rather than estimated |
 | 5.6 | Supplies | either |
 | 5.7 | ~~Never write "anonymous" where "pseudonymous" is true~~ | **done** | Said on the setup screen where the key is generated, not in a policy — the trade is stated at the moment it is made |

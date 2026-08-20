@@ -18,7 +18,7 @@
 
 import { confidenceForField, isSeeded } from './confidence.js';
 import type { Confidence, ResourceField, ResourceRecord, VolatilityClass } from './types.js';
-import { ageInDays, classOf } from './volatility.js';
+import { ageInDays, classOf, hemisphereOf, seasonOf } from './volatility.js';
 
 export interface Age {
   days: number;
@@ -37,8 +37,21 @@ export interface Age {
 export type FieldDisplay =
   /** Rule 5. Blank is unknown, never "no restriction". */
   | { kind: 'unknown'; cls: VolatilityClass | null }
-  /** Rule 2. The old value is deliberately not carried — it must not be rendered. */
-  | { kind: 'call-first'; confidence: Confidence; cls: VolatilityClass | null }
+  /** Rule 2 and rule 7. The old value is deliberately not carried — it must not be rendered. */
+  | {
+      kind: 'call-first';
+      confidence: Confidence;
+      cls: VolatilityClass | null;
+      /**
+       * Why, where the reason is not staleness.
+       *
+       * A reader deciding whether to send somebody across a city at 11pm is owed the
+       * difference between *"nobody has checked this in a month"* and *"this only opens
+       * when the city calls it"*. The first might still be right; the second is a coin
+       * flip tonight regardless of how recently it was verified.
+       */
+      because?: 'weather-activated' | 'out-of-season';
+    }
   /** Rule 1. A volatile value always carries its age; `age` is non-null when volatile. */
   | {
       kind: 'value';
@@ -91,6 +104,43 @@ function rawValues(v: unknown): string[] {
 }
 
 /** How one field of one record must be rendered. */
+/**
+ * Fields that describe when a place is open, as opposed to what it is or who it takes.
+ *
+ * Rule 7 applies to exactly these. A weather-activated warming centre's *address* is still
+ * its address; only the question "is it open tonight" becomes unanswerable.
+ */
+const AVAILABILITY: readonly ResourceField[] = ['hours', 'intake_hours', 'capacity_signal'];
+
+/**
+ * Whether this record's opening depends on something this app cannot check.
+ *
+ * Two cases, and neither is about staleness — a record verified this morning is just as
+ * unanswerable:
+ *
+ * - **`weather_activated`.** A warming centre that opens when the city calls it. Its posted
+ *   hours are the hours it keeps *when activated*, and on a mild night the door is locked
+ * - **`winter_only` or `summer_only`, out of season.** July hours for a winter shelter are
+ *   last winter's hours
+ *
+ * Out of season is only claimed where the season can actually be determined — a record with
+ * no latitude, or one in the tropics where the four-season model does not describe the
+ * year, is left alone rather than guessed at.
+ */
+function unanswerable(record: ResourceRecord, now: Date): 'weather-activated' | 'out-of-season' | null {
+  const seasonal = typeof record.seasonal === 'string' ? record.seasonal : null;
+  if (seasonal === 'weather_activated') return 'weather-activated';
+  if (seasonal !== 'winter_only' && seasonal !== 'summer_only') return null;
+
+  const hemisphere = hemisphereOf(record.lat);
+  if (hemisphere === null) return null;
+  const season = seasonOf(now, hemisphere);
+  if (season === null) return null;
+
+  const open = seasonal === 'winter_only' ? 'winter' : 'summer';
+  return season === open ? null : 'out-of-season';
+}
+
 export function displayField(
   record: ResourceRecord,
   field: ResourceField,
@@ -105,6 +155,22 @@ export function displayField(
 
   const confidence = confidenceForField(record, field, now, marginDays);
   const age = ageOf(record, now);
+
+  /*
+   * Rule 7 — a place whose opening depends on a condition this app cannot check never
+   * renders its hours.
+   *
+   * This is the display rules' own stated purpose applied to the one case they did not
+   * cover: "a confident wrong answer that sends someone somewhere that turns them away."
+   * Showing "Open 19:00-07:00" for a warming centre that has not been activated tonight is
+   * exactly that, and freshness cannot fix it — the value is accurate and the answer is
+   * still wrong.
+   *
+   * Checked before staleness, because staleness is not the reason and saying it was would
+   * suggest a recent verification would help.
+   */
+  const because = AVAILABILITY.includes(field) ? unanswerable(record, now) : null;
+  if (because) return { kind: 'call-first', confidence, cls, because };
 
   // Rule 2 — a stale or suspect volatile field never shows its old value.
   if (cls === 'volatile' && (confidence === 'stale' || confidence === 'suspect')) {
