@@ -467,29 +467,6 @@ the screen where somebody joins a squad-held watch.
 | 4.3 | ~~A declaration must not read as a safety monitor~~ | **done** | *"This app does not watch anybody. You do."* Stated above the board, because everything below it looks like a monitor and is not one |
 | 4.4 | ~~Handover~~ | **done** | **Nobody hands over a board.** The incoming watch derives its own from operators re-announcing when their phones see the holder change — passing the outgoing holder's picture would make the new watch's board a thing it was told rather than derived |
 
-## Milestone 6 — Knowledge can get in
-
-**Done when:** an operator who was on that block last night can put what they learned into
-the directory, from the phone in their hand, without a git account.
-
-Found by reviewing the app against its own archetypes on 2026-08-20. It is the largest gap
-in the project and it is structural rather than a missing feature.
-
-[`lineage.md`](lineage.md) states the thesis plainly: *"there is a ninth group Steele did not
-name — people with local ground truth and no institution at all"*, and **NavCom is tooling
-for the ninth tribe.** The directory is the instrument for that claim.
-
-Right now knowledge only comes **out**. There is no path in:
-
-| | Item | Owner | Cost |
-|---|---|---|---|
-| 6.1 | **Flag a record in one tap** | agent | Display rule 4 is **half-built**: the app renders a flag and cannot set one. The rule's own words are *"reporting must always be easier than fixing"*, and reporting is currently impossible while fixing needs a pull request |
-| 6.2 | **Correct a record from the phone** | agent | The Convert has the best directory knowledge in the network and the most reason to be unlinkable. She cannot add a line to it without a laptop and a git account |
-| 6.3 | **Where corrections go** | **decision** | A correction is an attestation by a keypair — the primitive already exists. Whether it travels to a watch, to peers, or to a maintainer's inbox is unresolved, and it decides whether the directory is per-squad or shared |
-
-Until this exists, an operator's own night is well served and **the ninth tribe has no
-instrument**. That is the gap between what this project says it is for and what it does.
-
 ## Milestone 5 — The properties we have written down
 
 Each is self-contained and none blocks an operator. **None may be claimed publicly before it
@@ -639,6 +616,137 @@ Left for its own change rather than folded into 4.1, because dropping a publishe
 wire-format decision — v3 to v4, the daemon, the spec and the tests — and it deserves to be
 visible as one rather than a line in a watch-mode commit.
 
+## Milestones 6–10 — what would make this a network rather than a tool
+
+Drafted 2026-08-20, after reviewing the app against its own twelve archetypes.
+
+**The honest summary of where 0–5 got to:** NavCom is a very good instrument for *one
+operator's night*. Going out, being watched, getting help, coming home and being counted —
+all of that is built to a standard worth defending.
+
+What it is not yet is an instrument for **the thing the project says it is for**. Five states
+stand between here and that, and each is a state you are in or not:
+
+| | | |
+|---|---|---|
+| **6** | Knowledge gets in | The ninth tribe gets its instrument |
+| **7** | Standing without permission | Credibility that needs no institution — and the watch gets the gate it was specified with |
+| **8** | The directory serves whoever opens it | Not only operators |
+| **9** | Nobody is a single point of failure | Including the person reading this |
+| **10** | Off-grid | The fourth layer stands |
+
+---
+
+## Milestone 6 — Knowledge gets in
+
+**Done when:** an operator who was on that block last night can put what they learned into
+the directory, from the phone in their hand, without a git account.
+
+[`lineage.md`](lineage.md) states the thesis: Steele's eight tribes are all institutions, and
+**there is a ninth he did not name — people with local ground truth and no institution at
+all.** NavCom is tooling for them. The directory is the instrument for that claim.
+
+Today knowledge only comes **out**.
+
+| | Item | Owner | Cost |
+|---|---|---|---|
+| 6.1 | **Flag a record in one tap** | agent | Display rule 4 is **half-built**: the app renders a flag and cannot set one. Its own words are *"reporting must always be easier than fixing"*, and today reporting is impossible while fixing needs a pull request |
+| 6.2 | **Correct a record from the phone** | agent | The Convert has the best directory knowledge in the network and the most reason to be unlinkable. She cannot add a line without a laptop |
+| 6.3 | **Where corrections go** | **decision** | A correction is an attestation by a keypair — the primitive exists. Whether it travels to a watch, to peers, or to a maintainer decides whether the directory is per-squad or shared. **Nothing else in 6 can be built until this is answered** |
+| 6.4 | **A correction is reviewable, not authoritative** | agent | An operator asserting a shelter closed must not silently delete it for everyone. Corrections carry their author and their age like every other attestation |
+| 6.5 | Intake rules from the people who know them | **human, local** | Was 1.2. It stays human, and 6.1–6.4 are what make it possible from a phone rather than a text editor |
+
+**Gate:** 6.3 before anything else. It is a shape decision, not an implementation detail.
+
+---
+
+## Milestone 7 — Standing without permission
+
+**Done when:** an operator with no social history and no institution can become visibly
+credible through contribution alone — and holding the watch means something.
+
+[`product/identity.md`](product/identity.md) designs this in full and none of it is built.
+Two axes, and the second is the one that matters here: **contribution requires nobody's
+approval, and it shows.** A single-axis reputation system ranks the person with the deepest
+lived experience as untrusted, which is exactly backwards.
+
+| | Item | Owner | Cost |
+|---|---|---|---|
+| 7.1 | **Endorsements with scope tags** | agent | `worked with`, `reliable`, `medic`, `can take watch` — never free text. An endorser explaining *why* somebody is credible is how an operator's history leaks |
+| 7.2 | **Contribution credit** | agent | Directory corrections and answered questions, credited to the callsign that made them. **Needs Milestone 6** |
+| 7.3 | **`can take watch` actually gates the watch** | agent | **Found in review: it does not.** [`watch/the-watch.md`](watch/the-watch.md) specifies the qualification; Milestone 4 shipped a watch anybody can take. Closing this is what makes invariant 4 mean something at squad scale |
+| 7.4 | **The trade, stated where it is made** | agent | *"You can contribute without a persistent identity, or build standing that travels. Not both"* [`declined.md`](declined.md). The pattern already exists on the setup screen |
+| 7.5 | Endorsing somebody who is not here yet | either | The cleanest route to first standing for a newcomer, per `identity.md` |
+
+**Never:** a dispute mechanism. [`declined.md`](declined.md) declines adjudication between
+operators, and an endorsement system that grows an appeals process has become one.
+
+---
+
+## Milestone 8 — The directory serves whoever opens it
+
+**Done when:** somebody looking for a bed tonight can use `navcom.app` themselves, in their
+own language, without being an operator or installing anything.
+
+The public site is already a zero-JavaScript document that works on any phone. It is built
+for the operator looking something up. **The person who needs the bed is not currently a
+user of this system, and there is no invariant that says they cannot be** — a directory
+records nothing about anybody who reads it.
+
+| | Item | Owner | Cost |
+|---|---|---|---|
+| 8.1 | **A public path shaped for the person, not the helper** | agent | *"I need a bed tonight"* is a different question from *"what are this shelter's intake rules"*. Same data, different entry |
+| 8.2 | **Language, because somebody is waiting for one** | agent | This is what unblocks 5.9. `languages.md` deferred the catalogue until *"somebody is waiting"* — a Spanish speaker looking for a bed in St. Louis is somebody waiting. The deferral was right and its condition is now met |
+| 8.3 | **Image-first navigation** | either | Already a stated direction: buttons crafted from images more than words, so the taxonomy does not assume a reader's language or literacy |
+| 8.4 | Regional taxonomy that is not a US assumption | **human, local** | `warming` and `cooling` assume a temperate climate and a particular emergency response. `directory-schema.md` already flags this |
+
+**Never:** anything recorded about a reader. No accounts, no analytics, no "recently viewed",
+no session. The reason the public site delivers zero JavaScript is that a reader with
+scripting off, an old phone, or a proxy still gets the directory — and that a document cannot
+watch you back.
+
+---
+
+## Milestone 9 — Nobody is a single point of failure
+
+**Done when:** the network keeps working for a month with its most active person entirely
+absent.
+
+The uncomfortable one. Today: **one** person on call, **one** box, **one** relay list run by
+strangers, **one** directory maintainer, **one** person who could review the logs. Every one
+of those is the same person.
+
+| | Item | Owner | Cost |
+|---|---|---|---|
+| 9.1 | **Identity recovery** | agent | `identity.md` designs three: a printed code, social recovery through endorsers, or nothing — *stated plainly* as a real choice. Today it is silently the third |
+| 9.2 | **RelayNode** | either | Public relays are volunteers who owe nobody uptime, and they can withhold a key bundle to force a classical fallback. Self-hosting removes a stranger from the path |
+| 9.3 | **A roster, not a person** | **human** | More than one on-call, and a way to hand the role over. 2.1 gets to one; this is what gets past one |
+| 9.4 | **The log reviewer** | **human** | Named in `CLAUDE.md` as a role that *"cannot be the agent or verification is theatre"*. Minutes a week, and nobody does it |
+| 9.5 | **The work is paid for** | agent | [`funding.md`](product/funding.md), designed and unbuilt. *"Operators buy supplies out of pocket, and the person doing the most is often the one who can least afford it."* Lightning, pseudonymous receipt, outside every visibility preset |
+
+**This milestone is mostly not code**, and that is the finding rather than an excuse.
+
+---
+
+## Milestone 10 — Off-grid
+
+**Done when:** a `Distress` reaches somebody with no cell network involved.
+
+The fourth layer, and the only one not standing. Blocked on hardware that does not exist yet,
+and **nothing in the software waits on it** — which is the point of having built the other
+three first.
+
+| | Item | Owner | Cost |
+|---|---|---|---|
+| 10.1 | **The cyberdeck** | **human, hardware** | A device that carries a relay. Everything below assumes one exists |
+| 10.2 | **LoRa bridge for the critical signals** | either | `Distress` and presence only. Not the directory, not queries — the link is too narrow and the failure mode of trying is a bridge that carries nothing when it matters |
+| 10.3 | **Store and forward** | agent | A signal raised out of range must arrive when range returns, and must say how old it is on arrival |
+
+**Watch for:** off-grid is where scope creep would be most expensive. The temptation is to
+carry everything over the radio link. `delivery.md` already says which signals matter.
+
+---
+
 ## Deferred, with reasons
 
 | | Item | Why |
@@ -647,10 +755,10 @@ visible as one rather than a line in a watch-mode commit.
 | — | Redundant executors on separate hardware | Blocked on hardware, not code |
 | — | **Native apps, both platforms** | Deprioritised. Adds locked-screen `Distress`, silent SMS (Android), and a phone holding watch overnight (Android). None blocking, and the web app stays complete |
 | — | Mecha Jono holding the board | Session 2, one function call |
-| — | Endorsements, funding, propagation, recovery, RelayNode | Designed, not scope |
-| — | Off-grid / LoRa bridge | Waiting on hardware — the cyberdeck |
+| — | Propagation | Designed, not scope. Endorsements are now 7.1, funding 9.5, recovery 9.1 and RelayNode 9.2 |
+| — | ~~Off-grid / LoRa bridge~~ | Now Milestone 10. Still waiting on hardware; nothing in software waits on it |
 | — | Playbooks | **Human, permanently.** Not agent work, and now per locale — see [`product/languages.md`](product/languages.md) |
-| — | A second interface language | When somebody is waiting for one, not to prove the mechanism |
+| — | A second interface language | Now 8.2. The deferral was right and **its condition is met**: somebody looking for a bed in their own language is somebody waiting |
 
 ### The seven ways people actually work, and who is served
 
