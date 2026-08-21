@@ -6,16 +6,8 @@
  */
 
 import { beforeEach, describe, expect, it } from 'vitest';
-import {
-  exportPatrols,
-  formatDuration,
-  keepsHistory,
-  patrols,
-  recordPatrol,
-  setKeepHistory,
-  type Patrol
-} from './patrol';
-import { burn, panicWipe } from './storage';
+import { exportPatrols, formatDuration, keepsHistory, patrols, recordPatrol, setKeepHistory, type Patrol } from './patrol';
+import { burn, clearStorageError, onStorageError, panicWipe, storageError } from './storage';
 
 function installLocalStorage() {
   const store = new Map<string, string>();
@@ -123,5 +115,84 @@ describe('durations read like a person wrote them', () => {
 
   it('never renders a negative night', () => {
     expect(formatDuration(-500)).toBe('0m');
+  });
+});
+
+describe('when the phone is full', () => {
+  /** Fails every write, the way a phone at quota does. */
+  const jam = () => {
+    // Reads still work — the record is on the phone, there is simply no room to write. That
+    // is the situation, and swapping in an empty store instead would test a different one.
+    const real = globalThis.localStorage;
+    (globalThis as Record<string, unknown>).localStorage = {
+      getItem: (k: string) => real.getItem(k),
+      removeItem: (k: string) => real.removeItem(k),
+      setItem: () => {
+        const e = new Error('exceeded the quota');
+        e.name = 'QuotaExceededError';
+        throw e;
+      }
+    };
+    return () => {
+      (globalThis as Record<string, unknown>).localStorage = real;
+    };
+  };
+
+  it('does not clear the history it failed to copy', () => {
+    // Three unchecked writes meant the copy failed and the original was cleared anyway —
+    // the one operation whose whole purpose is not losing the record was what lost it.
+    recordPatrol({ started: 1, ended: 2, area: 'North', note: null });
+    expect(patrols()).toHaveLength(1);
+
+    const release = jam();
+    try {
+      expect(setKeepHistory(true)).toBe(false);
+    } finally {
+      release();
+    }
+    expect(patrols()).toHaveLength(1);
+  });
+
+  it('leaves the setting where the record actually is', () => {
+    // A setting that says "kept" while the record sits in the wipeable tier would send the
+    // operator into a panic wipe believing their history was safe.
+    recordPatrol({ started: 1, ended: 2, area: null, note: null });
+    const release = jam();
+    try {
+      setKeepHistory(true);
+    } finally {
+      release();
+    }
+    expect(keepsHistory()).toBe(false);
+    expect(patrols()).toHaveLength(1);
+  });
+
+  it('says a patrol was not recorded, rather than returning as though it were', () => {
+    const release = jam();
+    try {
+      expect(recordPatrol({ started: 3, ended: 4, area: null, note: null })).toBe(false);
+      expect(storageError()).toMatch(/out of storage/);
+    } finally {
+      release();
+    }
+  });
+
+  it('tells whoever is listening, at the moment it happens', () => {
+    // The report used to be read once, at mount, on one screen. An operator on any other
+    // screen was told nothing at all.
+    // Starting clean on purpose: the notifier deliberately does not fire when the message
+    // has not changed, and a failure from an earlier test is still standing.
+    clearStorageError();
+    const heard: (string | null)[] = [];
+    const unsubscribe = onStorageError((m) => heard.push(m));
+    const release = jam();
+    try {
+      recordPatrol({ started: 5, ended: 6, area: null, note: null });
+    } finally {
+      release();
+      unsubscribe();
+    }
+    expect(heard.filter(Boolean)).toHaveLength(1);
+    expect(heard[0]).toMatch(/out of storage/);
   });
 });

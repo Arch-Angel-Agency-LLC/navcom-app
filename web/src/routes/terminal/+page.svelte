@@ -9,19 +9,17 @@
   import { pq } from '$lib/terminal/pq.svelte';
   import { loadConfig } from '$lib/terminal/config';
   import { loadIdentity } from '$lib/terminal/identity';
-  import { corruptTiers, storageError } from '$lib/terminal/storage';
+  import { corruptTiers } from '$lib/terminal/storage';
   import { offline } from '$lib/terminal/offline.svelte';
 
   const s = $derived(watch.state);
   let configured = $state(false);
   let identity = $state<ReturnType<typeof loadIdentity>>(null);
-  let full = $state<string | null>(null);
   let damaged = $state(false);
 
   onMount(() => {
     configured = loadConfig() !== null;
     identity = loadIdentity();
-    full = storageError();
     damaged = corruptTiers().length > 0;
     void offline.checkShell();
     watch.start();
@@ -276,15 +274,6 @@
     new. <strong>The damaged copy has been kept</strong> rather than overwritten — do not
     clear this site's data if you want somebody to try to recover it.
   </p>
-{/if}
-
-{#if full}
-  <!--
-    The one storage failure that must not be silent. An operator whose phone is out of room
-    silently stops recording patrols -- the thing they rely on being there afterwards -- and
-    would find out by looking for it later.
-  -->
-  <p class="error" data-storage-full>{full}</p>
 {/if}
 
 {#if operator.error}

@@ -23,7 +23,7 @@ Each cell is a pass. `—` not started, `✓` done, and a note when it found som
 | Milestone | Surface | R | E | X |
 |---|---|---|---|---|
 | **0** Prove what is built | Browser harness, service worker, offline, seeding, the verification layer itself | **✓** | **✓** | **✓** |
-| **1** One operator alone | Display rules, patrol record, contact, wipe, seeder | **✓** | — | — |
+| **1** One operator alone | Display rules, patrol record, contact, wipe, seeder | **✓** | **✓** | — |
 | **2** One watch staffed | Executor, pager, drills, web push, on-call | — | — | — |
 | **3** Two who met once | Peers, presence, cards, invites, public presence, buddy | — | — | — |
 | **4** Squad with no box | Watch mode, group sealing, board, handover, watch key | — | — | — |
@@ -157,6 +157,46 @@ added and missed. Checked in both directions: the tests fail against the old wip
   a duplicate header column. It handled all of them. Worth noting that a contributor dropping a
   middle column now degrades *correctly* because of the first finding — the shifted
   `last_verified` is unparseable, so the record reads *call first* rather than inventing a date
+
+## 1.E — Milestone 1, error handling and reporting
+
+**The failure that was reported to nobody.** The cross-cutting sweep made `write` return
+whether it had saved, and left a comment saying *"the screens that write ask."* **Not one of
+the thirty-odd call sites checked the boolean.** The only reader anywhere was Status, which
+read the message once, at mount. So an operator whose phone was full closed a patrol, saw it
+accepted, and was told nothing — unless they later opened a different screen, which then
+reported a failure from some earlier moment with no indication of what had not been saved.
+
+This is the shape the lens is looking for: a fix that made the *layer* honest and stopped
+there. Storage now notifies, and the banner lives in the terminal layout, so it appears on
+whatever screen the operator is on at the moment the write fails. It is one place rather than
+thirty because a report that each call site has to remember is a report that will be missed
+again — that is precisely how this went unreported for two milestones.
+
+**And the one that lost the record rather than merely failing to save it.** `setKeepHistory`
+moves the patrol log between tiers when the operator changes their mind about surviving a
+panic wipe. Three unchecked writes: copy the log to the new tier, clear the old one. On a full
+phone the copy failed and **the clear ran anyway** — so the one operation whose entire purpose
+is not losing the history was the thing that destroyed it, on the device least able to afford
+it. The source is now cleared only once the copy has landed, and the setting is put back if it
+did not, so the record is always where the operator's setting says it is.
+
+Both are checked in both directions, and the browser tests prove an operator actually sees it
+rather than that the mechanism exists — the layout banner is the kind of thing that would
+otherwise sit there unreachable.
+
+**Nothing found in three places:** the seeder's build-time errors are the best in the codebase
+(they name the file and explain *why* ids are global, so the contributor can act); the contact
+errors say what to do; and the display rules already answer invariant 9 correctly for a missing
+date.
+
+**Two notes on the harness, not the product:**
+
+- The build/preview race from 0.E **recurred** — chaining `npm run build` into a Playwright run
+  served a half-written build and failed both new specs. Re-running serially passed. It is
+  worth a script rather than a note next time it happens
+- The RTL suite caught the banner using `border-left`. Working as intended, and a reminder that
+  a fix written in one pass can break a property established in another milestone
 
 ## Method note, after three passes
 

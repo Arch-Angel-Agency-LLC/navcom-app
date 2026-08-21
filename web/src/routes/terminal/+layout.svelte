@@ -10,6 +10,7 @@
   import { onMount } from 'svelte';
   import '$lib/terminal/tokens.css';
   import '$lib/terminal/screen.css';
+  import { saving } from '$lib/terminal/saving.svelte';
   let { children } = $props();
 
   /**
@@ -26,7 +27,15 @@
    * button is testing nothing and failing at random.
    */
   onMount(() => {
+    /**
+     * A phone that cannot save has to say so on whatever screen the operator is looking at.
+     *
+     * It lives here rather than on each screen because every screen writes and none of them
+     * checked — the failure is silent by construction, so the report cannot be opt-in.
+     */
+    saving.start();
     document.documentElement.dataset.hydrated = 'true';
+    return () => saving.stop();
   });
 </script>
 
@@ -39,10 +48,25 @@
 </svelte:head>
 
 <div class="terminal">
+  {#if saving.failure}
+    <p class="saving-failed" role="status" data-storage-full>{saving.failure}</p>
+  {/if}
   {@render children()}
 </div>
 
 <style>
+  /* Stated plainly and kept out of the way. Nothing here is an alarm — the operator is
+     mid-task, and this tells them one true thing about the phone. */
+  .saving-failed {
+    margin: 0;
+    padding: 0.6rem 0.75rem;
+    border: 1px solid var(--edge);
+    border-inline-start: 3px solid var(--warn, var(--edge));
+    background: var(--raised, transparent);
+    font-size: 0.85rem;
+    line-height: 1.4;
+  }
+
   .terminal {
     display: flex;
     flex-direction: column;

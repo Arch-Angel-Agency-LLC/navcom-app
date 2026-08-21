@@ -71,16 +71,34 @@ export function patrols(): Patrol[] {
   return get<Patrol[]>(tier(), FIELD) ?? [];
 }
 
-/** Moves what already exists, so changing the answer is not a way to lose a year by accident. */
-export function setKeepHistory(keep: boolean): void {
+/**
+ * Moves what already exists, so changing the answer is not a way to lose a year by accident.
+ *
+ * **The source is cleared only once the copy has landed.** Written as three unchecked writes,
+ * a full phone failed the copy and then went on to clear the original — so the one operation
+ * whose entire purpose is *not* losing the history was the thing that lost it, on the device
+ * least able to afford it. Returns false if the move did not happen; nothing is destroyed in
+ * that case and the setting stays where it was.
+ */
+export function setKeepHistory(keep: boolean): boolean {
   const existing = patrols();
-  set('accruing', KEEP, keep);
-  set(tier(), FIELD, existing);
-  set(keep ? 'wipeable' : 'accruing', FIELD, []);
+  const from = tier();
+  if (!set('accruing', KEEP, keep)) return false;
+
+  const to = tier();
+  if (from === to) return true;
+  if (!set(to, FIELD, existing)) {
+    // Put the answer back, so the record is still where the operator's setting says it is.
+    set('accruing', KEEP, !keep);
+    return false;
+  }
+  set(from, FIELD, []);
+  return true;
 }
 
-export function recordPatrol(patrol: Patrol): void {
-  set(tier(), FIELD, [...patrols(), patrol]);
+/** Returns whether it was actually stored, so the caller is able to say so. */
+export function recordPatrol(patrol: Patrol): boolean {
+  return set(tier(), FIELD, [...patrols(), patrol]);
 }
 
 export function formatDuration(seconds: number): string {

@@ -881,3 +881,58 @@ test.describe('patrols', () => {
     await expect(page.getByText(/survive a panic wipe/i)).toBeVisible();
   });
 });
+
+test.describe('a phone that has run out of room', () => {
+  /**
+   * The failure that is invisible by construction.
+   *
+   * Nothing throws, the screen does exactly what it was going to do, and the operator finds
+   * out later by looking for something that is not there. It was reported on one screen,
+   * read once at mount — so an operator anywhere else was told nothing at all.
+   */
+  const refuseWrites = (page: import('@playwright/test').Page) =>
+    page.addInitScript(() => {
+      const real = localStorage.setItem.bind(localStorage);
+      let armed = false;
+      // Armed after the seed lands, so the device still starts as a configured operator.
+      queueMicrotask(() => {
+        armed = true;
+      });
+      localStorage.setItem = (key: string, value: string) => {
+        if (armed && key.startsWith('navcom.')) {
+          const e = new Error('exceeded the quota');
+          e.name = 'QuotaExceededError';
+          throw e;
+        }
+        return real(key, value);
+      };
+    });
+
+  test('says so on the screen the operator is actually looking at', async ({ page }) => {
+    await seedDevice(page, OUT);
+    await refuseWrites(page);
+    await open(page, '/terminal/setup/');
+
+    // Any write will do — the point is that the report does not depend on which screen it
+    // happened on, or on the operator going to Status to ask.
+    await page.locator('#clabel').fill('Sam');
+    await page.locator('#cnumber').fill('+1 555 0100');
+    await page.getByRole('button', { name: /^save$/i }).click();
+
+    await expect(page.locator('[data-storage-full]')).toBeVisible();
+    await expect(page.locator('[data-storage-full]')).toContainText(/out of storage/i);
+  });
+
+  test('and says what would free some, rather than only that it failed', async ({ page }) => {
+    await seedDevice(page, OUT);
+    await refuseWrites(page);
+    await open(page, '/terminal/setup/');
+
+    await page.locator('#clabel').fill('Sam');
+    await page.locator('#cnumber').fill('+1 555 0100');
+    await page.getByRole('button', { name: /^save$/i }).click();
+
+    // An error that names no action is a notification that something is wrong.
+    await expect(page.locator('[data-storage-full]')).toContainText(/clearing an area/i);
+  });
+});

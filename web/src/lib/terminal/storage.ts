@@ -88,9 +88,36 @@ function read(tier: Tier): Record<string, unknown> {
  */
 let lastError: string | null = null;
 
+/**
+ * Who to tell when a write fails.
+ *
+ * `write` recorded the failure and returned it, and the comment there said *"the screens
+ * that write ask."* **None of them did** — thirty-odd call sites discarded the boolean, and
+ * the only screen that ever read the message was Status, once, at mount. So an operator
+ * whose phone was full closed a patrol, saw it accepted, and learned nothing until they
+ * happened to open a different screen.
+ *
+ * A caller that wants to react at the point of failure still can. This exists so that the
+ * ones that do not still cannot fail silently.
+ */
+type Watcher = (message: string | null) => void;
+const watchers = new Set<Watcher>();
+
+const report = (message: string | null): void => {
+  if (message === lastError) return;
+  lastError = message;
+  for (const watcher of watchers) watcher(message);
+};
+
+/** Subscribes to write failures. Returns the unsubscribe. */
+export const onStorageError = (watcher: Watcher): (() => void) => {
+  watchers.add(watcher);
+  return () => watchers.delete(watcher);
+};
+
 export const storageError = (): string | null => lastError;
 export const clearStorageError = (): void => {
-  lastError = null;
+  report(null);
 };
 
 /**
@@ -98,13 +125,14 @@ export const clearStorageError = (): void => {
  *
  * Throwing would surface as a rejected click somewhere with no message, and the operator
  * would find out that nothing had been saved by looking for it later. So the failure is
- * recorded and returned, and the screens that write ask.
+ * recorded and returned, and every terminal screen shows it — through the layout, because
+ * asking each of thirty call sites to remember is how it went unreported for two milestones.
  */
 function write(tier: Tier, data: Record<string, unknown>): boolean {
   if (typeof localStorage === 'undefined') return false;
   try {
     localStorage.setItem(keyFor(tier), JSON.stringify(data));
-    lastError = null;
+    report(null);
     return true;
   } catch (e) {
     /*
@@ -117,9 +145,11 @@ function write(tier: Tier, data: Record<string, unknown>): boolean {
      */
     const name = e instanceof Error ? e.name : '';
     const outOfRoom = name === 'QuotaExceededError' || name === 'NS_ERROR_DOM_QUOTA_REACHED';
-    lastError = outOfRoom
-      ? 'This phone is out of storage, so that was not saved. Clearing an area you no longer carry will free some.'
-      : 'That could not be saved on this phone.';
+    report(
+      outOfRoom
+        ? 'This phone is out of storage, so that was not saved. Clearing an area you no longer carry will free some.'
+        : 'That could not be saved on this phone.'
+    );
     return false;
   }
 }
