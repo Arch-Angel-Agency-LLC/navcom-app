@@ -37,6 +37,13 @@ interface Seed {
    * which is the right default: most of these tests are about a phone with no signal.
    */
   relayEvents?: unknown[];
+  /**
+   * Accept subscriptions but refuse everything published.
+   *
+   * A phone on bad signal, which is a field terminal's ordinary state — and the state in
+   * which half of this app's "it worked" messages were being printed.
+   */
+  refusePublish?: boolean;
 }
 
 /**
@@ -107,6 +114,11 @@ export async function seedDevice(page: Page, seed: Seed = {}): Promise<void> {
         } catch {
           return;
         }
+        if (message[0] === 'EVENT' && s.refusePublish) {
+          const event = message[1] as { id?: string };
+          this.deliver(JSON.stringify(['OK', event.id ?? '', false, 'blocked: no']));
+          return;
+        }
         if (message[0] !== 'REQ') return;
         const subId = message[1] as string;
         const filters = message.slice(2) as Record<string, unknown>[];
@@ -169,7 +181,9 @@ export async function seedDevice(page: Page, seed: Seed = {}): Promise<void> {
       close(): void {}
     }
     (globalThis as unknown as { WebSocket: unknown }).WebSocket =
-      s.relayEvents && s.relayEvents.length > 0 ? ReplayingSocket : DeadSocket;
+      (s.relayEvents && s.relayEvents.length > 0) || s.refusePublish
+        ? ReplayingSocket
+        : DeadSocket;
 
     // Already set up by an earlier navigation in this test. Leave it alone.
     if (localStorage.getItem('navcom.seeded') === '1') return;

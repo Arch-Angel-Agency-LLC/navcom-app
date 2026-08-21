@@ -28,7 +28,7 @@ export default defineConfig({
   reporter: process.env['CI'] ? [['github'], ['list']] : [['list']],
 
   use: {
-    baseURL: 'http://localhost:4173',
+    baseURL: 'http://localhost:4191',
     trace: 'retain-on-failure'
   },
 
@@ -53,8 +53,17 @@ export default defineConfig({
      * The same discipline the HTML assertions already follow: testing the source would test
      * something nobody runs.
      */
-    command: 'npm run preview -- --port 4173 --strictPort',
-    port: 4173,
+    /*
+     * A port of our own, not Vite's default.
+     *
+     * `reuseExistingServer` reuses whatever is already listening on that port — and 4173 is
+     * the default for every Vite project on the machine. A run once navigated to a different
+     * application entirely and failed on a missing hydration flag, which reads exactly like a
+     * bug in the screen under test. Reuse is worth keeping; colliding with every other
+     * project is not.
+     */
+    command: 'npm run preview -- --port 4191 --strictPort',
+    port: 4191,
     reuseExistingServer: !process.env['CI'],
     timeout: 60_000
   }

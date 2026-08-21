@@ -142,15 +142,17 @@ export const invites = {
    * `callsign` is what *you* will call them — yours to set, never sent anywhere, and
    * defaulting to what they call themselves.
    */
-  async accept(invite: Waiting, callsign: string): Promise<void> {
+  async accept(invite: Waiting, callsign: string): Promise<boolean> {
     const identity = loadIdentity();
     const urls = relays();
-    if (!identity?.callsign) return;
+    if (!identity?.callsign) return false;
 
-    pair(invite.from, callsign.trim() || invite.payload.callsign);
-    waiting = Object.fromEntries(Object.entries(waiting).filter(([id]) => id !== invite.id));
+    // Idempotent, because a failed reply leaves this invite on the screen to be tapped
+    // again — and the second tap must not be refused for a pairing the first one made.
+    if (!peerPubkeys().includes(invite.from)) {
+      pair(invite.from, callsign.trim() || invite.payload.callsign);
+    }
 
-    if (urls.length === 0) return;
     const back = buildInvite(
       identity.secretKey,
       invite.from,
@@ -158,7 +160,26 @@ export const invites = {
       Math.floor(Date.now() / 1000),
       kemKeys()[invite.from]
     );
-    await Promise.allSettled(pool().publish(urls, back));
+
+    /*
+     * Whether the reply actually left, rather than whether we tried.
+     *
+     * **Pairing is two halves and only one of them is local.** This result was discarded, so
+     * an operator accepting with no signal — which is the ordinary state of a field terminal
+     * — added the peer to their own list, sent nothing, and was told nothing. They see the
+     * peer; the peer never hears. For a buddy that means **nobody is watching while they
+     * believe somebody is**, which is invariant 4's mistake made one person at a time.
+     *
+     * There is deliberately no retry queue: invites are held in memory precisely so there is
+     * nothing to expire, migrate or leak into a wipe. Instead the invite stays on the screen
+     * and the operator can tap Accept again when they have signal.
+     */
+    const results = await Promise.allSettled(pool().publish(urls, back));
+    const reached = results.some((r) => r.status === 'fulfilled');
+    if (!reached) return false;
+
+    waiting = Object.fromEntries(Object.entries(waiting).filter(([id]) => id !== invite.id));
+    return true;
   },
 
   /**
@@ -185,10 +206,10 @@ export const invites = {
  * have not met — a deliberate act, aimed at one person, and the reason a card carries a
  * contact key instead.
  */
-export async function invite(contact: string, note: string): Promise<void> {
+export async function invite(contact: string, note: string): Promise<boolean> {
   const identity = loadIdentity();
   const urls = relays();
-  if (!identity?.callsign || urls.length === 0) return;
+  if (!identity?.callsign || urls.length === 0) return false;
 
   const event = buildInvite(
     identity.secretKey,
@@ -197,5 +218,7 @@ export async function invite(contact: string, note: string): Promise<void> {
     Math.floor(Date.now() / 1000),
     kemKeys()[contact]
   );
-  await Promise.allSettled(pool().publish(urls, event));
+  // Reported rather than assumed. The screen used to mark this sent whatever happened.
+  const results = await Promise.allSettled(pool().publish(urls, event));
+  return results.some((r) => r.status === 'fulfilled');
 }

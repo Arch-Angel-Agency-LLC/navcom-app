@@ -22,18 +22,24 @@ vi.mock('./identity', () => ({
 }));
 vi.mock('./card', () => ({ contactKey: () => null, contactPubkey: () => null }));
 vi.mock('./relays', () => ({ relays: () => ['wss://fake.relay'] }));
-vi.mock('./pq.svelte', () => ({ kemKeys: () => null }));
+vi.mock('./pq.svelte', () => ({ kemKeys: () => ({}) }));
+/** Whether the relays accept anything. A field terminal is offline more often than not. */
+let relaysUp = true;
+
 vi.mock('./pool', () => ({
   pool: () => ({
     subscribeMany: (_u: string[], _f: unknown, p: { onevent: (e: Event) => void }) => {
       deliver = p.onevent;
       return { close: () => {} };
     },
-    publish: () => [Promise.resolve('ok')]
+    publish: () =>
+      relaysUp
+        ? [Promise.resolve('ok')]
+        : [Promise.reject(new Error('no relay accepted'))]
   })
 }));
 
-const { invites } = await import('./invites.svelte');
+const { invites, invite } = await import('./invites.svelte');
 
 const T = 1_800_000_000;
 const from = (secret: Uint8Array, callsign: string, at: number): Event =>
@@ -44,6 +50,7 @@ const flood = (n: number) => {
 };
 
 beforeEach(() => {
+  relaysUp = true;
   invites.ignoreAll();
   invites.start();
 });
@@ -82,5 +89,54 @@ describe('when pairing requests arrive faster than the list will hold', () => {
     flood(3);
     expect(invites.waiting).toHaveLength(3);
     expect(invites.flooded).toBe(false);
+  });
+});
+
+describe('accepting when the reply cannot be sent', () => {
+  it('says the pairing is one-sided rather than reporting success', async () => {
+    // Pairing is two halves and only one is local. The publish result was discarded, so an
+    // operator accepting with no signal — the ordinary state of a field terminal — added
+    // the peer to their own list, sent nothing, and was told nothing.
+    deliver(from(newSecretKey(), 'Raven', T));
+    const waiting = invites.waiting[0]!;
+
+    relaysUp = false;
+    expect(await invites.accept(waiting, 'Raven')).toBe(false);
+  });
+
+  it('leaves it on the screen so it can be tried again', async () => {
+    // There is deliberately no retry queue — invites are held in memory so there is nothing
+    // to expire, migrate or leak into a wipe. The retry is the operator tapping again.
+    deliver(from(newSecretKey(), 'Raven', T));
+    relaysUp = false;
+    await invites.accept(invites.waiting[0]!, 'Raven');
+    expect(invites.waiting).toHaveLength(1);
+  });
+
+  it('succeeds on the second try without refusing an already-made pairing', async () => {
+    deliver(from(newSecretKey(), 'Raven', T));
+    relaysUp = false;
+    await invites.accept(invites.waiting[0]!, 'Raven');
+
+    relaysUp = true;
+    expect(await invites.accept(invites.waiting[0]!, 'Raven')).toBe(true);
+    expect(invites.waiting).toHaveLength(0);
+  });
+
+  it('reports plainly when the reply did go out', async () => {
+    deliver(from(newSecretKey(), 'Raven', T));
+    expect(await invites.accept(invites.waiting[0]!, 'Raven')).toBe(true);
+    expect(invites.waiting).toHaveLength(0);
+  });
+});
+
+describe('asking somebody to pair', () => {
+  it('does not claim to have sent something that never left the device', async () => {
+    relaysUp = false;
+    expect(await invite(publicKeyOf(newSecretKey()), 'out most Thursdays')).toBe(false);
+  });
+
+  it('says so when it did', async () => {
+    expect(await invite(publicKeyOf(newSecretKey()), 'out most Thursdays')).toBe(true);
   });
 });

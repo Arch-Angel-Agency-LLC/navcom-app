@@ -45,14 +45,23 @@
     else board.stop();
   }
 
+  /** Who we could not reach a relay for. */
+  let failed = $state<string | null>(null);
+
   async function ask(contact: string) {
     if (busy) return;
     busy = true;
     try {
-      await invite(contact, note.trim());
-      sent = [...sent, contact];
-      asking = null;
-      note = '';
+      // Marked sent whatever happened, so an operator with no signal watched it succeed and
+      // waited for a reply to something that never left the device.
+      if (await invite(contact, note.trim())) {
+        sent = [...sent, contact];
+        asking = null;
+        note = '';
+        failed = null;
+      } else {
+        failed = contact;
+      }
     } finally {
       busy = false;
     }
@@ -138,6 +147,16 @@
               <p class="cost">This is your card.</p>
             {:else if sent.includes(e.contact)}
               <p class="cost">Sent. If they want to pair, they will appear on Peers.</p>
+            {:else if failed === e.contact}
+              <!--
+                It said "Sent." whatever happened, so an operator with no signal watched it
+                succeed and then waited for a reply to something that never left the phone.
+              -->
+              <p class="cost" data-invite-failed>
+                That did not reach a relay, so it has not been sent. Try again when you have
+                signal.
+              </p>
+              <button onclick={() => ask(e.contact)} disabled={busy}>Try again</button>
             {:else if !callsign}
               <p class="cost"><a href="/terminal/setup/">Pick a callsign</a> to ask.</p>
             {:else if asking === e.contact}

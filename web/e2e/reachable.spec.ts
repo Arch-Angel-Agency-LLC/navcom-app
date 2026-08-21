@@ -972,3 +972,35 @@ test.describe('being flooded with pairing requests', () => {
     await expect(banner).toHaveCount(0);
   });
 });
+
+test.describe('pairing when the reply cannot be sent', () => {
+  /**
+   * Pairing is two halves and only one of them is local. The publish result was discarded,
+   * so an operator accepting with no signal — the ordinary state of a field terminal —
+   * added the peer to their own list, sent nothing, and was told nothing.
+   *
+   * For a buddy that means nobody is watching while they believe somebody is.
+   */
+  test('says the pairing is one-sided instead of looking finished', async ({ page }) => {
+    const { generateSecretKey, getPublicKey } = await import('nostr-tools/pure');
+    const { buildInvite } = await import('@navcom/core');
+    const mine = Uint8Array.from((TEST_SECRET.match(/../g) ?? []).map((b) => parseInt(b, 16)));
+
+    const raven = generateSecretKey();
+    const ask = buildInvite(raven, getPublicKey(mine), { callsign: 'Raven' }, 1_800_000_000);
+
+    await seedDevice(page, { callsign: 'Wren', relayEvents: [ask], refusePublish: true });
+    await open(page, '/terminal/peers/');
+
+    await expect(page.getByText('Raven')).toBeVisible({ timeout: 10_000 });
+    await page.getByRole('button', { name: /^accept$/i }).click();
+
+    const warning = page.locator('[data-half-paired]');
+    await expect(warning).toBeVisible();
+    await expect(warning).toContainText(/they do not have you/i);
+    await expect(warning).toContainText(/will not see your patrols/i);
+
+    // And the request is still there, because tapping Accept again is the retry.
+    await expect(page.getByRole('button', { name: /^accept$/i })).toBeVisible();
+  });
+});

@@ -20,6 +20,8 @@
   let code = $state('');
   let callsign = $state('');
   let error = $state<string | null>(null);
+  /** Who was accepted while the reply could not be sent. */
+  let halfPaired = $state<string | null>(null);
   let copied = $state(false);
   let using = $state<string[]>([]);
   let defaults = $state(false);
@@ -122,8 +124,12 @@
   }
 
   async function take(w: Waiting) {
-    await invites.accept(w, naming[w.id] ?? '');
+    // Pairing is two halves and only one is local. If the reply did not reach a relay they
+    // are on this device's list and this device is on nobody's, which for a buddy means
+    // nobody is watching while the operator believes somebody is.
+    const reached = await invites.accept(w, naming[w.id] ?? '');
     mine = peers();
+    halfPaired = reached ? null : w.payload.callsign;
   }
 
   async function copy() {
@@ -218,6 +224,12 @@
       <button class="drop" data-ignore-all onclick={() => invites.ignoreAll()}>
         Clear all requests
       </button>
+    {/if}
+    {#if halfPaired}
+      <p class="over" data-half-paired>
+        You have {halfPaired}, but they do not have you — your reply did not reach a relay.
+        Tap Accept again when you have signal, or they will not see your patrols.
+      </p>
     {/if}
     <ul class="asks">
       {#each invites.waiting as w (w.id)}

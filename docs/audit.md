@@ -25,7 +25,7 @@ Each cell is a pass. `—` not started, `✓` done, and a note when it found som
 | **0** Prove what is built | Browser harness, service worker, offline, seeding, the verification layer itself | **✓** | **✓** | **✓** |
 | **1** One operator alone | Display rules, patrol record, contact, wipe, seeder | **✓** | **✓** | **✓** |
 | **2** One watch staffed | Executor, pager, drills, web push, on-call | **✓** | **✓** | **✓** |
-| **3** Two who met once | Peers, presence, cards, invites, public presence, buddy | **✓** | — | — |
+| **3** Two who met once | Peers, presence, cards, invites, public presence, buddy | **✓** | **✓** | — |
 | **4** Squad with no box | Watch mode, group sealing, board, handover, watch key | — | — | — |
 | **5** Written-down properties | PQC, declined, battery, RTL, watch-state v4 | — | — | — |
 | **6** Knowledge gets in | Corrections, merge, needs-checking, notes, promotion | — | — | — |
@@ -402,6 +402,48 @@ passes left that are mostly about traffic: presence, the board, handover, correc
 to replay them against a `REQ` filter. The flood banner and its clear control are proven in a
 real browser rather than asserted from a unit test, which is what this project's own rule
 asks for.
+
+## 3.E — Milestone 3, error handling and reporting
+
+**Pairing is two halves and only one of them is local.** Accepting an invite pairs the peer on
+this device and publishes a reply carrying your key back. `await Promise.allSettled(publish)`
+**discarded its result**, so an operator accepting with no signal — the ordinary state of a
+field terminal — added the peer to their own list, sent nothing, and was told nothing. They see
+the peer; the peer never hears.
+
+For a **buddy** that is the sharpest form: buddy pairing means somebody watches your patrols,
+so a reply that never left means **nobody is watching while the operator believes somebody
+is.** That is invariant 4's mistake made one person at a time.
+
+`accept` now reports whether the reply actually reached a relay, and the screen says so in
+those terms — *"You have Raven, but they do not have you."* There is deliberately **no retry
+queue**: invites are held in memory precisely so there is nothing to expire, migrate or leak
+into a wipe, and adding an outbox to fix this would trade a stated design decision for a
+convenience. The retry is the operator tapping Accept again, so the request stays on screen
+when the reply fails and `accept` was made idempotent — the second tap must not be refused for
+a pairing the first one made.
+
+**The same discard, one screen over.** `Find` marked an invite `Sent.` unconditionally, so an
+operator with no signal watched it succeed and then waited for a reply to something that never
+left the phone. Now it says it did not reach a relay, and offers *Try again*.
+
+**Nothing found in the branch that looked worst.** `accept` and `invite` both bail early on
+`urls.length === 0`, silently — but `relays()` falls through to a shipped default list and can
+never return empty, so that branch is unreachable. Left alone rather than dressed up as a fix.
+
+### Two harness faults, both of which manufacture false results
+
+**Playwright was reusing another project's server.** `reuseExistingServer` on port **4173** —
+Vite's default, and therefore every Vite project on the machine — meant a run navigated to a
+completely different application and failed waiting for a hydration flag it would never set.
+It reads exactly like a bug in the screen under test, and I spent a probe cycle on it. NavCom
+now has a port of its own. Worth stating plainly: this can produce a false *pass* as easily as
+a false failure, and nothing about the output says which application answered.
+
+**And the harness needed to be able to refuse.** A relay that accepts subscriptions but
+rejects publishes is a phone on bad signal, which is where half of this app's *"it worked"*
+messages were being printed. `seedDevice` takes `refusePublish` now, which is what made the
+half-pairing warning provable in a browser rather than asserted from a mock.
 
 ## Milestone 2, after three passes
 
