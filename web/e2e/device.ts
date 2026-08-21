@@ -30,6 +30,13 @@ interface Seed {
   peers?: { pubkey: string; callsign: string; since: number }[];
   /** Whether the patrol history survives a panic wipe. */
   keepPatrolHistory?: boolean;
+  /**
+   * Events a relay will hand back, as raw JSON.
+   *
+   * Present only when a test needs traffic to arrive. Without it the socket stays dead,
+   * which is the right default: most of these tests are about a phone with no signal.
+   */
+  relayEvents?: unknown[];
 }
 
 /**
@@ -58,6 +65,88 @@ export async function seedDevice(page: Page, seed: Seed = {}): Promise<void> {
      * run: a pool with a socket that never opens is exactly the state a phone with no
      * signal is in, which is the state most of these tests are about anyway.
      */
+    /**
+     * A relay that answers, for the tests that need traffic to arrive.
+     *
+     * The dead socket below is right for almost everything here, and it is also why no
+     * browser test could ever check what happens when something *arrives* — a whole class
+     * of behaviour, including everything a peer or a watch sends, was reachable only in
+     * unit tests with the pool mocked out.
+     *
+     * This speaks just enough of the protocol to be useful: it accepts a `REQ`, replays the
+     * canned events whose `kind` and `p` tag match the filter, and closes with `EOSE`. It is
+     * not a relay implementation and should not grow into one.
+     */
+    class ReplayingSocket extends EventTarget {
+      static readonly CONNECTING = 0;
+      static readonly OPEN = 1;
+      static readonly CLOSING = 2;
+      static readonly CLOSED = 3;
+      readyState = 0;
+      readonly url: string;
+      onopen: ((e: unknown) => void) | null = null;
+      onclose: ((e: unknown) => void) | null = null;
+      onerror: ((e: unknown) => void) | null = null;
+      onmessage: ((e: { data: string }) => void) | null = null;
+
+      constructor(url: string) {
+        super();
+        this.url = url;
+        setTimeout(() => {
+          this.readyState = 1;
+          const open = new Event('open');
+          this.onopen?.(open);
+          this.dispatchEvent(open);
+        }, 0);
+      }
+
+      send(raw: string): void {
+        let message: unknown[];
+        try {
+          message = JSON.parse(raw) as unknown[];
+        } catch {
+          return;
+        }
+        if (message[0] !== 'REQ') return;
+        const subId = message[1] as string;
+        const filters = message.slice(2) as Record<string, unknown>[];
+
+        const matches = (event: Record<string, unknown>) =>
+          filters.some((f) => {
+            const kinds = f['kinds'] as number[] | undefined;
+            if (kinds && !kinds.includes(event['kind'] as number)) return false;
+            const wanted = f['#p'] as string[] | undefined;
+            if (wanted) {
+              const tags = (event['tags'] as string[][]) ?? [];
+              const tagged = tags.filter((t) => t[0] === 'p').map((t) => t[1]);
+              if (!wanted.some((w) => tagged.includes(w))) return false;
+            }
+            return true;
+          });
+
+        for (const event of (s.relayEvents ?? []) as Record<string, unknown>[]) {
+          if (!matches(event)) continue;
+          this.deliver(JSON.stringify(['EVENT', subId, event]));
+        }
+        this.deliver(JSON.stringify(['EOSE', subId]));
+      }
+
+      private deliver(data: string): void {
+        setTimeout(() => {
+          const message = new MessageEvent('message', { data });
+          this.onmessage?.(message);
+          this.dispatchEvent(message);
+        }, 0);
+      }
+
+      close(): void {
+        this.readyState = 3;
+        const closed = new Event('close');
+        this.onclose?.(closed);
+        this.dispatchEvent(closed);
+      }
+    }
+
     class DeadSocket extends EventTarget {
       static readonly CONNECTING = 0;
       static readonly OPEN = 1;
@@ -79,7 +168,8 @@ export async function seedDevice(page: Page, seed: Seed = {}): Promise<void> {
       send(): void {}
       close(): void {}
     }
-    (globalThis as unknown as { WebSocket: unknown }).WebSocket = DeadSocket;
+    (globalThis as unknown as { WebSocket: unknown }).WebSocket =
+      s.relayEvents && s.relayEvents.length > 0 ? ReplayingSocket : DeadSocket;
 
     // Already set up by an earlier navigation in this test. Leave it alone.
     if (localStorage.getItem('navcom.seeded') === '1') return;

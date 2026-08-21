@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { readDevice, seedDevice, serviceWorkerReady, open } from './device';
+import { readDevice, seedDevice, serviceWorkerReady, open, TEST_SECRET } from './device';
 
 /**
  * Every control an operator is told about is on the screen and operable.
@@ -934,5 +934,41 @@ test.describe('a phone that has run out of room', () => {
 
     // An error that names no action is a notification that something is wrong.
     await expect(page.locator('[data-storage-full]')).toContainText(/clearing an area/i);
+  });
+});
+
+test.describe('being flooded with pairing requests', () => {
+  /**
+   * The one place a stranger's traffic reaches the operator's screen without consent — the
+   * contact key is published, because that is what a card is for.
+   *
+   * This is also the first browser test in the suite that needed anything to *arrive*.
+   * Until the harness could replay relay traffic, everything a peer or a watch sends was
+   * reachable only in unit tests with the pool mocked out.
+   */
+  test('says it is being flooded, and the way out is a control on the screen', async ({ page }) => {
+    const { generateSecretKey, getPublicKey } = await import('nostr-tools/pure');
+    const { buildInvite } = await import('@navcom/core');
+    const mine = Uint8Array.from(
+      (TEST_SECRET.match(/../g) ?? []).map((b) => parseInt(b, 16))
+    );
+    const myPubkey = getPublicKey(mine);
+
+    const events = [];
+    for (let i = 0; i < 60; i++) {
+      events.push(buildInvite(generateSecretKey(), myPubkey, { callsign: `Stranger${i}` }, 1_800_000_000 + i));
+    }
+    await seedDevice(page, { callsign: 'Wren', relayEvents: events });
+    await open(page, '/terminal/peers/');
+
+    const banner = page.locator('[data-invites-flooded]');
+    await expect(banner).toBeVisible({ timeout: 10_000 });
+    await expect(banner).toContainText(/turned away/i);
+
+    // A cap the operator cannot clear would be worse than the flood.
+    const clear = page.locator('[data-ignore-all]');
+    await expect(clear).toBeVisible();
+    await clear.click();
+    await expect(banner).toHaveCount(0);
   });
 });

@@ -41,7 +41,22 @@ export interface Waiting extends Invite {
   id: string;
 }
 
+/**
+ * How many pairing requests are held at once.
+ *
+ * An operator's address is published — that is what a card is for — so **anybody can write
+ * into this list**, and nothing about an invite is expensive to produce. Unbounded, five
+ * thousand of them cost twelve and a half million property copies and four seconds on a
+ * laptop, because each arrival copied the whole map. On the device floor the screen is
+ * simply gone, and the peers list goes with it.
+ *
+ * Fifty is far more pairing requests than a real person receives, and small enough that the
+ * screen stays usable while somebody works out what is happening.
+ */
+const MAX_WAITING = 50;
+
 let waiting = $state<Record<string, Waiting>>({});
+let flooded = $state(false);
 let closer: { close(): void } | null = null;
 
 export const invites = {
@@ -57,6 +72,29 @@ export const invites = {
     return Object.values(waiting)
       .filter((w) => !known.has(w.from))
       .sort((a, b) => a.at - b.at);
+  },
+
+  /**
+   * Whether requests are arriving faster than this list will hold.
+   *
+   * Said plainly on the screen rather than hidden, because the operator is the only one who
+   * can tell a flood from a busy week, and because an invite they were expecting may be the
+   * one being turned away.
+   */
+  get flooded(): boolean {
+    return flooded;
+  },
+
+  /**
+   * Clears every waiting request at once.
+   *
+   * Local, silent, and tells nobody — the same as ignoring one. This exists because a capped
+   * list that can only be emptied fifty taps at a time is a list an operator cannot recover,
+   * which would make the cap the attack rather than the defence.
+   */
+  ignoreAll(): void {
+    waiting = {};
+    flooded = false;
   },
 
   /** Starts listening on whichever inboxes this operator actually has. */
@@ -78,6 +116,21 @@ export const invites = {
           readInvite(identity.secretKey, event) ?? (secret ? readInvite(secret, event) : null);
         if (!read) return;
         if (read.from === identity.pubkey) return;
+        if (event.id in waiting) return;
+
+        /*
+         * Full: the ones already here are kept and this one is refused.
+         *
+         * Evicting the oldest instead would let a flood push out the invite the operator is
+         * actually waiting for. Neither direction is free — a flood that arrives first does
+         * block a later real invite — so the answer is not a cleverer rule but telling the
+         * operator and letting them clear it. `ignoreAll` is the other half of this, and
+         * without it the cap would be worse than the flood.
+         */
+        if (Object.keys(waiting).length >= MAX_WAITING) {
+          flooded = true;
+          return;
+        }
         waiting = { ...waiting, [event.id]: { ...read, id: event.id } };
       }
     });
@@ -116,6 +169,7 @@ export const invites = {
    */
   ignore(invite: Waiting): void {
     waiting = Object.fromEntries(Object.entries(waiting).filter(([id]) => id !== invite.id));
+    flooded = false;
   },
 
   stop(): void {

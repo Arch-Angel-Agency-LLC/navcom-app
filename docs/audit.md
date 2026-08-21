@@ -25,7 +25,7 @@ Each cell is a pass. `—` not started, `✓` done, and a note when it found som
 | **0** Prove what is built | Browser harness, service worker, offline, seeding, the verification layer itself | **✓** | **✓** | **✓** |
 | **1** One operator alone | Display rules, patrol record, contact, wipe, seeder | **✓** | **✓** | **✓** |
 | **2** One watch staffed | Executor, pager, drills, web push, on-call | **✓** | **✓** | **✓** |
-| **3** Two who met once | Peers, presence, cards, invites, public presence, buddy | — | — | — |
+| **3** Two who met once | Peers, presence, cards, invites, public presence, buddy | **✓** | — | — |
 | **4** Squad with no box | Watch mode, group sealing, board, handover, watch key | — | — | — |
 | **5** Written-down properties | PQC, declined, battery, RTL, watch-state v4 | — | — | — |
 | **6** Knowledge gets in | Corrections, merge, needs-checking, notes, promotion | — | — | — |
@@ -363,6 +363,45 @@ looked complete, and the node checked the keys were *strings* without checking t
 anything. Both halves were reasonable and the join was a hole — the same shape that has now
 appeared three times in this project. The browser refuses and unsubscribes; the node requires
 non-empty.
+
+## 3.R — Milestone 3, robustness
+
+**The pairing inbox is the one place a stranger's traffic reaches an operator's screen
+without their consent** — the contact key is published, because that is what a card is for —
+and it was unbounded. Worse, each arrival copied the whole map, so it was quadratic: five
+thousand invites cost **twelve and a half million property copies and four seconds on a
+laptop**. On the device floor that screen is gone, and the peers list goes with it.
+
+Capped at fifty, which is far more pairing requests than a real person receives. **The cap is
+only defensible because of the two things beside it**: the operator is told plainly that
+requests are being turned away, and there is one control that clears them all. A capped list
+that empties fifty taps at a time is one nobody can recover from, which would make the cap the
+attack rather than the defence. The trade is stated rather than solved — a flood that arrives
+first does block a later real invite, and the answer to that is the operator's, not a cleverer
+eviction rule.
+
+**A peer list that was not a list broke pairing and presence**, the same class 1.X found in
+the patrol record and reachable the same way — a restored backup, a hand-edited blob. It threw
+out of `pair` and `peerPubkeys`: a pairing button that does nothing, and a presence
+subscription that never starts, neither saying why.
+
+**Nothing found in two places.** A hostile invite cannot carry a huge callsign — `readInvite`
+caps it, and the cap holds at the point of read rather than the point of display. And presence
+is only accepted from keys already paired with, checked inside `readPresence` rather than by
+the caller.
+
+### The harness gained the thing it was missing
+
+No browser test in this suite could check what happens when something **arrives**. The e2e
+socket is deliberately dead — right for almost everything here, since most of these tests are
+about a phone with no signal — but it meant every behaviour driven by relay traffic was
+reachable only in unit tests with the pool mocked out. That is a large blind spot with six
+passes left that are mostly about traffic: presence, the board, handover, corrections.
+
+`seedDevice` now takes `relayEvents` and swaps in a socket that speaks enough of the protocol
+to replay them against a `REQ` filter. The flood banner and its clear control are proven in a
+real browser rather than asserted from a unit test, which is what this project's own rule
+asks for.
 
 ## Milestone 2, after three passes
 

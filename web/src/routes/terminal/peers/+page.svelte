@@ -205,6 +205,20 @@
 {#if invites.waiting.length > 0}
   <section class="act">
     <h2>Asked to pair</h2>
+    {#if invites.flooded}
+      <!--
+        Anybody can send one of these — the address is published, which is what a card is
+        for. Said plainly, because the operator is the only one who can tell a flood from a
+        busy week, and because the invite they were expecting may be the one being refused.
+      -->
+      <p class="over" data-invites-flooded>
+        More pairing requests are arriving than this will hold, so new ones are being
+        turned away. If you were expecting one, clear these and ask them to send it again.
+      </p>
+      <button class="drop" data-ignore-all onclick={() => invites.ignoreAll()}>
+        Clear all requests
+      </button>
+    {/if}
     <ul class="asks">
       {#each invites.waiting as w (w.id)}
         <li>
@@ -298,6 +312,15 @@
 {/if}
 
 <style>
+  .over {
+    margin: 0 0 0.6rem;
+    padding: 0.6rem 0.75rem;
+    border: 1px solid var(--edge);
+    border-inline-start: 3px solid var(--warn, var(--edge));
+    font-size: 0.85rem;
+    line-height: 1.4;
+  }
+
   .act { gap: .6rem; }
   .form { display: flex; flex-direction: column; gap: .6rem; }
   .qr {

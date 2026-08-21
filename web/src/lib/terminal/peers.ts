@@ -33,8 +33,20 @@ export interface Peer {
 
 const FIELD = 'peers';
 
+/**
+ * Everybody paired with, or nobody.
+ *
+ * Guarded against not being a list, the same way the patrol record is. Storage hands back
+ * whatever is there — a restored backup from another version, a blob edited by hand — and an
+ * object here threw out of `pair` and `peerPubkeys`, which surfaces as a pairing button that
+ * does nothing and a presence subscription that never starts.
+ *
+ * Reading it as empty loses the pairings, which is bad. Refusing to start is worse, and it
+ * is the same call the corrupt-storage path already makes.
+ */
 export function peers(): Peer[] {
-  return get<Peer[]>('accruing', FIELD) ?? [];
+  const stored = get<Peer[]>('accruing', FIELD);
+  return Array.isArray(stored) ? stored : [];
 }
 
 export class PairError extends Error {}

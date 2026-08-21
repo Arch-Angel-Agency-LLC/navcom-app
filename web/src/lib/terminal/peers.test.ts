@@ -7,7 +7,7 @@
 
 import { beforeEach, describe, expect, it } from 'vitest';
 import { PairError, pair, peerPubkeys, peers, unpair } from './peers';
-import { burn, panicWipe } from './storage';
+import { burn, panicWipe, set } from './storage';
 
 function installLocalStorage() {
   const store = new Map<string, string>();
@@ -83,5 +83,18 @@ describe('where the list lives', () => {
     pair(raven, 'Raven');
     burn();
     expect(peers()).toEqual([]);
+  });
+});
+
+describe('a peer list that is not a list', () => {
+  it('reads as empty rather than breaking pairing and presence', () => {
+    // Reachable through a restored backup or a hand-edited blob. Unguarded it threw out of
+    // `pair` and `peerPubkeys` — a pairing button that does nothing, and a presence
+    // subscription that never starts, neither of them saying why.
+    set('accruing', 'peers', { nope: true });
+    expect(peers()).toEqual([]);
+    expect(peerPubkeys()).toEqual([]);
+    expect(() => pair('bb'.repeat(32), 'Raven')).not.toThrow();
+    expect(peers()).toHaveLength(1);
   });
 });
