@@ -653,6 +653,55 @@ test.describe('reporting a problem with a record', () => {
     await expect(first.getByText(/write about the place, not the person/i)).toBeVisible();
   });
 
+  test('a note can be scribbled one-handed and stays on the phone', async ({ page }) => {
+    // You learn a shelter shut intake at 20:30 standing outside it in the rain. You cannot
+    // pick a field and choose an enum in that moment, and a correction meant for later is a
+    // correction that never happens.
+    await seedDevice(page, OUT);
+    await open(page, AREA);
+
+    const first = page.locator('[data-record]').first();
+    await first.getByRole('button', { name: /note for later/i }).click();
+    await first.locator('input.fix').fill('shut intake 20:30');
+    await first.getByRole('button', { name: /^keep$/i }).click();
+
+    await expect(first.locator('[data-note]')).toContainText('shut intake 20:30');
+
+    // Survives a reload, because "later" is later.
+    await open(page, AREA);
+    await expect(page.locator('[data-note]').first()).toContainText('shut intake 20:30');
+  });
+
+  test('a note is destroyed by a panic wipe, unlike the directory itself', async ({ page }) => {
+    // The riskiest free text in the system is written here -- in a hurry, about something
+    // that just happened, which is exactly where a line about a PERSON gets written despite
+    // every rule. So it lives in the tier a wipe destroys.
+    await seedDevice(page, OUT);
+    await open(page, AREA);
+    const first = page.locator('[data-record]').first();
+    await first.getByRole('button', { name: /note for later/i }).click();
+    await first.locator('input.fix').fill('note that should not survive');
+    await first.getByRole('button', { name: /^keep$/i }).click();
+
+    const before = await readDevice(page);
+    expect(JSON.stringify(before.wipeable)).toContain('note that should not survive');
+    expect(JSON.stringify(before.accruing)).not.toContain('note that should not survive');
+  });
+
+  test('a note goes nowhere — it is not a correction', async ({ page }) => {
+    await seedDevice(page, OUT);
+    await open(page, AREA);
+    const first = page.locator('[data-record]').first();
+    await first.getByRole('button', { name: /note for later/i }).click();
+    await first.locator('input.fix').fill('private scribble');
+    await first.getByRole('button', { name: /^keep$/i }).click();
+
+    // Nothing published, and no report appears beside the listing.
+    await expect(first.locator('[data-report]')).toHaveCount(0);
+    const device = await readDevice(page);
+    expect(JSON.stringify(device.accruing['corrections'] ?? {})).not.toContain('private scribble');
+  });
+
   test('a report survives losing the network, because the directory does', async ({ page, context }) => {
     await seedDevice(page, OUT);
     await open(page, AREA);

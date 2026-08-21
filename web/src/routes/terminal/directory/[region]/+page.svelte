@@ -23,6 +23,7 @@
   import { AVAILABILITY_FIELDS, FIELD_LABELS, INTAKE_FIELDS, labelValue } from '$lib/directory/load';
   import { mergeCorrections, needsChecking, CORRECTABLE_FIELDS, FIELD_OPTIONS } from '@navcom/core';
   import { corrections } from '$lib/terminal/corrections.svelte';
+  import { clearNote, keepNote, notes } from '$lib/terminal/notes';
   import { onMount } from 'svelte';
 
   let { data } = $props();
@@ -61,6 +62,23 @@
   let correcting = $state<ResourceField | null>(null);
   let typed = $state('');
 
+  /** Scribbles, kept on this phone. Reloaded on mount because they are read from storage. */
+  let jotted = $state<Record<string, string>>({});
+  let jotting = $state<string | null>(null);
+  let jotText = $state('');
+
+  function jot(id: string) {
+    keepNote(id, jotText);
+    jotted = notes();
+    jotting = null;
+    jotText = '';
+  }
+
+  function dropNote(id: string) {
+    clearNote(id);
+    jotted = notes();
+  }
+
   async function report(id: string, flag: string) {
     await corrections.submit(id, { flag });
     reporting = null;
@@ -82,6 +100,7 @@
 
     // Scoped to the area actually carried. Asking a relay for every correction on the
     // network would pull places this operator will never go, on a phone counting bytes.
+    jotted = notes();
     corrections.start(data.records.map((r: ResourceRecord) => r.id));
 
     // Ask to be saved for offline.
@@ -271,6 +290,35 @@
               6.2. Reporting must always be easier than fixing, and until now it was
               impossible while fixing needed a pull request. One tap, no form, no account.
             -->
+            <!--
+              6.6. Capture cold, correct warm. Shown above the report control because in the
+              moment it matters this is the only thing that can be done one-handed.
+            -->
+            {#if jotted[record.id]}
+              <p class="note" data-note>
+                <strong>Your note:</strong> {jotted[record.id]}
+                <button class="drop" onclick={() => dropNote(record.id)}>Done with it</button>
+              </p>
+            {/if}
+
+            {#if jotting === record.id}
+              <input class="fix" bind:value={jotText} autocomplete="off"
+                placeholder="shut intake 20:30" />
+              <p class="cost">
+                Stays on this phone. Nobody else ever sees it, and a panic wipe takes it —
+                so <strong>turn it into a correction</strong> when you are somewhere warm.
+                Write about the place, never the person.
+              </p>
+              <div class="row">
+                <button class="drop" onclick={() => jot(record.id)}>Keep</button>
+                <button class="drop" onclick={() => (jotting = null)}>Cancel</button>
+              </div>
+            {:else if reporting !== record.id}
+              <button class="drop" onclick={() => { jotting = record.id; jotText = jotted[record.id] ?? ''; }}>
+                Note for later
+              </button>
+            {/if}
+
             {#if reporting === record.id && correcting}
               <!--
                 Most of what an operator learns at a door is an enum, so most corrections are
@@ -356,6 +404,10 @@
   .report {
     margin: 0 0 .5rem; color: var(--t-oncall); font-size: .9rem;
     border-inline-start: 2px solid var(--t-oncall); padding-inline-start: .6rem;
+  }
+  .note {
+    margin: .4rem 0 0; color: var(--t-ink); font-size: .9rem;
+    border-inline-start: 2px solid var(--t-station); padding-inline-start: .6rem;
   }
   .asks {
     margin: .4rem 0 0; color: var(--t-muted); font-size: .88rem;

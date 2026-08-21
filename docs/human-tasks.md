@@ -206,6 +206,26 @@ npm run check:data --workspace navcom-web
 
 ---
 
+## 4b. Promote what operators reported — minutes, weekly
+
+Operators can now correct records from their phones, and those corrections are live on
+relays. They reach other operators immediately; they reach `navcom.app` when a person
+promotes them.
+
+```bash
+navcom-promote --since 7
+```
+
+It prints what is waiting, grouped by place, most-reported first, with who said it and how
+they know. **It writes nothing.** Read them, decide, and edit the CSV yourself — a tool that
+applied corrections would have removed the person this step exists for, and you would find
+out by reading a shelter's hours you never approved.
+
+Two people saying the same thing is evidence. One person saying it twice is a correction,
+and only their latest word is shown.
+
+---
+
 ## 5. Run the daemon and executor together — 30 minutes, needs the Jetson
 
 Both subscribe to `20911`. It has been reasoned that two response streams do not confuse a

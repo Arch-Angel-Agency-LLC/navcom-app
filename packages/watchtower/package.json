@@ -11,7 +11,8 @@
     "watchtower-cli": "./dist/client/index.js",
     "navcom-escalation": "dist/escalation/index.js",
     "navcom-pager": "./dist/pager/index.js",
-    "navcom-push": "./dist/push/index.js"
+    "navcom-push": "./dist/push/index.js",
+    "navcom-promote": "./dist/promote/index.js"
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",
