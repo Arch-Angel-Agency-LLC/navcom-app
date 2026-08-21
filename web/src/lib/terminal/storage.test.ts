@@ -325,3 +325,31 @@ describe('the salvage copy is part of the tier [invariant 7]', () => {
     }
   });
 });
+
+describe('confirming a burn', () => {
+  it('accepts the callsign as a person reads it, not as it is stored', () => {
+    // `José` is one code point or two depending on the keyboard, and the two render
+    // identically. Unnormalised, an operator who set up on one device and confirmed on
+    // another was refused their own callsign while trying to destroy the phone.
+    const precomposed = 'José';
+    const decomposed = 'José';
+    expect(precomposed).not.toBe(decomposed);
+
+    set('accruing', 'callsign', precomposed);
+    expect(burnConfirmed(decomposed, precomposed)).toBe(true);
+    expect(localStorage.getItem('navcom.accruing')).toBeNull();
+  });
+
+  it('still refuses a callsign that is merely similar', () => {
+    // NFC and not NFKC: canonical equivalence is the same character written two ways, and
+    // this gate ends in destroying everything on the device.
+    set('accruing', 'callsign', 'Wren');
+    expect(burnConfirmed('ｗｒｅｎ', 'Wren')).toBe(false);
+    expect(burnConfirmed('Wren ', 'Wren')).toBe(true);
+  });
+
+  it('never matches an empty confirmation against no identity', () => {
+    expect(burnConfirmed('', null)).toBe(false);
+    expect(burnConfirmed('   ', null)).toBe(false);
+  });
+});

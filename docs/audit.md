@@ -23,7 +23,7 @@ Each cell is a pass. `—` not started, `✓` done, and a note when it found som
 | Milestone | Surface | R | E | X |
 |---|---|---|---|---|
 | **0** Prove what is built | Browser harness, service worker, offline, seeding, the verification layer itself | **✓** | **✓** | **✓** |
-| **1** One operator alone | Display rules, patrol record, contact, wipe, seeder | **✓** | **✓** | — |
+| **1** One operator alone | Display rules, patrol record, contact, wipe, seeder | **✓** | **✓** | **✓** |
 | **2** One watch staffed | Executor, pager, drills, web push, on-call | — | — | — |
 | **3** Two who met once | Peers, presence, cards, invites, public presence, buddy | — | — | — |
 | **4** Squad with no box | Watch mode, group sealing, board, handover, watch key | — | — | — |
@@ -197,6 +197,43 @@ date.
   worth a script rather than a note next time it happens
 - The RTL suite caught the banner using `border-left`. Working as intended, and a reminder that
   a fix written in one pass can break a property established in another milestone
+
+## 1.X — Milestone 1, edge cases
+
+**A night patrol read as ending before it started.** The export rendered
+`Dec 31, 2025 · 10:00 PM–02:00 AM`, which says a patrol ended four hours before it began.
+Crossing midnight is not an edge case for this product — **it is the ordinary case**, because
+patrols happen at night, and the export is the one artifact deliberately designed to leave the
+app and be pasted into a post or a grant application, where a reader who cannot tell whether
+the log is wrong has no way to ask. Now `(next day)`, or `(+N days)` for a sign-off somebody
+forgot. Checked across the turn of a year and across spring-forward, where 01:30–03:30 local
+correctly reads as one hour.
+
+**An operator could be refused their own callsign while trying to destroy their phone.**
+`José` is one code point or two depending on which keyboard produced it, and the two render
+identically. The burn gate compared the raw strings, so somebody who set up on one device and
+confirmed on another was told their callsign did not match — while looking at a name identical
+to what they had typed, under whatever circumstances make a person burn a device. Compared as
+NFC now, deliberately not NFKC: canonical equivalence is the same character written two ways,
+and this gate ends in destroying everything.
+
+**A patrol record that was not a list threw out of sign-off.** Reachable through a restored
+backup or a hand-edited blob, and it surfaced as a sign-off button that did nothing and said
+nothing. Read as empty now, which is the same call the corrupt-storage path already makes.
+
+**Nothing found in the seeder.** The obvious lead was that `loadAll` throws for a CSV with no
+manifest but not the reverse, and thirty-odd seeded regions do have zero records — so the
+picker looked like it would offer an area whose page was never prerendered. It already filters
+on record count, and the comment there says why. Checked rather than assumed, and it was
+already right.
+
+## Milestone 1, after three passes
+
+Every finding was in the same place — the moment an operator is alone and something has gone
+wrong. A future date the display trusted, a `#` that ate the help message, a wipe that kept a
+copy, a full phone that said nothing, a move that lost the record, a burn gate that would not
+open, an overnight patrol that read as impossible. **Milestone 1 is the layer that has to work
+when nothing else does**, and it was the failure paths, not the features, that had the holes.
 
 ## Method note, after three passes
 

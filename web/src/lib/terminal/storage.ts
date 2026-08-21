@@ -246,11 +246,26 @@ export async function burnCaches(): Promise<void> {
  * Returns whether it burned, so a caller can tell "refused" from "done" without re-deriving
  * the rule.
  */
+/**
+ * Compared the way a person reads it, not the way it is stored.
+ *
+ * `José` can be one code point or two, depending on which keyboard produced it, and the two
+ * render identically. Unnormalised, an operator who set up on one device and typed the
+ * confirmation on another was refused their own callsign — the screen showing them a name
+ * that looked exactly like what they had typed — while trying to destroy the device. A
+ * confirmation nobody can satisfy is not a safeguard.
+ *
+ * **NFC, not NFKC.** Canonical equivalence only: two strings that are the same character.
+ * NFKC also folds compatibility forms, which would let a visibly *different* callsign match,
+ * and this gate ends in destroying everything on the phone.
+ */
+const sameName = (a: string, b: string): boolean => a.normalize('NFC') === b.normalize('NFC');
+
 export function burnConfirmed(typed: string, callsign: string | null): boolean {
   // No identity means nothing to burn — and an empty confirmation must never match an
   // empty callsign into a successful destroy.
   if (!callsign) return false;
-  if (typed.trim() !== callsign) return false;
+  if (!sameName(typed.trim(), callsign.trim())) return false;
   burn();
   return true;
 }

@@ -7,7 +7,7 @@
 
 import { beforeEach, describe, expect, it } from 'vitest';
 import { exportPatrols, formatDuration, keepsHistory, patrols, recordPatrol, setKeepHistory, type Patrol } from './patrol';
-import { burn, clearStorageError, onStorageError, panicWipe, storageError } from './storage';
+import { burn, clearStorageError, onStorageError, panicWipe, set, storageError } from './storage';
 
 function installLocalStorage() {
   const store = new Map<string, string>();
@@ -194,5 +194,22 @@ describe('when the phone is full', () => {
     }
     expect(heard.filter(Boolean)).toHaveLength(1);
     expect(heard[0]).toMatch(/out of storage/);
+  });
+});
+
+describe('a patrol field that is not a list', () => {
+  it('reads as empty rather than throwing out of sign-off', () => {
+    // Reachable through a restored backup or a hand-edited blob. Unguarded, the spread in
+    // recordPatrol threw — which reaches the operator as a sign-off button that does
+    // nothing and says nothing.
+    set('wipeable', 'patrols', { nope: true });
+    expect(patrols()).toEqual([]);
+    expect(() => recordPatrol({ started: 1, ended: 2, area: null, note: null })).not.toThrow();
+    expect(patrols()).toHaveLength(1);
+  });
+
+  it('survives an export too', () => {
+    set('wipeable', 'patrols', 'not a list at all');
+    expect(() => exportPatrols(patrols(), { callsign: 'Wren' })).not.toThrow();
   });
 });

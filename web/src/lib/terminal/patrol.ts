@@ -67,8 +67,18 @@ export function keepsHistory(): boolean {
 
 const tier = (): Tier => (keepsHistory() ? 'accruing' : 'wipeable');
 
+/**
+ * The patrol record, or an empty one.
+ *
+ * Guarded against not being a list. Storage returns whatever is there — a restored backup
+ * from another version, or a blob edited by hand — and an object here threw out of
+ * `recordPatrol`, which surfaces as a sign-off button that does nothing and says nothing.
+ * Reading it as empty is the same call the corrupt-storage path already makes, for the same
+ * reason: a terminal that will not start is worse than one that has lost something.
+ */
 export function patrols(): Patrol[] {
-  return get<Patrol[]>(tier(), FIELD) ?? [];
+  const stored = get<Patrol[]>(tier(), FIELD);
+  return Array.isArray(stored) ? stored : [];
 }
 
 /**
@@ -133,10 +143,26 @@ export function exportPatrols(list: Patrol[], opts: ExportOptions): string {
     total += p.ended - p.started;
 
     const time = (d: Date) => d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+    /*
+     * Patrols happen at night, so crossing midnight is the ordinary case here rather than
+     * the edge one — and the line read `Dec 31 · 10:00 PM–02:00 AM`, which says a patrol
+     * ended four hours before it began. This is the artifact designed to leave the app and
+     * be pasted into a grant application, where a reader who cannot tell whether the log is
+     * wrong has no way to ask.
+     */
+    const nights = Math.round(
+      (Date.parse(`${end.toDateString()} 00:00:00`) - Date.parse(`${start.toDateString()} 00:00:00`)) / 86_400_000
+    );
+    const span =
+      nights === 0 ? `${time(start)}–${time(end)}`
+      : nights === 1 ? `${time(start)}–${time(end)} (next day)`
+      : `${time(start)}–${time(end)} (+${nights} days)`;
+
     const parts = [
       start.toLocaleDateString([], { day: 'numeric', month: 'short', year: 'numeric' }),
       ...(opts.includeAreas !== false && p.area ? [p.area] : []),
-      `${time(start)}–${time(end)}`,
+      span,
       formatDuration(p.ended - p.started)
     ];
     lines.push(parts.join(' · '));
