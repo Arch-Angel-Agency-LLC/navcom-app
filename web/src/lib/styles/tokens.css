@@ -128,3 +128,33 @@ ul { margin: 0; padding: 0; list-style: none; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }
+
+/*
+ * Paper.
+ *
+ * An operator hands somebody a printed page. That works with a dead phone, no phone, or a
+ * phone they will not hand over — and it is the only artifact this project produces that
+ * cannot be corrected after it leaves.
+ *
+ * **Forced light, whatever the reader's theme.** Somebody in dark mode printing a shelter
+ * listing would otherwise get white text on nothing, or a page of ink. The screen adapts to
+ * the reader; paper adapts to nobody.
+ *
+ * Pure black on pure white rather than the screen palette: the tokens are tuned for contrast
+ * on a backlit display, and a #12161c that reads as ink on a screen prints as grey on a bad
+ * office printer.
+ */
+@media print {
+  :root,
+  :root[data-theme='dark'],
+  :root:not([data-theme='light']) {
+    --ground: #ffffff;
+    --surface: #ffffff;
+    --ink: #000000;
+    --muted: #1a1a1a;
+    --faint: #333333;
+    --line: #999999;
+    --line-strong: #000000;
+    color-scheme: light;
+  }
+}

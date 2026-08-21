@@ -38,6 +38,45 @@
 </footer>
 
 <style>
+  /*
+   * What does not belong on paper.
+   *
+   * Navigation is dead ink — a printed link cannot be followed — and the footer is chrome
+   * for a screen. What survives is the record: the address, the phone number, the intake
+   * rules, and how old they are.
+   */
+  @media print {
+    header,
+    footer,
+    .skip {
+      display: none !important;
+    }
+    :global(body) {
+      background: #fff;
+      color: #000;
+    }
+    main {
+      padding: 0 !important;
+      max-width: none !important;
+    }
+    /*
+     * A record split across a page break is a record somebody misreads.
+     *
+     * `:global` because these live in the child routes, not in this layout — Svelte scopes
+     * component styles, so an unqualified `section` here matches nothing and silently does
+     * nothing. The compiler said so, which is the only reason this is right.
+     */
+    :global(section),
+    :global(.notice),
+    :global(li) {
+      break-inside: avoid;
+    }
+    :global(a) {
+      color: #000;
+      text-decoration: underline;
+    }
+  }
+
   .skip {
     position: absolute;
     /* Off-screen on the side the script starts from, so it is off-screen in Arabic too. */

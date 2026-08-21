@@ -735,7 +735,7 @@ the most dangerous mistake in it.
 
 | | Item | Owner | Cost |
 |---|---|---|---|
-| 8.1 | **Print it** | agent | **No dependency on anything.** The site is already prerendered and scriptless, so a print stylesheet means an operator can hand somebody paper — which works with a dead phone, no phone, or a phone they will not hand over. Cheapest useful thing in 6–10 |
+| 8.1 | ~~Print it~~ | **done** | The one artifact here that **cannot be corrected after it leaves**, so the sheet carries its own age, its source, and *"call before you go"* — the instruction that survives being out of date. Forced black-on-white whatever the reader's theme: the screen adapts to the reader, paper adapts to nobody |
 | 8.2 | **A path shaped for the person, not the helper** | agent | *"Somewhere tonight"*, *"somewhere with my dog"*, *"somewhere that will not ask for ID"* — every one a filter over fields the schema already has |
 | 8.3 | **Lead with what gets you turned away** | agent | A real record says *"Intake closes hard at 21:00 — arriving 21:05 means turned away."* The most valuable sentence in the file, buried in `notes` |
 | 8.4 | **No dead ends** | agent | An empty result says what to do instead. Never a blank list — the reader has nowhere else to go |

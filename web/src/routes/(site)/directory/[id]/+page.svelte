@@ -47,6 +47,34 @@
     <p class="type">{labelValue(record.type)}</p>
   </header>
 
+  <!--
+    Only on paper, and the reason this whole item is worth doing carefully.
+
+    Every screen in this project shows how old its data is, because a confident wrong answer
+    is the worst failure here. A printed page has no such signal — it looks equally
+    authoritative the day it was printed and eighteen months later, and it cannot be
+    corrected after it leaves somebody's hand.
+
+    So the sheet carries its own age, its source, and the one instruction that survives being
+    out of date.
+  -->
+  <div class="printed" aria-hidden="true" data-print-provenance>
+    <p>
+      <strong>navcom.app</strong> — this page was printed from a directory kept by
+      volunteers.
+    </p>
+    <p>
+      {#if record.last_verified}
+        Last checked <strong>{record.last_verified}</strong>{#if record.verified_by}, by
+        {record.verified_by}{/if}.
+      {:else}
+        <strong>Nobody has checked this.</strong> It came from a public listing.
+      {/if}
+      Hours and intake rules change without notice.
+    </p>
+    <p><strong>Call before you go.</strong></p>
+  </div>
+
   <section>
     <h2>Contact</h2>
     <dl>
@@ -114,6 +142,26 @@
 </div>
 
 <style>
+  /*
+   * Screen sees nothing of this; paper sees it first.
+   *
+   * `display: none` rather than a visually-hidden pattern, and `aria-hidden` on the element:
+   * a screen reader announcing "printed from navcom.app, call before you go" to somebody
+   * reading the page they are already on would be noise, and the same facts are already on
+   * the screen with their ages attached.
+   */
+  .printed { display: none; }
+  @media print {
+    .printed {
+      display: block;
+      border: 2px solid #000;
+      padding: 0.6rem 0.8rem;
+      margin: 0 0 1rem;
+    }
+    .printed p { margin: 0.2rem 0; }
+    .back, .map a { display: none; }
+  }
+
   .back { font-size: 0.9rem; margin-bottom: 1rem; }
   .back a { color: var(--muted); }
 
