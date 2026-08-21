@@ -3,6 +3,7 @@ import type { Event } from 'nostr-tools/core';
 import type { SecretKey } from '../crypto/keys.js';
 import { KIND_CORRECTION } from '../events/kinds.js';
 import { confidenceForField } from './confidence.js';
+import { displayField, type FieldDisplay } from './display.js';
 import type { Confidence, Method, ResourceField, ResourceRecord } from './types.js';
 import { FIELD_CLASS } from './volatility.js';
 
@@ -262,6 +263,45 @@ export function mergeCorrections(
   }
 
   return { record, sources, reports };
+}
+
+/**
+ * How a merged field should be displayed, with the provenance that actually won.
+ *
+ * **Use this rather than `displayField` on a merged record.** A record carries one set of
+ * attestation fields — one `verified_by`, one `method`, one `last_verified` — and a merged
+ * record has as many provenances as it has corrections. `displayField` on the merged record
+ * therefore reads the *base* record's age for every field, which is wrong in the worst
+ * direction:
+ *
+ * > A correction made last night in person, over a record scraped in January, rendered as
+ * > **`call-first / stale`** — display rule 2 blanking a value because of an age that was
+ * > not its own. The corrections were invisible on the face of the record they corrected.
+ *
+ * Found by probing rather than by reading. Both halves were tested; the join was not, which
+ * is the second time that has been the shape of a bug in this system.
+ */
+export function displayMerged(
+  merged: MergedRecord,
+  field: ResourceField,
+  now: Date
+): { display: FieldDisplay; by: (Correction & { by: string }) | null } {
+  const source = merged.sources[field];
+  if (!source?.correction) {
+    return { display: displayField(merged.record, field, now), by: null };
+  }
+
+  const c = source.correction;
+  // The winning attestation's own author, method and date -- which is what the confidence
+  // rules are supposed to be weighing.
+  const asRecord = {
+    ...merged.record,
+    verified_by: c.verified_by,
+    method: c.method,
+    last_verified: c.last_verified,
+    flag: 'ok'
+  } as ResourceRecord;
+  return { display: displayField(asRecord, field, now), by: c };
 }
 
 /**

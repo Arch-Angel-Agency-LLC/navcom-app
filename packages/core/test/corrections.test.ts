@@ -16,6 +16,8 @@ import type { Event } from 'nostr-tools/core';
 import {
   buildCorrection,
   CorrectionError,
+  displayField,
+  displayMerged,
   mergeCorrections,
   needsChecking,
   readCorrection,
@@ -242,5 +244,55 @@ describe('what to ask, so contributing is an errand rather than an audit', () =>
     const asks = needsChecking(base({ pets: undefined }), [], NOW);
     expect(asks.every((a) => typeof a === 'string')).toBe(true);
     expect(JSON.stringify(asks)).not.toMatch(/callsign|operator|assign/i);
+  });
+});
+
+describe('a corrected field carries its own provenance, not the record\'s', () => {
+  /**
+   * The bug this section exists for.
+   *
+   * A record carries ONE set of attestation fields; a merged record has as many provenances
+   * as it has corrections. Reading the merged record with `displayField` therefore used the
+   * base record's age for every field — so a correction made last night in person, over a
+   * record scraped in January, rendered as `call-first / stale`.
+   *
+   * Display rule 2 blanking a value because of an age that was not its own. The corrections
+   * were invisible on the face of the records they corrected, which is the entire point of
+   * Milestone 6 quietly not working.
+   */
+  const staleRecord = base({ last_verified: '2025-01-01', method: 'website', verified_by: 'anonymous' });
+  const fresh = () => readable(wren, correction({ last_verified: '2026-08-20', method: 'in_person' }));
+
+  it('shows a fresh correction as a value, not as call-first', () => {
+    const merged = mergeCorrections(staleRecord, [fresh()], NOW);
+    const shown = displayMerged(merged, 'hours', NOW);
+    expect(shown.display.kind).toBe('value');
+    expect(shown.display.kind === 'value' && shown.display.value).toBe('Mon-Sun 20:00-06:00');
+  });
+
+  it('names who said it, which is what standing actually is', () => {
+    // 7.6. Not a profile page and not a total -- your standing is that your callsign is on
+    // records people rely on. Provenance by name, on the artifact.
+    const shown = displayMerged(mergeCorrections(staleRecord, [fresh()], NOW), 'hours', NOW);
+    expect(shown.by?.verified_by).toBe('Wren');
+    expect(shown.by?.method).toBe('in_person');
+  });
+
+  it('reports the correction\'s age, not the record\'s', () => {
+    const shown = displayMerged(mergeCorrections(staleRecord, [fresh()], NOW), 'hours', NOW);
+    expect(shown.display.kind === 'value' && shown.display.confidence).toBe('high');
+  });
+
+  it('leaves an uncorrected field reading exactly as it did', () => {
+    const merged = mergeCorrections(staleRecord, [fresh()], NOW);
+    expect(displayMerged(merged, 'name', NOW).by).toBeNull();
+    expect(displayMerged(merged, 'name', NOW).display).toEqual(displayField(staleRecord, 'name', NOW));
+  });
+
+  it('still blanks a correction that is itself old', () => {
+    // The rules are not being bypassed, only applied to the right attestation.
+    const old = readable(wren, correction({ last_verified: '2025-06-01', method: 'website' }));
+    const shown = displayMerged(mergeCorrections(base({ hours: undefined }), [old], NOW), 'hours', NOW);
+    expect(shown.display.kind).toBe('call-first');
   });
 });

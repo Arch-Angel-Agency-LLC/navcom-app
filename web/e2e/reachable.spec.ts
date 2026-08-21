@@ -702,6 +702,42 @@ test.describe('reporting a problem with a record', () => {
     expect(JSON.stringify(device.accruing['corrections'] ?? {})).not.toContain('private scribble');
   });
 
+  test('a correction shows who said it, which is what standing is', async ({ page }) => {
+    // 7.6. Not a profile page and not a total -- your standing is that your callsign is on
+    // records people rely on. There is nothing here to compare between two operators.
+    await seedDevice(page, OUT);
+    await open(page, AREA);
+
+    const first = page.locator('[data-record]').first();
+    await first.getByRole('button', { name: /report a problem/i }).click();
+    await first.getByRole('button', { name: /^pets$/i }).click();
+    await first.getByRole('button', { name: /^no$/i }).click();
+
+    const by = first.locator('[data-said-by="pets"]');
+    await expect(by).toBeVisible();
+    await expect(by).toContainText('Wren');
+    await expect(by).toContainText(/in person/i);
+  });
+
+  test('a fresh correction over a stale record reads as fresh, not as call first', async ({ page }) => {
+    // The bug this closed: a merged record carries one set of attestation fields, so every
+    // corrected field was being read with the BASE record's age. A correction made just now,
+    // in person, rendered as `call first` -- display rule 2 blanking a value because of an
+    // age that was not its own, which made corrections invisible on the records they fix.
+    await seedDevice(page, OUT);
+    await open(page, AREA);
+
+    const first = page.locator('[data-record]').first();
+    await first.getByRole('button', { name: /report a problem/i }).click();
+    await first.getByRole('button', { name: /^intake$/i }).click();
+    await first.locator('input.fix').fill('19:00-20:30');
+    await first.getByRole('button', { name: /^send$/i }).click();
+
+    const row = first.locator('[data-field="intake_hours"]');
+    await expect(row).toContainText('19:00-20:30');
+    await expect(row).not.toContainText(/call first/i);
+  });
+
   test('a report survives losing the network, because the directory does', async ({ page, context }) => {
     await seedDevice(page, OUT);
     await open(page, AREA);

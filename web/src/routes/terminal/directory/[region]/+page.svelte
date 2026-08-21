@@ -21,7 +21,7 @@
     type ResourceType
   } from '$lib/directory';
   import { AVAILABILITY_FIELDS, FIELD_LABELS, INTAKE_FIELDS, labelValue } from '$lib/directory/load';
-  import { mergeCorrections, needsChecking, CORRECTABLE_FIELDS, FIELD_OPTIONS } from '@navcom/core';
+  import { displayMerged, mergeCorrections, needsChecking, CORRECTABLE_FIELDS, FIELD_OPTIONS } from '@navcom/core';
   import { corrections } from '$lib/terminal/corrections.svelte';
   import { clearNote, keepNote, notes } from '$lib/terminal/notes';
   import { onMount } from 'svelte';
@@ -252,17 +252,19 @@
             {/each}
 
             <dl>
-              <FieldRow field="address" label={FIELD_LABELS.address ?? 'Address'}
-                display={displayField(record, 'address', now)} />
-              <FieldRow field="phone" label={FIELD_LABELS.phone ?? 'Phone'}
-                display={displayField(record, 'phone', now)} />
-              {#each AVAILABILITY_FIELDS as field (field)}
-                <FieldRow {field} label={FIELD_LABELS[field] ?? field}
-                  display={displayField(record, field, now)} />
-              {/each}
-              {#each INTAKE_FIELDS as field (field)}
-                <FieldRow {field} label={FIELD_LABELS[field] ?? field}
-                  display={displayField(record, field, now)} />
+              {#each ['address', 'phone', ...AVAILABILITY_FIELDS, ...INTAKE_FIELDS] as ResourceField[] as field (field)}
+                {@const shown = displayMerged(merged, field, now)}
+                <FieldRow {field} label={FIELD_LABELS[field] ?? field} display={shown.display} />
+                {#if shown.by}
+                  <!--
+                    7.6. Standing lives in the artifacts rather than in a profile: your
+                    callsign is on records people rely on. Provenance by name, never a total,
+                    and there is nothing here to compare between two operators.
+                  -->
+                  <p class="said-by" data-said-by={field}>
+                    {shown.by.verified_by}, {shown.by.method.replace(/_/g, ' ')}
+                  </p>
+                {/if}
               {/each}
             </dl>
 
@@ -404,6 +406,10 @@
   .report {
     margin: 0 0 .5rem; color: var(--t-oncall); font-size: .9rem;
     border-inline-start: 2px solid var(--t-oncall); padding-inline-start: .6rem;
+  }
+  .said-by {
+    margin: -.2rem 0 .4rem; color: var(--t-station); font-size: .78rem;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   }
   .note {
     margin: .4rem 0 0; color: var(--t-ink); font-size: .9rem;
