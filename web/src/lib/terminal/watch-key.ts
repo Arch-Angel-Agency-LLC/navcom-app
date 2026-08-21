@@ -100,6 +100,25 @@ export function joinWatch(secretHex: string): SecretKey {
   } catch {
     throw new WatchKeyError('That is not a watch key — expected 64 hexadecimal characters.');
   }
+
+  /*
+   * Refuses to overwrite, exactly as `createWatch` does.
+   *
+   * The two were asymmetric: founding was guarded against replacing a live watch's identity,
+   * and joining — the one that takes a key from somebody else — was not. On a device holding
+   * the only copy of a watch key, that is the watch ending and every operator configured
+   * against it stranded, with nothing said.
+   *
+   * The screen happens to hide the join form while a watch is held, and that is not where
+   * this belongs: a `maxlength` on a textarea stops the operator who typed it and nobody
+   * else [`limits.ts`]. Giving up a watch is a deliberate act with its own control.
+   */
+  if (watchKey()) {
+    throw new WatchKeyError(
+      'This device already holds a watch. Give that one up first — joining would replace it, and anybody configured against the old address would be left with nothing.'
+    );
+  }
+
   set('accruing', SECRET, secretToHex(secret));
   // Joining is not founding. Somebody handed you this, so the gate applies.
   set('accruing', FOUNDED, false);

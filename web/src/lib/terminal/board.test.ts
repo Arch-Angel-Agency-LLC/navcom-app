@@ -55,6 +55,18 @@ const query = (i: number): Event => {
   return finalizeEvent(buildSignal(sender, to, 'query', { text: `q${i}`, area: 'north' }, T + i), sender);
 };
 
+const onStation = (who: Uint8Array, at: number): Event =>
+  finalizeEvent(
+    buildSignal(who, to, 'on-station', {
+      callsign: 'Raven', area: 'north side', expected_duration: 7200,
+      routine_interval: null, share_position: false, position: null
+    }, at),
+    who
+  );
+
+const stoodDown = (who: Uint8Array, at: number): Event =>
+  finalizeEvent(buildSignal(who, to, 'stood-down', {}, at), who);
+
 const distress = (): Event => {
   const sender = newSecretKey();
   return finalizeEvent(
@@ -168,5 +180,55 @@ describe('a watch whose publishes do not land', () => {
     const item = board.distress[0]!;
     expect(await board.answer(item, 'awake, on my way')).toBe(true);
     expect(board.distress.map((w) => w.id)).toContain(item.id);
+  });
+});
+
+describe('state changes arriving out of order', () => {
+  it('does not let a replayed stand-down take somebody off the board', () => {
+    // The presence store already guards this and says why — out-of-order delivery is normal
+    // on relays. The board, which is the watch's picture of who is out, did not: a stale
+    // stand-down removed an operator who was actually out, and the watch stopped seeing them.
+    const raven = newSecretKey();
+    deliver(stoodDown(raven, T));
+    deliver(onStation(raven, T + 3600));
+    expect(board.entries).toHaveLength(1);
+
+    deliver(stoodDown(raven, T + 60));
+    expect(board.entries).toHaveLength(1);
+  });
+
+  it('does not let a replayed sign-on put somebody back who has gone home', () => {
+    // The other direction, and the reason the timestamp is remembered after the entry is
+    // deleted rather than read off it.
+    const raven = newSecretKey();
+    deliver(onStation(raven, T));
+    deliver(stoodDown(raven, T + 3600));
+    expect(board.entries).toHaveLength(0);
+
+    deliver(onStation(raven, T + 60));
+    expect(board.entries).toHaveLength(0);
+  });
+
+  it('still follows a genuine stand-down', () => {
+    const raven = newSecretKey();
+    deliver(onStation(raven, T));
+    deliver(stoodDown(raven, T + 3600));
+    expect(board.entries).toHaveLength(0);
+  });
+
+  it('orders the queue by when we received it, not when they say they sent it', () => {
+    // Sorted oldest first because those people have waited longest — and ordered by the
+    // sender's own created_at, anything backdated went straight to the top of the queue.
+    deliver(query(1));
+    const backdated = (() => {
+      const sender = newSecretKey();
+      return finalizeEvent(
+        buildSignal(sender, to, 'query', { text: 'jumped the queue', area: 'north' }, T - 999_999),
+        sender
+      );
+    })();
+    deliver(backdated);
+
+    expect(board.waiting.map((w) => w.text)).toEqual(['q1', 'jumped the queue']);
   });
 });

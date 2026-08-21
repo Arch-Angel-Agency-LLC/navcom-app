@@ -26,7 +26,7 @@ Each cell is a pass. `—` not started, `✓` done, and a note when it found som
 | **1** One operator alone | Display rules, patrol record, contact, wipe, seeder | **✓** | **✓** | **✓** |
 | **2** One watch staffed | Executor, pager, drills, web push, on-call | **✓** | **✓** | **✓** |
 | **3** Two who met once | Peers, presence, cards, invites, public presence, buddy | **✓** | **✓** | **✓** |
-| **4** Squad with no box | Watch mode, group sealing, board, handover, watch key | **✓** | **✓** | — |
+| **4** Squad with no box | Watch mode, group sealing, board, handover, watch key | **✓** | **✓** | **✓** |
 | **5** Written-down properties | PQC, declined, battery, RTL, watch-state v4 | — | — | — |
 | **6** Knowledge gets in | Corrections, merge, needs-checking, notes, promotion | — | — | — |
 | **7** Standing | Credentials, claims, revocation, the watch gate | — | — | — |
@@ -491,6 +491,44 @@ timestamp that crossed a device boundary deserves the question *whose clock is t
 that rebuild core, so both were type-checking and testing against a stale `dist/`. Use the
 package scripts — `npm run check`, `npm test --prefix` — not the tools directly.
 
+## 4.X — Milestone 4, edge cases
+
+**It began by overturning a negative I recorded in 4.R.** I wrote that the board timestamps
+signals with local receipt time and therefore could not be reordered by a backdated flood.
+It used `event.created_at` — **the sender's clock** — and I had read the variable name rather
+than its assignment. Two real findings were sitting behind that mistake.
+
+**Nothing stopped a replayed state change from making the board wrong.** A stale `stood-down`
+removed an operator who was actually out, so the watch simply stopped seeing them; a stale
+`on-station` put somebody back who had gone home. The presence store already guards exactly
+this and says why — *"out-of-order delivery is normal on relays"* — and the board, which is the
+watch's own picture of who is out, did not. The timestamp is now remembered per operator, and
+kept after a stand-down deletes the entry, because otherwise a later replay resurrects them.
+
+**And the queue could be jumped by backdating.** *"Waiting on you"* is sorted oldest first,
+because those people have waited longest — ordered by the sender's own `created_at`, so
+anything stamped far enough in the past went straight to the top of the watch's list. Receipt
+time is both the honest answer to *"how long have I had this"* and the one nobody else can set.
+
+**A guard that existed on one door and not the other.** `createWatch` refuses to replace a live
+watch's identity and explains why; `joinWatch` — the one that takes a key from somebody else —
+overwrote it without a word. On a device holding the only copy of a watch key, that is the
+watch ending and everybody configured against it stranded. The screen happens to hide the join
+form while a watch is held, and that is not where the rule belongs: *a `maxlength` on a
+textarea stops the operator who typed it and nobody else*.
+
+**Nothing found in group sealing, and it is worth saying what was checked.** Zero holders
+throws with a real sentence rather than producing a message nobody can read. One holder works
+and a stranger is refused. **Duplicate holders produce an envelope byte-identical in size to
+three distinct ones**, so the unlabelled-wrap design holds up under the obvious probe. A
+hundred holders is 18 kB and 225 ms — linear, and nowhere near a problem at squad scale.
+
+**Also nothing found in a place I expected something:** `expected_until` and `routine_due` are
+computed in the sender's frame and would be wrong for the same reason as everything above —
+but nothing renders them. Dead fields, so no operator has ever been misled by them. Recorded
+rather than fixed, because fixing an unused field is how a codebase grows work that protects
+nobody.
+
 ## 4.E — Milestone 4, error handling and reporting
 
 Three publishes on the watch side, all discarding their result — the same defect 3.E found on
@@ -551,11 +589,11 @@ and deliberately differently:
   silently — and a watch told that knows something extraordinary is happening, which is a true
   and useful thing to know
 
-**Nothing found in one place, worth recording because it is the same question three passes
-have now asked.** The board timestamps signals with **local receipt time**, not the sender's
-`created_at`, so a backdated flood cannot reorder it. That is the "whose clock is this?"
-question already answered correctly, in the component where getting it wrong would have been
-worst.
+**One claimed negative here was wrong, and 4.X corrected it.** This pass recorded that the
+board timestamps signals with local receipt time. It does not — it used `event.created_at`,
+the sender's clock. See 4.X for what that cost. The finding above stands; the negative beside
+it did not, and it is left here rather than quietly edited because a wrong "nothing found" is
+the most expensive thing this document can contain.
 
 ### The harness, again
 

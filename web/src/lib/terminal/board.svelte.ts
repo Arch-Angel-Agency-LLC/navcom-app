@@ -85,6 +85,19 @@ let unannounced = $state(false);
 /** Still advertised as staffed, because standing down never reached a relay. */
 let stillAdvertised = $state(false);
 let darkRetry: ReturnType<typeof setInterval> | null = null;
+
+/**
+ * The timestamp of the last sign-on or stand-down applied for each operator.
+ *
+ * Kept separately because a stand-down **deletes** the entry, and the board still has to
+ * remember that it happened — otherwise a stale sign-on arriving afterwards puts somebody
+ * back on the board who has gone home.
+ *
+ * This is the one thing an operator's own clock is good for: ordering two of their own
+ * events. The presence store already guards this and says why — *"out-of-order delivery is
+ * normal on relays"* — and the board, which is the watch's picture of who is out, did not.
+ */
+let stateAt: Record<string, number> = {};
 let onStation = $state(false);
 let since = $state(0);
 let closer: { close(): void } | null = null;
@@ -428,6 +441,15 @@ function apply(
   const callsign = typeof payload.callsign === 'string' ? payload.callsign : from.slice(0, 8);
   const now = event.created_at;
 
+  if (type === 'on-station' || type === 'stood-down') {
+    // Their clock, ordering their own two events. Anything older than what we have already
+    // applied for this operator is a replay, and acting on it would make the board wrong in
+    // whichever direction the stale event points.
+    const applied = stateAt[from];
+    if (applied !== undefined && applied >= now) return;
+    stateAt[from] = now;
+  }
+
   if (type === 'on-station') {
     const duration = typeof payload.expected_duration === 'number' ? payload.expected_duration : 7200;
     const entry: BoardEntry = {
@@ -497,7 +519,15 @@ function apply(
       callsign,
       type,
       text: typeof payload.text === 'string' ? payload.text : null,
-      at: now
+      /*
+       * How long **we** have had it, not when they say they sent it.
+       *
+       * The list is sorted oldest first because those people have waited longest, and it was
+       * ordered by the sender's own `created_at` — so anything backdated went straight to the
+       * top of the watch's queue. Receipt time is both the honest answer to "how long have I
+       * had this" and the one nobody else can set.
+       */
+      at: Math.floor(Date.now() / 1000)
     }
   ];
 }
