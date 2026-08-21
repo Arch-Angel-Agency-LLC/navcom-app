@@ -703,15 +703,20 @@ one person outward.
 
 | | Item | Owner | Cost |
 |---|---|---|---|
-| 7.1 | **Endorsements with scope tags, and an expiry inside the signature** | agent | `worked with`, `medic`, `can take watch` — never free text, because an endorser explaining *why* is how an operator's history leaks. Expiry is signed, not asserted by the holder, or a lapsed endorsement is one you simply keep presenting |
-| 7.2 | **The founder of a watch can always hold it** | agent | Genesis. Without this, 7.3 is a gate on a door with no key cut for it |
-| 7.3 | **`can take watch` gates joining somebody else's watch** | agent | **Found in review: nothing gates it.** [`watch/the-watch.md`](watch/the-watch.md) specifies the qualification; Milestone 4 shipped a watch anybody can take |
-| 7.4 | **The gate says what it does not prove** | agent | Three endorsers do not mean somebody will stay awake tonight. Same discipline as the capability receipt: the claim and its limit in one breath |
-| 7.5 | **Revocation by silence** | agent | Falls out of 7.1. You cannot un-say an endorsement — nothing here is retroactive — but you can let it lapse, which gives withdrawal **without the appeals process `declined.md` refuses** |
+| 7.1 | ~~Endorsements with scope tags~~ | **done** | **A credential names nobody** — *"I vouch for the holder of this"*, a scope and a date and no subject at all. So you can vouch for somebody who has never opened the app, and no map of who-knows-whom exists to breach. The cost is that it is a bearer token, and that is said in the same breath |
+| 7.2 | ~~The founder of a watch can always hold it~~ | **done** | Genesis. Founding needs nobody's permission because there is nobody to ask |
+| 7.3 | ~~`can take watch` gates joining somebody else's watch~~ | **done** | The spec violation is closed. Somebody handed a key needs somebody who already holds it to say so |
+| 7.4 | ~~The gate says what it does not prove~~ | **done** | *"Somebody's word about how you have worked before — not a promise that you will stay awake tonight. Only you can make that one."* Named, never counted |
+| 7.5 | ~~Withdrawal~~ | **done** | **The plan was wrong and the spec was right.** It proposed revocation-by-silence via expiry; [`identity.md`](product/identity.md) already specified explicit revocation published by the endorser — which creates no adjudication either, and invents no second rule for staleness. Only the original endorser can revoke, checked against the key |
 | 7.6 | **Standing lives in the artifacts, not a profile** | agent | **Needs Milestone 6.** The obvious build is a reputation page, which is a leaderboard with extra steps. `verified_by` is already on every record: your standing is that your callsign is on records people rely on. Nothing to total, nothing to game |
-| 7.7 | **The trade, stated where it is made** | agent | *"Contribute without a persistent identity, or build standing that travels. Not both"* [`declined.md`](declined.md) |
+| 7.7 | ~~The trade, stated where it is made~~ | **done** | On the standing screen, in the same words the setup screen uses about the callsign |
 
 **Never:** a score, a rank, or a comparison between two operators. Provenance by name.
+
+**Age rather than expiry.** Nothing lapses on a timer. Somebody endorsed `medic` five years
+ago is a fact about five years ago, and this system already has one way of handling that —
+show the age and let the reader weigh it, exactly as the directory does. A second rule for
+the same problem would be a rule too many.
 
 **Declined, not deferred — resistance to forged endorsements.** A gate creates an incentive
 to mint keys that did not exist while endorsements were decoration. We are not building

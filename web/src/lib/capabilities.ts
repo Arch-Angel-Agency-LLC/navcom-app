@@ -295,6 +295,20 @@ export const CAPABILITIES: Capability[] = [
     requires: ['identity', 'watch']
   },
   {
+    name: 'Standing',
+    screen: 'terminal/standing/',
+    claims: [
+      // The property everything else follows from, stated before anything is written.
+      'A credential names nobody',
+      'no map of who knows whom exists anywhere',
+      // The cost of not naming people, said in the same breath rather than discovered.
+      'whoever holds the bytes can take it up',
+      'There is no free text'
+    ],
+    control: '#cred',
+    requires: ['identity']
+  },
+  {
     name: 'Wipe this device',
     screen: 'terminal/wipe/',
     claims: [

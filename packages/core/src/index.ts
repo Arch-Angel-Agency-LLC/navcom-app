@@ -9,6 +9,7 @@ export * from './events/signal.js';
 export * from './events/presence.js';
 export * from './events/public.js';
 export * from './events/key-bundle.js';
+export * from './events/endorsement.js';
 export * from './events/invite.js';
 export * from './events/response.js';
 export * from './board.js';

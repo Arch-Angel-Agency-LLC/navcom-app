@@ -220,7 +220,7 @@ describe('what to ask, so contributing is an errand rather than an audit', () =>
     // A value nobody has confirmed in a season is worth a question, not distrust.
     const old = base({
       pets: 'yes', id_required: 'no', intake_hours: '19:00-21:00',
-      capacity_signal: 'often_full', sobriety: 'no_questions', accepts: 'single_men',
+      capacity_signal: 'often_full', sobriety: 'no_questions', accepts: ['single_men'],
       curfew: '22:00', phone: '314-555-0100', last_verified: '2025-01-01'
     });
     expect(needsChecking(old, [], NOW).length).toBeGreaterThan(0);
@@ -229,7 +229,7 @@ describe('what to ask, so contributing is an errand rather than an audit', () =>
   it('asks for nothing when a record is complete and fresh', () => {
     const good = base({
       pets: 'yes', id_required: 'no', intake_hours: '19:00-21:00',
-      capacity_signal: 'often_full', sobriety: 'no_questions', accepts: 'single_men',
+      capacity_signal: 'often_full', sobriety: 'no_questions', accepts: ['single_men'],
       curfew: '22:00', phone: '314-555-0100',
       last_verified: '2026-08-19', method: 'in_person', verified_by: 'Wren'
     });

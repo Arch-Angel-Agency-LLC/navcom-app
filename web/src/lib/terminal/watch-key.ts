@@ -32,6 +32,7 @@ import { newSecretKey, publicKeyOf, secretFromHex, secretToHex, type SecretKey }
 import { clearField, get, set } from './storage';
 
 const SECRET = 'watch_secret';
+const FOUNDED = 'watch_founded';
 
 /** The watch's secret, or null on a device that holds no watch. */
 export function watchKey(): SecretKey | null {
@@ -62,7 +63,26 @@ export function createWatch(): SecretKey {
   if (existing) return existing;
   const secret = newSecretKey();
   set('accruing', SECRET, secretToHex(secret));
+  // Founding is self-evident, and this is what records it.
+  set('accruing', FOUNDED, true);
   return secret;
+}
+
+/**
+ * Whether this device founded the watch it holds.
+ *
+ * **The genesis route for the qualification gate.** `can take watch` is the endorsement that
+ * lets somebody hold a board [`watch/the-watch.md`], and gating on it alone bricks a new
+ * squad: nobody has standing, so nobody can take watch, so the watch is unusable and
+ * Milestone 4 stops working.
+ *
+ * Founding needs nobody's permission because there is nobody to ask. Whoever starts a watch
+ * can always hold it; everybody else needs an endorsement from somebody who already does.
+ * The gate is real, the first holder needs no key cut for them, and a squad grows outward
+ * from one person.
+ */
+export function foundedHere(): boolean {
+  return get<boolean>('accruing', FOUNDED) === true;
 }
 
 /**
@@ -81,6 +101,8 @@ export function joinWatch(secretHex: string): SecretKey {
     throw new WatchKeyError('That is not a watch key — expected 64 hexadecimal characters.');
   }
   set('accruing', SECRET, secretToHex(secret));
+  // Joining is not founding. Somebody handed you this, so the gate applies.
+  set('accruing', FOUNDED, false);
   return secret;
 }
 
@@ -92,4 +114,5 @@ export function joinWatch(secretHex: string): SecretKey {
  */
 export function leaveWatch(): void {
   clearField('accruing', SECRET);
+  clearField('accruing', FOUNDED);
 }

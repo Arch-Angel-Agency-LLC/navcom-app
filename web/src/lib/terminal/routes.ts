@@ -23,6 +23,7 @@ export const TERMINAL_ROUTES = [
   'watch/',
   'on-call/',
   'resupply/',
+  'standing/',
   'log/',
   'wipe/'
 ] as const;

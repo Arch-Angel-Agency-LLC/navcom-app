@@ -55,6 +55,24 @@ export const KIND_PUBLIC_PRESENCE = 20914;
  */
 export const KIND_INVITE = 1910;
 
+/**
+ * A credential — *"I vouch for the holder of this."*
+ *
+ * **Never published.** Handed over the way everything else here is, because indexing it
+ * anywhere would build the social graph this design exists to avoid. Addressable so that a
+ * revocation can name it.
+ */
+export const KIND_CREDENTIAL = 30912;
+
+/** Taking one up, binding it to a persona. Also never published. */
+export const KIND_CLAIM = 30913;
+
+/**
+ * Withdrawing a credential. **Published**, unlike the credential itself, because a reader
+ * has to be able to find it — and it names only the credential, so it reveals nobody.
+ */
+export const KIND_REVOCATION = 30914;
+
 /** Ephemeral. Signals: on-station, routine, query, assist, stood-down. */
 export const KIND_SIGNAL = 20910;
 

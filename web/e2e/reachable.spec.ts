@@ -731,6 +731,106 @@ test.describe('reporting a problem with a record', () => {
   });
 });
 
+test.describe('standing', () => {
+  test('a credential can be written and taken up, with no network and no approval', async ({ page }) => {
+    // The whole exchange is two people and two devices. Nothing is published, looked up, or
+    // approved by anybody.
+    await seedDevice(page, OUT);
+    await open(page, '/terminal/standing/');
+
+    await page.getByRole('button', { name: /^can take watch$/i }).click();
+    const blob = await page.locator('pre.blob').innerText();
+    expect(blob).toContain('"sig"');
+
+    await page.locator('#cred').fill(blob);
+    await page.getByRole('button', { name: /take it up/i }).click();
+    await expect(page.locator('[data-endorsement="can-take-watch"]')).toBeVisible();
+  });
+
+  test('a credential names nobody', async ({ page }) => {
+    // The property everything else follows from. A subject here would be the social graph.
+    await seedDevice(page, OUT);
+    await open(page, '/terminal/standing/');
+    await page.getByRole('button', { name: /^medic$/i }).click();
+
+    const blob = JSON.parse(await page.locator('pre.blob').innerText());
+    expect(blob.tags).toEqual([]);
+    expect(JSON.stringify(blob)).not.toContain('p2p');
+    // The only key in it is the endorser's own.
+    const device = await readDevice(page);
+    expect(blob.pubkey).toBeTruthy();
+    expect(JSON.stringify(blob)).not.toContain(String(device.accruing['contact_secret'] ?? 'none'));
+  });
+
+  test('the same credential cannot be taken up twice', async ({ page }) => {
+    await seedDevice(page, OUT);
+    await open(page, '/terminal/standing/');
+    await page.getByRole('button', { name: /^reliable$/i }).click();
+    const blob = await page.locator('pre.blob').innerText();
+
+    await page.locator('#cred').fill(blob);
+    await page.getByRole('button', { name: /take it up/i }).click();
+    await page.locator('#cred').fill(blob);
+    await page.getByRole('button', { name: /take it up/i }).click();
+    await expect(page.getByText(/already hold that one/i)).toBeVisible();
+  });
+
+  test('refuses something that is not a credential', async ({ page }) => {
+    await seedDevice(page, OUT);
+    await open(page, '/terminal/standing/');
+    await page.locator('#cred').fill('not a credential');
+    await page.getByRole('button', { name: /take it up/i }).click();
+    await expect(page.getByText(/not a credential|not signed/i)).toBeVisible();
+  });
+});
+
+test.describe('who may hold a watch', () => {
+  test('whoever started it can, because founding needs nobody', async ({ page }) => {
+    // 7.2. Gating on an endorsement alone would brick a new squad: nobody has standing, so
+    // nobody can take watch, so the watch is unusable.
+    await seedDevice(page, OUT);
+    await open(page, '/terminal/watch/');
+    await page.getByRole('button', { name: /start a watch on this phone/i }).click();
+
+    await expect(page.getByRole('button', { name: /take the watch/i })).toBeVisible();
+    await expect(page.getByText(/you started this watch/i)).toBeVisible();
+  });
+
+  test('somebody handed the key cannot, until somebody says they can', async ({ page }) => {
+    // 7.3, and the spec violation it closes: the-watch.md specifies `can take watch` as the
+    // qualification and Milestone 4 shipped a watch anybody could take.
+    await seedDevice(page, OUT);
+    await open(page, '/terminal/watch/');
+    await page.locator('#key').fill('c'.repeat(64));
+    await page.getByRole('button', { name: /^join$/i }).click();
+
+    await expect(page.locator('[data-ungated]')).toBeVisible();
+    await expect(page.getByRole('button', { name: /take the watch/i })).toHaveCount(0);
+  });
+
+  test('and can once they hold the credential, which names who vouched', async ({ page }) => {
+    await seedDevice(page, OUT);
+    // Write and take up a `can take watch` credential first.
+    await open(page, '/terminal/standing/');
+    await page.getByRole('button', { name: /^can take watch$/i }).click();
+    const blob = await page.locator('pre.blob').innerText();
+    await page.locator('#cred').fill(blob);
+    await page.getByRole('button', { name: /take it up/i }).click();
+
+    await open(page, '/terminal/watch/');
+    await page.locator('#key').fill('c'.repeat(64));
+    await page.getByRole('button', { name: /^join$/i }).click();
+
+    const vouchers = page.locator('[data-vouchers]');
+    await expect(vouchers).toBeVisible();
+    // Provenance by name, never a count.
+    await expect(vouchers).toContainText('Wren');
+    // 7.4: the claim and its limit together.
+    await expect(vouchers).toContainText(/not a\s+promise that you will stay awake/i);
+    await expect(page.getByRole('button', { name: /take the watch/i })).toBeVisible();
+  });
+});
+
 test.describe('patrols', () => {
   test('whether the history survives a wipe is a control, not a setting somebody has to find', async ({ page }) => {
     await seedDevice(page, OUT);

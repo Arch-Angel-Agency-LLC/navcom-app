@@ -15,7 +15,8 @@
   import { onMount } from 'svelte';
   import { declineIsValid } from '@navcom/core';
   import { board } from '$lib/terminal/board.svelte';
-  import { createWatch, joinWatch, leaveWatch, watchPubkey, WatchKeyError } from '$lib/terminal/watch-key';
+  import { createWatch, foundedHere, joinWatch, leaveWatch, watchPubkey, WatchKeyError } from '$lib/terminal/watch-key';
+  import { endorsersFor } from '$lib/terminal/standing';
   import { loadIdentity } from '$lib/terminal/identity';
   import { loadConfig } from '$lib/terminal/config';
 
@@ -27,17 +28,37 @@
   let text = $state('');
   let busy = $state(false);
   let confirmLeave = $state(false);
+  /**
+   * 7.3. `the-watch.md` specifies `can take watch` as the qualification and the watch
+   * shipped with no gate at all.
+   *
+   * 7.2 is why it does not brick a new squad: founding is self-evident. Whoever started this
+   * watch can always hold it; anybody handed the key needs somebody who already holds it to
+   * say so.
+   */
+  let founded = $state(false);
+  let vouchers = $state<{ endorser: string; at: string }[]>([]);
+  const qualified = $derived(founded || vouchers.length > 0);
 
   onMount(() => {
+    founded = foundedHere();
+    vouchers = endorsersFor('can-take-watch').map((e) => ({ endorser: e.endorser, at: e.at }));
     address = watchPubkey();
     callsign = loadIdentity()?.callsign ?? null;
     board.start();
     return () => board.stop();
   });
 
+  /** Re-read after anything that changes what this device holds. */
+  function refresh() {
+    address = watchPubkey();
+    founded = foundedHere();
+    vouchers = endorsersFor('can-take-watch').map((e) => ({ endorser: e.endorser, at: e.at }));
+  }
+
   function start() {
     createWatch();
-    address = watchPubkey();
+    refresh();
     board.start();
   }
 
@@ -45,7 +66,7 @@
     error = null;
     try {
       joinWatch(joining);
-      address = watchPubkey();
+      refresh();
       joining = '';
       board.start();
     } catch (e) {
@@ -56,7 +77,7 @@
   function leave() {
     void board.standDown();
     leaveWatch();
-    address = null;
+    refresh();
     confirmLeave = false;
   }
 
@@ -169,7 +190,37 @@
         Nobody is published as watching. Operators signing on now will read Dark, which is
         a supported state and an honest one.
       </p>
-      <button onclick={() => board.takeWatch()}>Take the watch</button>
+      {#if qualified}
+        {#if founded}
+          <p class="cost">
+            You started this watch, so it is yours to hold. Anybody you hand the key to will
+            need somebody who already holds it to say they can.
+          </p>
+        {:else}
+          <p class="cost" data-vouchers>
+            <strong>{vouchers.map((v) => v.endorser).join(', ')}</strong>
+            {vouchers.length === 1 ? 'says' : 'say'} you can take a watch.
+            <!--
+              7.4. The claim and its limit in one breath, the same discipline as the
+              capability receipt. Three endorsers is not a promise about tonight.
+            -->
+            That is somebody's word about how you have worked before — <strong>it is not a
+            promise that you will stay awake tonight</strong>. Only you can make that one.
+          </p>
+        {/if}
+        <button onclick={() => board.takeWatch()}>Take the watch</button>
+      {:else}
+        <p class="cost" data-ungated>
+          <strong>Nobody has said you can take a watch.</strong> Holding a board means
+          operators go out believing a named human is reading what they send, so it is not
+          something to take on your own say-so when the watch is somebody else's.
+        </p>
+        <p class="cost">
+          Ask somebody who already holds this watch for a <code>can take watch</code>
+          credential, and claim it on <a href="/terminal/standing/">your standing</a>. If you
+          are starting your own watch instead, that needs nobody's permission.
+        </p>
+      {/if}
     {/if}
   </section>
 

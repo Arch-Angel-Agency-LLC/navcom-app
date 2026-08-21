@@ -395,6 +395,7 @@
     <a href="/terminal/patrols/">Your patrols</a>
     <a href="/terminal/log/">What the watch wrote</a>
     <a href="/terminal/wipe/">Wipe this device</a>
+    <a href="/terminal/standing/">Standing</a>
     <a href="/terminal/on-call/">On call</a>
     <a href="/terminal/setup/">Setup</a>
   </nav>
