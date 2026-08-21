@@ -148,6 +148,30 @@ function main(): void {
     console.log(`[executor] on-call: ${wakeable.map((e) => `${e.declaration.author.callsign} (${e.declaration.channel})`).join(", ")}`);
   }
 
+  /*
+   * Who is able to ACKNOWLEDGE, which is a different question from who can be woken.
+   *
+   * An ack is matched by key. Somebody on-call by phone who does not run NavCom has no key
+   * and cannot stop a ladder from their own device -- that is legitimate, and they
+   * acknowledge by telling whoever is at the console.
+   *
+   * But if NOBODY has a key, no acknowledgement can ever be accepted: every ladder runs to
+   * EXHAUSTED even when a person is on their way, and every drill fails forever, which
+   * demotes the watch permanently. That is worth a paragraph at startup rather than a
+   * discovery months later.
+   */
+  const canAck = roster.filter((e) => e.declaration.author.pubkey);
+  if (roster.length > 0 && canAck.length === 0) {
+    console.warn("[executor] ####################################################");
+    console.warn("[executor] NOBODY ON-CALL HAS A PUBKEY. No acknowledgement can");
+    console.warn("[executor] be accepted, so every ladder runs to EXHAUSTED even");
+    console.warn("[executor] when somebody is on their way, and every drill FAILS.");
+    console.warn("[executor] Add `pubkey = \"...\"` to an [[escalation.oncall]] entry.");
+    console.warn("[executor] ####################################################");
+  } else if (canAck.length > 0) {
+    console.log(`[executor] can acknowledge: ${canAck.map((e) => e.declaration.author.callsign).join(", ")}`);
+  }
+
   const executor = new EscalationExecutor({
     config, secretKey, pubkey,
     drillStatePath: config.escalation.drillStatePath,

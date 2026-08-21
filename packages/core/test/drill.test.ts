@@ -118,3 +118,28 @@ describe('when the next one fires', () => {
     expect(nextDrillAt(null, T, DEFAULT_DRILL_WINDOW_DAYS, () => 0)).toBe(T);
   });
 });
+
+describe('the same person answering more than once', () => {
+  const wren = { kind: 'human' as const, callsign: 'Wren', pubkey: 'aa'.repeat(32) };
+
+  it('counts as one person, because that is how many people it is', () => {
+    // A client retries its acknowledgement and several relays deliver each attempt. The
+    // list is published in 10910, where "Wren, Wren, Wren" reads as three people having
+    // woken up — and a roster's depth is the one thing a reader judges from it.
+    const drill = evaluateDrill(1000, ['Wren'], [wren, wren, wren], 4200);
+    expect(drill.acknowledged).toHaveLength(1);
+    expect(drillSentence(drill)).toMatch(/Wren answered in 4s/);
+    expect(drillSentence(drill)).not.toMatch(/Wren, Wren/);
+  });
+
+  it('still keeps two different people apart', () => {
+    const raven = { kind: 'human' as const, callsign: 'Raven', pubkey: 'bb'.repeat(32) };
+    expect(evaluateDrill(1000, ['Wren', 'Raven'], [wren, raven, wren], 4200).acknowledged)
+      .toHaveLength(2);
+  });
+
+  it('falls back to the callsign when nobody carries a key', () => {
+    const keyless = { kind: 'human' as const, callsign: 'Wren' };
+    expect(evaluateDrill(1000, ['Wren'], [keyless, keyless], 100).acknowledged).toHaveLength(1);
+  });
+});

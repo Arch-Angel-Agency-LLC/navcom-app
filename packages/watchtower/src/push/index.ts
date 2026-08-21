@@ -81,7 +81,11 @@ export function readSubscription(raw: string): webpush.PushSubscription {
   if (typeof s.endpoint !== "string" || !/^https:\/\//.test(s.endpoint)) {
     throw new Error("A subscription needs an https endpoint.");
   }
-  if (typeof s.keys?.p256dh !== "string" || typeof s.keys?.auth !== "string") {
+  // Non-empty, not merely present. A browser whose `getKey` returned null produced empty
+  // strings on the other side of this handover, and they passed a typeof check while being
+  // exactly as useless as an absent key.
+  if (typeof s.keys?.p256dh !== "string" || typeof s.keys?.auth !== "string" ||
+      s.keys.p256dh.trim() === "" || s.keys.auth.trim() === "") {
     // A subscription missing its keys would send an unencrypted push, which some services
     // accept. Refused: the encryption is the reason this exists rather than a curl.
     throw new Error("A subscription needs both keys. Without them the page is not encrypted.");

@@ -69,13 +69,34 @@ export function nextDrillAt(
  * weekly drill exists to surface, and recording it as anything else would let a watch with
  * no roster look untested rather than unstaffed.
  */
+/**
+ * One person who answered is one person, however many times they said so.
+ *
+ * A client retries an acknowledgement and several relays deliver each attempt, so the same
+ * human arrives repeatedly. Unfiltered, a drill reported *"Wren, Wren, Wren answered"* — and
+ * that list is published in `10910`, where it reads as three people having woken up. A
+ * roster's depth is the one thing a reader is trying to judge from it.
+ *
+ * By key where there is one, by callsign otherwise. First occurrence wins, which is also the
+ * earliest, matching the `firstAckMs` the caller measured.
+ */
+function dedupe(authors: Author[]): Author[] {
+  const seen = new Set<string>();
+  return authors.filter((a) => {
+    const key = a.pubkey ?? `callsign:${a.callsign ?? ''}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
 export function evaluateDrill(
   at: number,
   paged: string[],
   acknowledged: Author[],
   firstAckMs: number | null
 ): Drill {
-  const humans = acknowledged.filter((a) => a.kind === 'human');
+  const humans = dedupe(acknowledged.filter((a) => a.kind === 'human'));
   return {
     at,
     paged,

@@ -238,3 +238,39 @@ describe('the trigger', () => {
     expect(DEFAULT_WINDOWS).toEqual({ pagingSeconds: 300, contactSeconds: 300 });
   });
 });
+
+describe('a clock that does not move forwards', () => {
+  const oncall = [{ author: { kind: 'node' as const, callsign: 'Wren' }, channel: 'sms' as const, expires: 9e9 }];
+  const open = (now: number) =>
+    startLadder({ distressId: 'x', operator: 'op', oncall, hasEmergencyContact: false, now });
+  const windows = { pagingSeconds: 300, contactSeconds: 300 };
+
+  it('does not stall the ladder for the length of the jump', () => {
+    // This runs on hardware that may have no battery-backed clock and syncs NTP after boot,
+    // so an hour's correction is ordinary. Unhandled, elapsed goes negative and the ladder
+    // stops: the operator waits out the whole jump before being told nobody is coming.
+    const ladder = open(10_000);
+    const corrected = advanceLadder(ladder, 6_400, windows);
+    expect(corrected.state).toBe('paging');
+    expect(corrected.stateSince).toBe(6_400);
+
+    // One window from the corrected clock, not from the old one.
+    expect(advanceLadder(corrected, 6_700, windows).state).toBe('exhausted');
+  });
+
+  it('does not report a clock correction as a transition', () => {
+    // The operator has no use for hearing about the node's clock, and C42 says a report
+    // means the ladder moved.
+    const registry = new LadderRegistry();
+    registry.open({ distressId: 'x', operator: 'op', oncall, hasEmergencyContact: false, now: 10_000 });
+    expect(registry.tickAll(6_400, windows)).toHaveLength(0);
+    // But the re-anchor was kept, so the next window is measured from the corrected clock.
+    expect(registry.tickAll(6_700, windows).map((l) => l.state)).toEqual(['exhausted']);
+  });
+
+  it('leaves an ordinary forward tick alone', () => {
+    const ladder = open(10_000);
+    expect(advanceLadder(ladder, 10_100, windows)).toBe(ladder);
+    expect(advanceLadder(ladder, 10_400, windows).state).toBe('exhausted');
+  });
+});

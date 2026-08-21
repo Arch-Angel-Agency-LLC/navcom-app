@@ -76,6 +76,7 @@ const DEFAULTS = {
   ladderRetentionSeconds: 3_600,
 };
 const CHANNELS = ["sms", "voice", "push", "console-open"] as const;
+const PUBKEY = /^[0-9a-f]{64}$/i;
 const RELAY_URL = /^wss?:\/\/.+/;
 
 /**
@@ -103,7 +104,7 @@ function parseOnCall(raw: unknown, path: string): OnCallEntry[] {
   }
 
   return raw.map((entry, i) => {
-    const e = entry as { callsign?: unknown; channel?: unknown; command?: unknown };
+    const e = entry as { callsign?: unknown; channel?: unknown; command?: unknown; pubkey?: unknown };
     const where = `[[escalation.oncall]] #${i + 1} (${path})`;
 
     if (typeof e.callsign !== "string" || e.callsign.trim() === "") {
@@ -124,9 +125,33 @@ function parseOnCall(raw: unknown, path: string): OnCallEntry[] {
       }
     }
 
+    /*
+     * The key this person acknowledges with.
+     *
+     * Optional, and its absence is a real state: somebody can be on-call by phone without
+     * running NavCom at all, and they acknowledge by saying so to whoever is at the console.
+     *
+     * But it was not merely optional -- it was **inexpressible**. The parser had no `pubkey`
+     * field, so every entry a config file could produce carried none, and the executor
+     * matches an ack by comparing `author.pubkey` to the event's. `undefined` matched
+     * nobody. In any real deployment every acknowledgement was refused and every drill
+     * failed, forever, while the tests passed against entries built by hand with a pubkey
+     * the config could not create.
+     */
+    if (e.pubkey !== undefined && (typeof e.pubkey !== "string" || !PUBKEY.test(e.pubkey))) {
+      throw new Error(
+        `${where}: pubkey must be 64 hexadecimal characters. ` +
+          `It is the key this person acknowledges with -- a wrong one refuses their ack at 3am.`,
+      );
+    }
+
     return {
       declaration: {
-        author: { kind: "node", callsign: e.callsign },
+        author: {
+          kind: "node",
+          callsign: e.callsign,
+          ...(e.pubkey ? { pubkey: (e.pubkey as string).toLowerCase() } : {}),
+        },
         channel: e.channel as OnCall["channel"],
         expires: STANDING,
       },

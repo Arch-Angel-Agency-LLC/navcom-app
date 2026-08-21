@@ -51,3 +51,21 @@ describe("reading what the on-call operator handed over", () => {
     }
   });
 });
+
+describe('a subscription whose keys are present but empty', () => {
+  const base = { endpoint: 'https://push.example/abc', keys: { p256dh: 'BQ', auth: 'AQ' } };
+
+  it('is refused, because an empty key encrypts nothing', () => {
+    // The browser side encodes a null key as an empty string, so this arrived looking like
+    // a complete subscription. A typeof check passed it, and the page failed at 3am on the
+    // one channel that exists to work then.
+    expect(() => readSubscription(JSON.stringify({ ...base, keys: { p256dh: '', auth: 'AQ' } })))
+      .toThrow(/both keys/i);
+    expect(() => readSubscription(JSON.stringify({ ...base, keys: { p256dh: 'BQ', auth: '   ' } })))
+      .toThrow(/both keys/i);
+  });
+
+  it('still accepts a real one', () => {
+    expect(readSubscription(JSON.stringify(base)).keys.p256dh).toBe('BQ');
+  });
+});

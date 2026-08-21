@@ -73,8 +73,19 @@ drill_state_path = "/var/lib/navcom/drill.json"
 # `command` is argv, never a shell string, so nothing in a distress payload can become a
 # command. {{message}} and {{callsign}} are substituted per argument.
 #
+# `pubkey` is the key this person ACKNOWLEDGES with, and it is a different thing from the
+# channel they are woken on. An ack is matched by key: without one here, this person cannot
+# stop a ladder from their own device.
+#
+# That is legitimate for somebody on-call by phone who does not run NavCom -- they
+# acknowledge by telling whoever is at the console. But if NO on-call entry has a pubkey,
+# nothing can ever acknowledge: every ladder runs to EXHAUSTED even when help is on the way,
+# and every drill FAILS, which demotes this watch permanently. The executor says so at
+# startup.
+#
 # [[escalation.oncall]]
 # callsign = "Wren"
+# pubkey   = "npub-as-64-hex-characters"
 # channel  = "sms"
 # command  = ["signal-cli", "-a", "+15550000", "send", "-m", "{{message}}", "+15550100"]
 #

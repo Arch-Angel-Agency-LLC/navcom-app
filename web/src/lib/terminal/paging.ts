@@ -91,13 +91,26 @@ export async function registerForPaging(senderKey: string): Promise<Registration
     applicationServerKey: applicationServerKey as BufferSource
   });
 
-  return {
-    endpoint: subscription.endpoint,
-    keys: {
-      p256dh: toBase64Url(subscription.getKey('p256dh')),
-      auth: toBase64Url(subscription.getKey('auth'))
-    }
-  };
+  const p256dh = toBase64Url(subscription.getKey('p256dh'));
+  const auth = toBase64Url(subscription.getKey('auth'));
+
+  /*
+   * A registration missing a key is refused rather than handed over.
+   *
+   * `getKey` can return null, and the encoder turns that into an empty string — so this
+   * returned a Registration that looked complete, the operator handed it to whoever runs the
+   * executor, and the node's reader checked the keys were strings without checking they were
+   * anything. An empty key cannot encrypt a page, so the failure surfaced at 3am on the one
+   * channel that exists to work then.
+   */
+  if (!p256dh || !auth) {
+    await subscription.unsubscribe().catch(() => {});
+    throw new PagingError(
+      'This browser did not return the keys needed to encrypt a page, so it cannot be on-call. Try removing NavCom from the Home Screen and adding it again.'
+    );
+  }
+
+  return { endpoint: subscription.endpoint, keys: { p256dh, auth } };
 }
 
 /** Stops this device being wakeable. Immediate, and tells nobody — like everything else here. */

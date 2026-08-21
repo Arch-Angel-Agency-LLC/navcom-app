@@ -107,6 +107,21 @@ export function startLadder(input: LadderStart): Ladder {
 export function advanceLadder(ladder: Ladder, now: number, windows: LadderWindows = DEFAULT_WINDOWS): Ladder {
   if (ladder.state === 'acknowledged' || ladder.state === 'exhausted') return ladder;
 
+  /*
+   * The clock moved backwards, so the window is re-anchored to now.
+   *
+   * This is wall-clock arithmetic on a box that may have no battery-backed clock and syncs
+   * NTP after boot — a correction of an hour is ordinary there, not exotic. Left alone, the
+   * elapsed time goes negative and the ladder simply stops: an operator waits out the whole
+   * jump before being told nobody is coming, which is invariant 2's promise arriving an
+   * hour late.
+   *
+   * Re-anchoring bounds the damage to one window instead of the size of the jump. It does
+   * not move the ladder's state, so nothing is reported — a clock correction is not a
+   * transition and the operator has no use for hearing about it.
+   */
+  if (now < ladder.stateSince) return { ...ladder, stateSince: now };
+
   const elapsed = now - ladder.stateSince;
 
   if (ladder.state === 'paging') {
@@ -193,9 +208,11 @@ export class LadderRegistry {
     const changed: Ladder[] = [];
     for (const [id, ladder] of this.ladders) {
       const next = advanceLadder(ladder, now, windows);
-      if (next.state === ladder.state) continue;
+      if (next === ladder) continue;
+      // Kept whether or not the state moved, so a re-anchored clock survives the tick. Only
+      // an actual transition is returned, because only a transition is reported [C42].
       this.ladders.set(id, next);
-      changed.push(next);
+      if (next.state !== ladder.state) changed.push(next);
     }
     return changed;
   }

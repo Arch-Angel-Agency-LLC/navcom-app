@@ -24,7 +24,7 @@ Each cell is a pass. `—` not started, `✓` done, and a note when it found som
 |---|---|---|---|---|
 | **0** Prove what is built | Browser harness, service worker, offline, seeding, the verification layer itself | **✓** | **✓** | **✓** |
 | **1** One operator alone | Display rules, patrol record, contact, wipe, seeder | **✓** | **✓** | **✓** |
-| **2** One watch staffed | Executor, pager, drills, web push, on-call | **✓** | **✓** | — |
+| **2** One watch staffed | Executor, pager, drills, web push, on-call | **✓** | **✓** | **✓** |
 | **3** Two who met once | Peers, presence, cards, invites, public presence, buddy | — | — | — |
 | **4** Squad with no box | Watch mode, group sealing, board, handover, watch key | — | — | — |
 | **5** Written-down properties | PQC, declined, battery, RTL, watch-state v4 | — | — | — |
@@ -324,6 +324,57 @@ safety-critical.** The executor, which is, had none of it.
 **Method note.** `npx vitest` does not typecheck. Two test fixtures written in 1.E used `null`
 for fields typed as optional strings and passed anyway; `tsc --noEmit` caught them here. Run
 the typecheck, not only the tests.
+
+## 2.X — Milestone 2, edge cases
+
+**Nobody declared on-call in a config file could acknowledge anything.** The executor matches
+an acknowledgement by comparing `author.pubkey` to the signing key. **The config parser had no
+`pubkey` field**, so every entry a config file could produce carried none, and `undefined`
+matched nobody. In any real deployment every ack was refused, every ladder ran to `EXHAUSTED`
+while somebody was on their way, and **every drill failed forever** — which then demoted the
+watch permanently under 2.E's own rule.
+
+Every existing test passed because the test helper takes a pubkey and builds the entry by
+hand. **The ack path was covered only in a shape production cannot create.** That is the same
+class as *a mechanism nobody can reach is not built*, one level down: the mechanism was
+reachable in the tests and unreachable in the product.
+
+`pubkey` is now a config field, validated as 64 hex at load rather than at 3am. It stays
+optional, because somebody on-call by phone who does not run NavCom is a real arrangement —
+but a roster where **nobody** can acknowledge is announced at startup in the same block the
+empty-roster warning uses, since it has the same consequence and none of the visibility.
+
+**A backwards clock stalled the ladder for the length of the jump.** Window arithmetic is
+wall-clock, on a box that may have no battery-backed clock and syncs NTP after boot — an
+hour's correction is ordinary there. Elapsed time went negative and the ladder simply stopped:
+the operator waits out the entire jump before being told nobody is coming. Re-anchored now,
+which bounds the damage to one window, and deliberately **not** reported — a clock correction
+is not a transition and the operator has no use for hearing about it.
+
+**`Wren, Wren, Wren answered.`** A client retries its acknowledgement and several relays
+deliver each attempt, so a drill recorded the same human repeatedly — and that list is
+published in `10910`, where three entries read as three people having woken up. A roster's
+depth is the one thing a reader is trying to judge from it. Deduplicated by key, falling back
+to callsign.
+
+**And a push registration that could never be encrypted passed both ends.** `getKey` can
+return null; the browser encoded that as an empty string and returned a `Registration` that
+looked complete, and the node checked the keys were *strings* without checking they were
+anything. Both halves were reasonable and the join was a hole — the same shape that has now
+appeared three times in this project. The browser refuses and unsubscribes; the node requires
+non-empty.
+
+## Milestone 2, after three passes
+
+Every finding was in a path that only runs when something has already gone wrong, or when
+nobody is watching: a flood, a failed dispatch, a dead executor, a drill nobody sees fire, an
+ack at 3am, a clock correction at boot. **Milestone 2 is the milestone whose entire purpose is
+to work on the worst night of somebody's year**, and three of the seven findings meant it
+would not have.
+
+The one that should carry forward: two of them — the unreachable ack path and the push
+registration — passed every test because the tests exercised objects the product cannot build.
+Coverage said yes and production said no.
 
 ## Milestone 1, after three passes
 
