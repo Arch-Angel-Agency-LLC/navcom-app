@@ -208,7 +208,7 @@ export function buddyState(
   payload: PresencePayload,
   heardAt: number,
   now: number,
-  opts: { graceSeconds?: number; unheardAfterSeconds?: number } = {}
+  opts: { graceSeconds?: number; unheardAfterSeconds?: number; skewSeconds?: number } = {}
 ): BuddyState {
   if (payload.status === 'stood-down') return 'home';
 
@@ -217,6 +217,24 @@ export function buddyState(
   const unheardAfter = opts.unheardAfterSeconds ?? 180;
   if (now - heardAt > unheardAfter) return 'unheard';
 
+  /*
+   * Their deadline, moved into our clock.
+   *
+   * `until` is a claim about their own future in their own frame — *"back by nine"* means
+   * nine o'clock according to the phone that said it. Compared straight against our `now`, a
+   * peer whose clock runs ten minutes slow reads **overdue the moment they set out**, and one
+   * whose clock runs fast is never overdue at all.
+   *
+   * The first of those is the one that matters: `overdue` is a nudge to a buddy, and the
+   * anti-pattern table names overdue nudges as the thing that produces alarm fatigue. A
+   * signal that fires because somebody's clock is wrong is exactly the noise that teaches
+   * people to ignore the real one.
+   *
+   * The skew is observable from the same message — the gap between when they said they sent
+   * it and when we received it — so no extra round trip and nothing to configure. The caller
+   * measures it because only the caller knows when it arrived.
+   */
+  const skew = opts.skewSeconds ?? 0;
   const grace = opts.graceSeconds ?? BUDDY_GRACE_SECONDS;
-  return now > payload.until + grace ? 'overdue' : 'out';
+  return now > payload.until + skew + grace ? 'overdue' : 'out';
 }

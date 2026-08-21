@@ -41,7 +41,22 @@ export interface PeerPresence {
   /** What you call them, from your own peer list. Never what they call themselves. */
   callsign: string;
   payload: PresencePayload;
-  /** Unix seconds of their last heartbeat. */
+  /**
+   * What their phone said the time was. **Used only to order events.**
+   *
+   * Never for staleness — see `heard`. It is a number chosen by another device, and a peer
+   * with a slow clock read as *unknown* while they were actively out, while one with a fast
+   * clock read as *out* for half an hour after they had stopped. The second is the dangerous
+   * direction: it tells a buddy somebody is fine when nothing has been heard, which is
+   * precisely what this module's own rule forbids.
+   */
+  at: number;
+  /**
+   * When **this** device received it. What staleness is measured from.
+   *
+   * The only honest answer to *"how long since I heard from them"* is one this phone can
+   * observe. Somebody else's clock is not evidence about our own silence.
+   */
   heard: number;
 }
 
@@ -99,7 +114,9 @@ export const presence = {
           // Out-of-order delivery is normal on relays. An older heartbeat must not
           // overwrite a newer one and make somebody look stale who is not.
           const existing = seen[read.from];
-          if (existing && existing.heard >= read.at) return;
+          // Ordering is the one thing their clock is good for: it is the only way to tell
+          // which of two of their own heartbeats came later.
+          if (existing && existing.at >= read.at) return;
 
           seen = {
             ...seen,
@@ -107,7 +124,8 @@ export const presence = {
               pubkey: read.from,
               callsign: known.callsign,
               payload: read.payload,
-              heard: read.at
+              at: read.at,
+              heard: Math.floor(Date.now() / 1000)
             }
           };
         }
@@ -133,7 +151,8 @@ export const presence = {
 
   /** What a buddy's phone should say about them. Never anything that reads as an alarm. */
   stateOf(p: PeerPresence, now = Math.floor(Date.now() / 1000)): BuddyState {
-    return buddyState(p.payload, p.heard, now);
+    // `heard - at` is how far their clock sat from ours in the message we actually got.
+    return buddyState(p.payload, p.heard, now, { skewSeconds: p.heard - p.at });
   },
 
   /** Publishes where you are to the peers you paired with, and to nobody else. */

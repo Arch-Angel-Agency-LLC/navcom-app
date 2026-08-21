@@ -9,6 +9,7 @@
 import { describe, expect, it } from 'vitest';
 import { generateSecretKey, getPublicKey } from 'nostr-tools/pure';
 import {
+  BUDDY_GRACE_SECONDS,
   buddyState,
   buildPresence,
   readPresence,
@@ -183,5 +184,44 @@ describe('what a buddy is told', () => {
     const states = ['out', 'overdue', 'home', 'unheard'];
     expect(states).not.toContain('distress');
     expect(states).not.toContain('emergency');
+  });
+});
+
+describe("a buddy whose phone has the wrong time", () => {
+  const out = (until: number) => ({
+    callsign: 'Raven', status: 'out' as const, area: 'north side', until, watching: false
+  });
+
+  it('is not overdue the moment they set out because their clock runs slow', () => {
+    // `until` is a claim in their frame — "back by nine" means nine on the phone that said
+    // it. Compared straight against our clock, ten minutes of skew made them overdue
+    // immediately. `overdue` is a nudge to a buddy, and the anti-pattern table names
+    // overdue nudges as the thing that produces alarm fatigue.
+    const ours = 1_800_000_000;
+    const theirs = ours - 600;
+    // They set out for an hour, by their clock.
+    expect(buddyState(out(theirs + 3600), ours, ours, { skewSeconds: 600 })).toBe('out');
+  });
+
+  it('does become overdue once their hour has genuinely passed', () => {
+    const ours = 1_800_000_000;
+    const theirs = ours - 600;
+    const later = ours + 3600 + BUDDY_GRACE_SECONDS + 60;
+    expect(buddyState(out(theirs + 3600), later, later, { skewSeconds: 600 })).toBe('overdue');
+  });
+
+  it('is not shielded from overdue by a fast clock either', () => {
+    // The other direction. Without the correction a fast clock is never overdue at all.
+    const ours = 1_800_000_000;
+    const theirs = ours + 600;
+    const later = ours + 3600 + BUDDY_GRACE_SECONDS + 60;
+    expect(buddyState(out(theirs + 3600), later, later, { skewSeconds: -600 })).toBe('overdue');
+  });
+
+  it('behaves exactly as before when the clocks agree', () => {
+    const ours = 1_800_000_000;
+    expect(buddyState(out(ours + 3600), ours, ours)).toBe('out');
+    expect(buddyState(out(ours - 1), ours + BUDDY_GRACE_SECONDS + 60, ours + BUDDY_GRACE_SECONDS + 60))
+      .toBe('overdue');
   });
 });

@@ -56,9 +56,19 @@ export interface BoardEntry {
   out: boolean;
 }
 
+/**
+ * The most cards one region's board will hold.
+ *
+ * Far more operators than any real metro has published, and small enough that a phone can
+ * still draw the screen. See the intake below for why a public board needs a bound at all.
+ */
+const MAX_CARDS = 200;
+
 let cards = $state<Record<string, PublishedCard>>({});
 let outNow = $state<Record<string, number>>({});
 let loading = $state(false);
+/** Whether more cards are being published to this region than the board will show. */
+let partial = $state(false);
 let closer: { close(): void } | null = null;
 let beat: ReturnType<typeof setInterval> | null = null;
 
@@ -70,6 +80,17 @@ export const board = {
    * operators to the top would make being listed the way to be seen, which is the first
    * step toward a network where visibility is a currency.
    */
+  /**
+   * Whether this board is showing everything it was offered.
+   *
+   * Said on the screen rather than kept quiet: a list that silently stops at two hundred
+   * looks like a complete list of two hundred people, and somebody looking for one
+   * particular operator would conclude they are not there.
+   */
+  get partial(): boolean {
+    return partial;
+  },
+
   get entries(): BoardEntry[] {
     const live = Math.floor(Date.now() / 1000) - OUT_FOR_SECONDS;
     return Object.values(cards)
@@ -111,12 +132,30 @@ export const board = {
             // overwrite a newer one and show somebody a name they have since changed.
             const existing = cards[read.contact];
             if (existing && existing.at >= read.at) return;
+
+            /*
+             * Bounded, like the pairing inbox, and for a sharper reason.
+             *
+             * The region tag is **public** — that is the whole point of a board — so anybody
+             * may publish a card into somebody else's area, and each arrival copied the
+             * whole map. It is the same quadratic intake the invite list had, on the screen
+             * with the wider door.
+             *
+             * A partial board is a usable board; an unbounded one is neither. Existing
+             * entries still update, so a flood cannot freeze what is already shown.
+             */
+            if (!existing && Object.keys(cards).length >= MAX_CARDS) {
+              partial = true;
+              return;
+            }
             cards = { ...cards, [read.contact]: read };
             return;
           }
           const who = readPublicPresence(event, region);
           if (!who) return;
           if ((outNow[who] ?? 0) >= event.created_at) return;
+          // Same door, same bound. Somebody already listed can still update.
+          if (!(who in outNow) && Object.keys(outNow).length >= MAX_CARDS) return;
           outNow = { ...outNow, [who]: event.created_at };
         },
         oneose: () => {

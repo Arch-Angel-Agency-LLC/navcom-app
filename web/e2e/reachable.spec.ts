@@ -1004,3 +1004,32 @@ test.describe('pairing when the reply cannot be sent', () => {
     await expect(page.getByRole('button', { name: /^accept$/i })).toBeVisible();
   });
 });
+
+test.describe('a region board with more cards than it can show', () => {
+  /**
+   * The region tag is public — that is what a board is for — so anybody may publish a card
+   * into somebody else's area. Unbounded, each arrival copied the whole map: the same
+   * quadratic intake the pairing inbox had, on the screen with the wider door.
+   */
+  test('says it is partial, so a missing name is not read as an absence', async ({ page }) => {
+    const { generateSecretKey } = await import('nostr-tools/pure');
+    const { buildCard } = await import('@navcom/core');
+
+    const events = [];
+    for (let i = 0; i < 240; i++) {
+      events.push(buildCard(generateSecretKey(), {
+        callsign: `Op${i}`, region: 'st-louis', doing: null, lightning: null
+      }, 1_800_000_000 + i));
+    }
+
+    await seedDevice(page, { callsign: 'Wren', relayEvents: events });
+    await open(page, '/terminal/find/');
+    await page.locator('select').selectOption('st-louis');
+
+    const notice = page.locator('[data-board-partial]');
+    await expect(notice).toBeVisible({ timeout: 10_000 });
+    await expect(notice).toContainText(/part of the board/i);
+    // And it points at the thing that does work.
+    await expect(notice).toContainText(/ask them for their code/i);
+  });
+});

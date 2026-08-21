@@ -25,7 +25,7 @@ Each cell is a pass. `—` not started, `✓` done, and a note when it found som
 | **0** Prove what is built | Browser harness, service worker, offline, seeding, the verification layer itself | **✓** | **✓** | **✓** |
 | **1** One operator alone | Display rules, patrol record, contact, wipe, seeder | **✓** | **✓** | **✓** |
 | **2** One watch staffed | Executor, pager, drills, web push, on-call | **✓** | **✓** | **✓** |
-| **3** Two who met once | Peers, presence, cards, invites, public presence, buddy | **✓** | **✓** | — |
+| **3** Two who met once | Peers, presence, cards, invites, public presence, buddy | **✓** | **✓** | **✓** |
 | **4** Squad with no box | Watch mode, group sealing, board, handover, watch key | — | — | — |
 | **5** Written-down properties | PQC, declined, battery, RTL, watch-state v4 | — | — | — |
 | **6** Knowledge gets in | Corrections, merge, needs-checking, notes, promotion | — | — | — |
@@ -444,6 +444,52 @@ a false failure, and nothing about the output says which application answered.
 rejects publishes is a phone on bad signal, which is where half of this app's *"it worked"*
 messages were being printed. `seedDevice` takes `refusePublish` now, which is what made the
 half-pairing warning provable in a browser rather than asserted from a mock.
+
+## 3.X — Milestone 3, edge cases
+
+**How fresh a peer looks on your screen was decided by their phone's clock.** Presence
+recorded `heard: read.at` — the timestamp the *sender* stamped — and measured staleness
+against it. A peer ten minutes slow **read as unknown while actively out**; one an hour fast
+**read as out for half an hour after they had stopped**. The second is the dangerous
+direction: it tells a buddy somebody is fine when nothing has been heard, which is exactly
+what this module's own opening rule forbids.
+
+One field was doing two jobs. Their timestamp is the only thing that can order two of their
+own heartbeats, so it is kept as `at` and used for nothing else; `heard` is now when *this*
+device received it. **The only honest answer to "how long since I heard from them" is one this
+phone can observe** — somebody else's clock is not evidence about our own silence.
+
+**And the same fault in the overdue signal, which fixing the first one made incoherent.**
+`until` is a claim in the sender's frame — *"back by nine"* means nine on the phone that said
+it — and it was compared straight against our clock. A peer whose clock ran slow read as
+**overdue the moment they set out**. `overdue` is a nudge to a buddy, and the anti-pattern
+table names overdue nudges as the thing that produces alarm fatigue: a signal that fires
+because somebody's clock is wrong is precisely the noise that teaches people to ignore the
+real one. The skew is observable from the same message, so the deadline is now translated into
+our frame with no extra round trip and nothing to configure.
+
+**The public board had the pairing inbox's flaw, through a wider door.** Same unbounded
+quadratic intake, but the region tag is *public* — that is what a board is for — so anybody
+may publish a card into somebody else's area. Bounded at two hundred, and the screen says the
+board is partial, because a list that silently stops looks like a complete list and somebody
+searching for one particular operator would conclude they are not there. Entries already shown
+still update, so a flood cannot freeze the board.
+
+**Nothing found in two places, both already right:** out-of-order delivery is handled
+explicitly for presence, cards and public presence, each with the reasoning written down; and
+a peer's `area` and `callsign` are bounded at the point of read.
+
+### Clocks, three passes running
+
+2.X found the ladder stalling on a backwards NTP correction. This pass found freshness and
+overdue both measured against a stranger's clock. **Every one of them was a place where one
+machine's time was used as though it were everyone's** — and the fix each time was to be
+explicit about whose clock a number belongs to. Worth carrying into the remaining passes: any
+timestamp that crossed a device boundary deserves the question *whose clock is this?*
+
+**Method note, third occurrence.** `npx tsc` and `npx vitest --root` bypass the npm scripts
+that rebuild core, so both were type-checking and testing against a stale `dist/`. Use the
+package scripts — `npm run check`, `npm test --prefix` — not the tools directly.
 
 ## Milestone 2, after three passes
 
