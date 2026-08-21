@@ -1033,3 +1033,56 @@ test.describe('a region board with more cards than it can show', () => {
     await expect(notice).toContainText(/ask them for their code/i);
   });
 });
+
+test.describe('a watch board under a flood', () => {
+  /**
+   * `20911` is a separate kind precisely so a client can prioritise it independently of
+   * routine traffic, and `buildDistress` says so in as many words: *"Distress gets its own
+   * kind so it is never queued behind routine traffic."* The board put it in one queue
+   * sorted by arrival, coloured red and otherwise equal.
+   *
+   * Red is not prioritisation if you have to scroll past a hundred queries to find it.
+   */
+  test('shows Distress above the routine traffic, not somewhere inside it', async ({ page }) => {
+    const { generateSecretKey, finalizeEvent, getPublicKey } = await import('nostr-tools/pure');
+    const { buildSignal, buildDistress } = await import('@navcom/core');
+    const mine = Uint8Array.from((TEST_SECRET.match(/../g) ?? []).map((b) => parseInt(b, 16)));
+
+    // The watch this phone holds. Signals are addressed to the watch and sealed to the
+    // members' own keys — one key for a box, one per phone for a squad.
+    const watchSecret = 'b'.repeat(63) + '2';
+    const watchPub = getPublicKey(
+      Uint8Array.from((watchSecret.match(/../g) ?? []).map((b) => parseInt(b, 16)))
+    );
+    const to = { pubkey: watchPub, holders: [getPublicKey(mine)] };
+
+    const events = [];
+    for (let i = 0; i < 40; i++) {
+      const sender = generateSecretKey();
+      events.push(finalizeEvent(
+        buildSignal(sender, to, 'query', { text: `where is a bed ${i}`, area: 'north' }, 1_800_000_000 + i),
+        sender
+      ));
+    }
+    const hurt = generateSecretKey();
+    events.push(finalizeEvent(
+      buildDistress(hurt, to, { position: null, area: 'north side' }, 1_800_009_999),
+      hurt
+    ));
+
+    await seedDevice(page, { callsign: 'Wren', watchSecret, relayEvents: events });
+    await open(page, '/terminal/watch/');
+
+    const distressHeading = page.getByRole('heading', { name: 'Distress' });
+    await expect(distressHeading).toBeVisible({ timeout: 10_000 });
+
+    // Above "Waiting on you" in the document, which is what "prioritise" has to mean on a
+    // screen somebody reads at 2am.
+    const waitingHeading = page.getByRole('heading', { name: /waiting on you/i });
+    const order = await distressHeading.evaluate(
+      (d, w) => d.compareDocumentPosition(w as Node) & Node.DOCUMENT_POSITION_FOLLOWING,
+      await waitingHeading.elementHandle()
+    );
+    expect(order).toBeTruthy();
+  });
+});

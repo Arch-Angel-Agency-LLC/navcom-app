@@ -36,6 +36,13 @@ interface Seed {
    * Present only when a test needs traffic to arrive. Without it the socket stays dead,
    * which is the right default: most of these tests are about a phone with no signal.
    */
+  /**
+   * Give the device a watch of its own, as 64 hex.
+   *
+   * A squad holds the watch on a phone, and the watch screen only shows a board on a device
+   * that actually holds one — so without this, nothing about the board is reachable.
+   */
+  watchSecret?: string;
   relayEvents?: unknown[];
   /**
    * Accept subscriptions but refuse everything published.
@@ -199,6 +206,11 @@ export async function seedDevice(page: Page, seed: Seed = {}): Promise<void> {
     if (s.watchtower) {
       accruing['watchtower'] = s.watchtower.pubkey;
       accruing['relays'] = s.watchtower.relays;
+    }
+    if (s.watchSecret) {
+      accruing['watch_secret'] = s.watchSecret;
+      // Founding is what grants the right to hold it, so a seeded watch is a founded one.
+      accruing['watch_founded'] = true;
     }
     if (s.contact) accruing['emergency_contact'] = s.contact;
     if (s.peers) accruing['peers'] = s.peers;

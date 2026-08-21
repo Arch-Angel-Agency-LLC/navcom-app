@@ -63,8 +63,23 @@ export interface Waiting {
   at: number;
 }
 
+/**
+ * How many of each the board will hold.
+ *
+ * The watch's address is handed to every operator, so anybody holding it can put something
+ * on this board — the same open door the escalation executor has. Unbounded, the screen a
+ * watch reads during an incident is whatever the last flood left behind.
+ *
+ * Two limits rather than one, because the two lists are not the same kind of thing. See the
+ * intake below.
+ */
+const ROUTINE_MAX = 200;
+const DISTRESS_MAX = 500;
+
 let entries = $state<BoardEntry[]>([]);
 let waiting = $state<Waiting[]>([]);
+let routineDropped = $state(false);
+let distressDropped = $state(false);
 let onStation = $state(false);
 let since = $state(0);
 let closer: { close(): void } | null = null;
@@ -102,8 +117,34 @@ export const board = {
    * in a quieter dress: a list where most entries do not matter teaches somebody to skim
    * the list.
    */
+  /**
+   * A `Distress`, and nothing else, oldest first.
+   *
+   * **Its own list because the spec says so**: `20911` is a separate kind precisely so
+   * clients can prioritise it independently of routine traffic [`signals.spec.md`]. This
+   * board flattened it into one queue sorted by arrival, styled red and otherwise equal — so
+   * a hundred queries arriving first put a `Distress` a hundred rows down the screen a watch
+   * reads when somebody is in trouble. Red is not prioritisation if you have to scroll to
+   * find it.
+   */
+  get distress(): Waiting[] {
+    return [...waiting].filter((w) => w.type === 'distress').sort((a, b) => a.at - b.at);
+  },
+
   get waiting(): Waiting[] {
-    return [...waiting].filter((w) => w.type !== 'resupply').sort((a, b) => a.at - b.at);
+    return [...waiting]
+      .filter((w) => w.type !== 'resupply' && w.type !== 'distress')
+      .sort((a, b) => a.at - b.at);
+  },
+
+  /** Whether routine traffic is arriving faster than the board will hold. */
+  get routineDropped(): boolean {
+    return routineDropped;
+  },
+
+  /** Whether even the Distress list has been capped, which is an extraordinary state. */
+  get distressDropped(): boolean {
+    return distressDropped;
   },
 
   /** What ran out. Its own list, quiet, and nobody is waiting in the street on it. */
@@ -245,6 +286,7 @@ export const board = {
     // screen can know. Acknowledging is telling them somebody is awake, not that it is over.
     if (item.type !== 'distress') {
       waiting = waiting.filter((w) => w.id !== item.id);
+      routineDropped = false;
     }
   },
 
@@ -335,8 +377,37 @@ function apply(
   if (type === 'routine') return;
 
   // Query, Assist and Distress are all things a person is waiting on.
+  const without = waiting.filter((w) => w.id !== event.id);
+
+  /*
+   * Bounded, and the two lists are bounded differently on purpose.
+   *
+   * Routine traffic is dropped once the board is full: two hundred unanswered queries is
+   * already more than any watch will work through, and letting them accumulate costs the
+   * screen that matters.
+   *
+   * A `Distress` is **never** dropped to make room for routine traffic, and its own cap is
+   * high and separate. Invariant 2 is the reason — the ladder may fail but it may never fail
+   * silently — so if even that cap is reached the board says so rather than quietly holding
+   * less than arrived. A watch seeing that knows something extraordinary is happening, which
+   * is a true and useful thing to know.
+   */
+  if (type === 'distress') {
+    const held = without.filter((w) => w.type === 'distress').length;
+    if (held >= DISTRESS_MAX) {
+      distressDropped = true;
+      return;
+    }
+  } else {
+    const held = without.filter((w) => w.type !== 'distress').length;
+    if (held >= ROUTINE_MAX) {
+      routineDropped = true;
+      return;
+    }
+  }
+
   waiting = [
-    ...waiting.filter((w) => w.id !== event.id),
+    ...without,
     {
       id: event.id,
       operator: from,

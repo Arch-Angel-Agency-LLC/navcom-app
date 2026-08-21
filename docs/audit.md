@@ -26,7 +26,7 @@ Each cell is a pass. `—` not started, `✓` done, and a note when it found som
 | **1** One operator alone | Display rules, patrol record, contact, wipe, seeder | **✓** | **✓** | **✓** |
 | **2** One watch staffed | Executor, pager, drills, web push, on-call | **✓** | **✓** | **✓** |
 | **3** Two who met once | Peers, presence, cards, invites, public presence, buddy | **✓** | **✓** | **✓** |
-| **4** Squad with no box | Watch mode, group sealing, board, handover, watch key | — | — | — |
+| **4** Squad with no box | Watch mode, group sealing, board, handover, watch key | **✓** | — | — |
 | **5** Written-down properties | PQC, declined, battery, RTL, watch-state v4 | — | — | — |
 | **6** Knowledge gets in | Corrections, merge, needs-checking, notes, promotion | — | — | — |
 | **7** Standing | Credentials, claims, revocation, the watch gate | — | — | — |
@@ -490,6 +490,44 @@ timestamp that crossed a device boundary deserves the question *whose clock is t
 **Method note, third occurrence.** `npx tsc` and `npx vitest --root` bypass the npm scripts
 that rebuild core, so both were type-checking and testing against a stale `dist/`. Use the
 package scripts — `npm run check`, `npm test --prefix` — not the tools directly.
+
+## 4.R — Milestone 4, robustness
+
+**A `Distress` could be buried under routine traffic on the screen a watch reads when
+somebody is hurt.** The board put every signal in one list sorted by arrival — `Distress`
+coloured red and otherwise equal — so forty queries arriving first put it forty rows down,
+and the list was unbounded. The watch address is handed to every operator, so the door is as
+open as the escalation executor's.
+
+**This one is a spec violation, not a design opinion.** `signals.spec.md` says `20911` is a
+*"separate kind so clients and relays can prioritise it independently of routine traffic"*, and
+`buildDistress` says it again in its own docstring: *"Distress gets its own kind so it is never
+queued behind routine traffic."* Both halves of the protocol knew. The client flattened them
+back together. **Red is not prioritisation if you have to scroll to find it.**
+
+`Distress` now has its own section above everything, and the two lists are bounded separately
+and deliberately differently:
+
+- **Routine traffic is dropped when full.** Two hundred unanswered queries is already more
+  than any watch will work through, and letting them accumulate costs the screen that matters
+- **A `Distress` is never dropped to make room for routine traffic**, and has its own much
+  higher cap. If even that is reached the board says so, because invariant 2 forbids failing
+  silently — and a watch told that knows something extraordinary is happening, which is a true
+  and useful thing to know
+
+**Nothing found in one place, worth recording because it is the same question three passes
+have now asked.** The board timestamps signals with **local receipt time**, not the sender's
+`created_at`, so a backdated flood cannot reorder it. That is the "whose clock is this?"
+question already answered correctly, in the component where getting it wrong would have been
+worst.
+
+### The harness, again
+
+Two more gaps closed, both of which had made a whole milestone unreachable from a browser:
+`seedDevice` can now seed a **watch key**, because the watch screen shows no board at all on a
+device that does not hold one — so nothing about Milestone 4's main screen was testable end to
+end. Between this and `relayEvents`, the board findings are proven where an operator would see
+them rather than asserted through a mock.
 
 ## Milestone 2, after three passes
 

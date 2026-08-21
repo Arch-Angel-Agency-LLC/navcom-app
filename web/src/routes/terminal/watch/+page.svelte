@@ -14,7 +14,7 @@
    */
   import { onMount } from 'svelte';
   import { declineIsValid } from '@navcom/core';
-  import { board } from '$lib/terminal/board.svelte';
+  import { board, type Waiting } from '$lib/terminal/board.svelte';
   import { createWatch, foundedHere, joinWatch, leaveWatch, watchPubkey, WatchKeyError } from '$lib/terminal/watch-key';
   import { endorsersFor } from '$lib/terminal/standing';
   import { loadIdentity } from '$lib/terminal/identity';
@@ -263,14 +263,8 @@
     {/if}
   </section>
 
-  <section>
-    <h2>Waiting on you</h2>
-    {#if board.waiting.length === 0}
-      <p class="cost">Nothing waiting.</p>
-    {:else}
-      <ul class="board asks">
-        {#each board.waiting as w (w.id)}
-          <li class={w.type === 'distress' ? 'distress' : ''}>
+  {#snippet ask(w: Waiting)}
+    <li class={w.type === 'distress' ? 'distress' : ''}>
             <div class="who">
               <span class="name">{w.callsign}</span>
               <span class="badge">{w.type}</span>
@@ -307,8 +301,46 @@
                 {w.type === 'distress' ? 'Tell them you are awake' : 'Answer'}
               </button>
             {/if}
-          </li>
-        {/each}
+    </li>
+  {/snippet}
+
+  <!--
+    Its own section, above everything.
+
+    `20911` is a separate kind precisely so a client can prioritise it independently of
+    routine traffic [signals.spec.md]. This screen used to put it in one queue sorted by
+    arrival, coloured red and otherwise equal — so a hundred queries arriving first put a
+    Distress a hundred rows down the screen a watch reads when somebody is in trouble. Red is
+    not prioritisation if you have to scroll to find it.
+  -->
+  {#if board.distress.length > 0}
+    <section class="urgent">
+      <h2>Distress</h2>
+      {#if board.distressDropped}
+        <p class="cost" data-distress-dropped>
+          More Distress signals are arriving than this board will hold. Something
+          extraordinary is happening, or somebody is flooding this watch.
+        </p>
+      {/if}
+      <ul class="board asks">
+        {#each board.distress as w (w.id)}{@render ask(w)}{/each}
+      </ul>
+    </section>
+  {/if}
+
+  <section>
+    <h2>Waiting on you</h2>
+    {#if board.routineDropped}
+      <p class="cost" data-routine-dropped>
+        More is arriving than this board will hold, so some routine traffic is not being
+        shown. Distress signals are never dropped for it.
+      </p>
+    {/if}
+    {#if board.waiting.length === 0}
+      <p class="cost">Nothing waiting.</p>
+    {:else}
+      <ul class="board asks">
+        {#each board.waiting as w (w.id)}{@render ask(w)}{/each}
       </ul>
     {/if}
   </section>
