@@ -114,8 +114,36 @@ describe('what a card refuses to carry', () => {
     }
   });
 
-  it('has no field for anything but a callsign, a region and a line', () => {
-    expect([...CARD_FIELDS]).toEqual(['callsign', 'region', 'doing']);
+  it('carries only the four things a card is allowed to say', () => {
+    // This list is deliberately hard to grow. It fired when `lightning` was added, which is
+    // what it is for -- widening a public artifact's fields should be a decision somebody
+    // made rather than a line somebody slipped in.
+    expect([...CARD_FIELDS]).toEqual(['callsign', 'region', 'doing', 'lightning']);
+  });
+
+  it('has no field for a position, a name, or anything about a person', () => {
+    // The stronger form of the guard above: what must never be here, whatever else grows.
+    for (const forbidden of ['lat', 'lon', 'position', 'coords', 'address', 'name', 'phone']) {
+      expect(CARD_FIELDS as readonly string[], forbidden).not.toContain(forbidden);
+    }
+  });
+
+  it('carries a Lightning address only when it is one', () => {
+    // Caught while the operator is looking at it, rather than when somebody tries to send
+    // them something and it silently fails.
+    const withAddress = readCard(buildCard(contact, card({ lightning: 'Wren@getalby.com' }), T));
+    expect(withAddress?.card.lightning).toBe('wren@getalby.com');
+
+    for (const junk of ['not-an-address', 'wren@', '@getalby.com', 'wren getalby.com']) {
+      expect(() => buildCard(contact, card({ lightning: junk }), T), junk).toThrow(CardError);
+    }
+  });
+
+  it('has nowhere to put an amount, a total, or a supporter', () => {
+    // Money is a stronger status signal than any badge, and a visible total would rebuild
+    // the leaderboard this project deliberately refused.
+    const c = buildCard(contact, card({ lightning: 'wren@getalby.com' }), T);
+    expect(c.content).not.toMatch(/sats|amount|total|received|supporters|balance/i);
   });
 
   it('refuses a card with no callsign or no region', () => {

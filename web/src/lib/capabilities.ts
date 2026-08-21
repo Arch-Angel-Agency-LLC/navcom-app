@@ -325,6 +325,19 @@ export const CAPABILITIES: Capability[] = [
     requires: []
   },
   {
+    name: 'Support',
+    screen: 'terminal/funding/',
+    claims: [
+      // funding.md's rule 2, which is the one that would be quietly broken first.
+      'Nothing here counts anything',
+      'This app never touches money',
+      // The cost that catches people out, stated before they enable anything.
+      'Converting to cash usually is not'
+    ],
+    control: '#mine',
+    requires: []
+  },
+  {
     name: 'Wipe this device',
     screen: 'terminal/wipe/',
     claims: [

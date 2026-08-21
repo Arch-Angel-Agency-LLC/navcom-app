@@ -125,6 +125,14 @@
               {#if e.out}<span class="badge">out tonight</span>{/if}
             </div>
             {#if e.doing}<p class="doing">{e.doing}</p>{/if}
+            {#if e.lightning}
+              <!--
+                A string to copy, and nothing that looks like a checkout. No amount, no
+                suggested figure, no total received -- funding.md forbids all three, and a
+                "support" button with a number beside it is how a leaderboard starts.
+              -->
+              <p class="ln" data-lightning>{e.lightning}</p>
+            {/if}
 
             {#if e.contact === mine}
               <p class="cost">This is your card.</p>
@@ -164,4 +172,8 @@
     color: var(--t-station); border: 1px solid var(--t-station); padding: .1rem .3rem;
   }
   .doing { margin: 0; color: var(--t-faint); font-size: .92rem; }
+  .ln {
+    margin: 0; font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: .82rem; color: var(--t-muted);
+  }
 </style>

@@ -31,6 +31,7 @@ import {
 import { contactKey, ensureContactKey, listed, myCard, saveCard, type MyCard } from './card';
 import { loadIdentity } from './identity';
 import { relays } from './relays';
+import { address } from './funding';
 import { pool } from './pool';
 
 /**
@@ -49,6 +50,8 @@ export interface BoardEntry {
   contact: string;
   callsign: string;
   doing?: string;
+  /** A string to copy. Never an amount, and never a total. */
+  lightning?: string;
   /** Whether this operator is publishing *"out tonight"* right now. */
   out: boolean;
 }
@@ -74,6 +77,7 @@ export const board = {
         contact: c.contact,
         callsign: c.card.callsign,
         doing: c.card.doing,
+        lightning: c.card.lightning,
         out: (outNow[c.contact] ?? 0) >= live
       }))
       .sort((a, b) => a.callsign.localeCompare(b.callsign));
@@ -145,7 +149,14 @@ export async function publishCard(card: MyCard): Promise<void> {
     secret,
     // One callsign, from the identity, rather than a second public name that could drift
     // from the one peers already know.
-    { callsign: identity.callsign, region: card.region, doing: card.doing },
+    {
+      callsign: identity.callsign,
+      region: card.region,
+      doing: card.doing,
+      // Only if the operator set one. Being supportable and being findable are separate
+      // choices, and publishing a card must not quietly enable the other.
+      ...(address() ? { lightning: address()! } : {})
+    },
     Math.floor(Date.now() / 1000)
   );
   saveCard(card);

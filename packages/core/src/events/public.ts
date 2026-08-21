@@ -46,7 +46,7 @@ import { KIND_CARD, KIND_PUBLIC_PRESENCE } from './kinds.js';
  */
 
 /** Exactly what a card may carry. A card with any other field is refused, not trimmed. */
-export const CARD_FIELDS = ['callsign', 'region', 'doing'] as const;
+export const CARD_FIELDS = ['callsign', 'region', 'doing', 'lightning'] as const;
 
 export interface Card {
   /** Never a legal name [invariant 8]. */
@@ -60,6 +60,35 @@ export interface Card {
   region: string;
   /** One line, in the operator's own words. Optional, and often the most useful part. */
   doing?: string;
+  /**
+   * A Lightning address, so support can reach somebody working under a persona.
+   *
+   * **A string, and nothing more.** This project holds no custody, no keys, no amounts and
+   * no payment handling — a seized phone yields an address, not a financial trail, and
+   * NavCom can never help with a payment problem because it never sees one.
+   *
+   * Widening the card's field allowlist is done deliberately here rather than casually. The
+   * allowlist exists to keep a *position* off a public artifact, and a payment address is
+   * not one: it says where money can arrive, never where a person is.
+   *
+   * There are no totals anywhere, ever [`product/funding.md`]. Money is a stronger status
+   * signal than any badge, and a visible total would rebuild the leaderboard this project
+   * deliberately refused.
+   */
+  lightning?: string;
+}
+
+/**
+ * Whether a string is a Lightning address — `name@domain`, the LUD-16 shape.
+ *
+ * Checked so a typo is caught while the operator is looking at it rather than when somebody
+ * tries to send them something and it silently fails. It is **not** checked against the
+ * network: resolving it would mean this app making a request about somebody's money, which
+ * is exactly the surface it refuses to have.
+ */
+export function isLightningAddress(value: string): boolean {
+  const v = value.trim().toLowerCase();
+  return /^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$/.test(v) && v.length <= 120;
 }
 
 /** The most a card may say. Long enough for a sentence, short enough not to be a profile. */
@@ -85,6 +114,10 @@ export function buildCard(contactSecret: SecretKey, card: Card, createdAt: numbe
 
   const content: Card = { callsign, region: card.region };
   if (doing) content.doing = doing;
+  if (card.lightning) {
+    if (!isLightningAddress(card.lightning)) throw new CardError('That is not a Lightning address.');
+    content.lightning = card.lightning.trim().toLowerCase();
+  }
 
   return finalizeEvent(
     {
@@ -138,8 +171,13 @@ export function readCard(event: Event): PublishedCard | null {
     return null;
   }
 
+  if (c.lightning !== undefined && (typeof c.lightning !== 'string' || !isLightningAddress(c.lightning))) {
+    return null;
+  }
+
   const card: Card = { callsign: c.callsign.trim(), region: c.region };
   if (c.doing) card.doing = c.doing;
+  if (c.lightning) card.lightning = String(c.lightning);
   return { contact: event.pubkey, card, at: event.created_at };
 }
 
