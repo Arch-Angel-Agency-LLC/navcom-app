@@ -5,7 +5,15 @@
    * Opening one caches it, which is the whole mechanism -- there is no "download" button
    * and no progress bar, because visiting the page IS the download.
    */
+  import { onMount } from 'svelte';
+  import { offline } from '$lib/terminal/offline.svelte';
+
   let { data } = $props();
+
+  // Checked rather than promised. "Opening it is what saves it" is true and says nothing
+  // about whether it worked, and an operator who believes they carry an area and does not
+  // finds out with no signal.
+  onMount(() => void offline.check(data.areas.map((a) => a.region.slug)));
 
   const byCountry = $derived(
     Object.entries(
@@ -46,6 +54,9 @@
         <li>
           <a class="area" href="/terminal/directory/{region.slug}/">
             <span class="name">{region.name}</span>
+            {#if offline.areas[region.slug] === 'yes'}
+              <span class="carried" data-carried={region.slug}>on this phone</span>
+            {/if}
             <span class="n">{records}</span>
           </a>
         </li>
@@ -65,5 +76,10 @@
   .n {
     font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
     font-size: .82rem; color: var(--t-faint);
+  }
+  .carried {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: .68rem; letter-spacing: .08em; text-transform: uppercase;
+    color: var(--t-station); border: 1px solid var(--t-station); padding: .1rem .3rem;
   }
 </style>

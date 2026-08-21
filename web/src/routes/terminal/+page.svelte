@@ -10,6 +10,7 @@
   import { loadConfig } from '$lib/terminal/config';
   import { loadIdentity } from '$lib/terminal/identity';
   import { storageError } from '$lib/terminal/storage';
+  import { offline } from '$lib/terminal/offline.svelte';
 
   const s = $derived(watch.state);
   let configured = $state(false);
@@ -20,6 +21,7 @@
     configured = loadConfig() !== null;
     identity = loadIdentity();
     full = storageError();
+    void offline.checkShell();
     watch.start();
     presence.start();
     void battery.start();
@@ -245,6 +247,18 @@
     stored today and opened by a future quantum computer. That needs
     {pq.uncovered().length === 1 ? 'one person you send to' : `${pq.uncovered().length} people you send to`}
     to open the app once, and it happens on its own after that.
+  </p>
+{/if}
+
+{#if offline.shellGaps && offline.shellGaps.length > 0}
+  <!--
+    Three screens promise this app works with no signal. Until now none of them looked.
+    A shell that did not finish saving means parts of the terminal will not open without a
+    connection -- which an operator should hear before they need them, not after.
+  -->
+  <p class="error" data-shell-gaps>
+    Some of this app did not save for offline use, so parts of it may need a connection.
+    Reopening on a good signal usually fixes it.
   </p>
 {/if}
 

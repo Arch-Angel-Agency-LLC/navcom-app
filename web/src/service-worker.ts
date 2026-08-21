@@ -53,8 +53,54 @@ function offline(): Response {
   });
 }
 
+/**
+ * What this install could not save.
+ *
+ * Read by the terminal so it can say what it actually has, rather than assuming. Empty is
+ * the ordinary case and the only one anybody should have to think about.
+ */
+let missing: string[] = [];
+
+/**
+ * Caches the shell, one request at a time.
+ *
+ * **`addAll` was the wrong primitive here and it took an audit to see it.** It rejects if
+ * *any* request fails, which fails the whole install — so `skipWaiting` never runs, the
+ * worker never takes over, and the terminal has **no offline capability at all**. On a
+ * screen that is online at the time, nothing looks wrong. The operator finds out in a car
+ * park with no signal, which is the one moment this exists for.
+ *
+ * One flaky asset, one 404 after a partial deploy, one connection dropping mid-install: any
+ * of them turned "offline-first" into "online-only, quietly".
+ *
+ * So each entry is cached on its own and a failure is recorded rather than fatal. A shell
+ * that is 95% cached is worth far more than no shell, and the 5% is worth saying out loud.
+ */
+async function cacheShell(): Promise<void> {
+  const cache = await caches.open(CACHE);
+  const failed: string[] = [];
+
+  await Promise.all(
+    SHELL.map(async (url) => {
+      try {
+        await cache.add(new Request(url, { credentials: 'same-origin' }));
+      } catch {
+        failed.push(url);
+      }
+    })
+  );
+
+  missing = failed;
+  if (failed.length > 0) {
+    // Loud in the console, because a partly-cached shell is a real state somebody debugging
+    // an offline failure needs to know about.
+    console.warn(`[navcom] ${failed.length} of ${SHELL.length} shell entries did not cache`, failed);
+  }
+}
+
 sw.addEventListener('install', (event) => {
-  event.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)).then(() => sw.skipWaiting()));
+  // `skipWaiting` regardless: a worker that serves most of the shell beats no worker.
+  event.waitUntil(cacheShell().then(() => sw.skipWaiting()));
 });
 
 sw.addEventListener('activate', (event) => {
@@ -78,7 +124,15 @@ sw.addEventListener('activate', (event) => {
  * So the page asks, explicitly, once it has rendered.
  */
 sw.addEventListener('message', (event) => {
-  const data = event.data as { cache?: string } | null;
+  const data = event.data as { cache?: string; ask?: string } | null;
+
+  // "What did you fail to save?" -- so a screen can tell the truth about what works offline
+  // rather than assuming the install went perfectly.
+  if (data?.ask === 'missing') {
+    event.source?.postMessage({ missing });
+    return;
+  }
+
   const path = data?.cache;
   if (typeof path !== 'string' || !path.startsWith('/terminal/')) return;
 
