@@ -26,7 +26,7 @@ Each cell is a pass. `—` not started, `✓` done, and a note when it found som
 | **1** One operator alone | Display rules, patrol record, contact, wipe, seeder | **✓** | **✓** | **✓** |
 | **2** One watch staffed | Executor, pager, drills, web push, on-call | **✓** | **✓** | **✓** |
 | **3** Two who met once | Peers, presence, cards, invites, public presence, buddy | **✓** | **✓** | **✓** |
-| **4** Squad with no box | Watch mode, group sealing, board, handover, watch key | **✓** | — | — |
+| **4** Squad with no box | Watch mode, group sealing, board, handover, watch key | **✓** | **✓** | — |
 | **5** Written-down properties | PQC, declined, battery, RTL, watch-state v4 | — | — | — |
 | **6** Knowledge gets in | Corrections, merge, needs-checking, notes, promotion | — | — | — |
 | **7** Standing | Credentials, claims, revocation, the watch gate | — | — | — |
@@ -490,6 +490,42 @@ timestamp that crossed a device boundary deserves the question *whose clock is t
 **Method note, third occurrence.** `npx tsc` and `npx vitest --root` bypass the npm scripts
 that rebuild core, so both were type-checking and testing against a stale `dist/`. Use the
 package scripts — `npm run check`, `npm test --prefix` — not the tools directly.
+
+## 4.E — Milestone 4, error handling and reporting
+
+Three publishes on the watch side, all discarding their result — the same defect 3.E found on
+the peer side, except here the consequences land on **other people**.
+
+**A stand-down that failed left the watch advertised as staffed.** This is the one the module
+already explains, two lines above the function: going quiet would leave the previous state on
+the relay and *"every operator reading it in the meantime would believe a human was
+watching."* A Dark that fails to publish produces precisely that — and it is **worse than
+never standing down**, because the heartbeat that had been refreshing the state is cleared
+first, so nothing retries and nothing expires it soon. The watch holder goes to bed; every
+operator reads *"Wren is at the console."* That is invariant 4, failing in the exact way the
+code was written to prevent.
+
+It now retries until it lands and says so until it does. **This is the one place in the app
+where going quiet is not the safe default**, so the automatic retry is warranted rather than
+hidden behaviour.
+
+**A watch that never announced itself looked identical to one that had.** `takeWatch` set
+`onStation = true` and published without checking. A holder whose screen says *On station*
+while nothing reached a relay is covering nobody. The heartbeat already retries, so this
+self-heals — but the operator had no way to know they were unstaffed *right now*, which is
+exactly when it matters.
+
+**An answer that reached no relay was taken off the board anyway.** The watch believed they
+had replied; the operator got nothing; the item was gone so nobody could notice. It stays
+until it has actually gone.
+
+### And a regression from 4.R, caught here
+
+Moving `Distress` into its own list made `send()` unable to find one: it looked only in
+`board.waiting`, so **the one signal that matters became unanswerable.** Fixed to search both.
+Worth recording plainly — the previous pass's fix introduced it, the tests all still passed,
+and it took reading the handler in a later pass to see it. The same compounding that makes the
+grid worth doing also makes each fix a place to look again.
 
 ## 4.R — Milestone 4, robustness
 

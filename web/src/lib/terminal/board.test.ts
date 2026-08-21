@@ -23,13 +23,17 @@ vi.mock('./config', () => ({ loadConfig: () => ({ watchtower: watchPub, relays: 
 vi.mock('./watch-key', () => ({ watchKey: () => watch, watchPubkey: () => watchPub }));
 vi.mock('./relays', () => ({ relays: () => ['wss://r'] }));
 vi.mock('./pq.svelte', () => ({ kemKeys: () => ({}), pq: { known: {} } }));
+/** Whether relays accept anything. A watch on a phone is offline as often as an operator. */
+let relaysUp = true;
+
 vi.mock('./pool', () => ({
   pool: () => ({
     subscribeMany: (_u: string[], _f: unknown, p: { onevent: (e: Event) => void }) => {
       deliver = p.onevent;
       return { close: () => {} };
     },
-    publish: () => [Promise.resolve('ok')]
+    publish: () =>
+      relaysUp ? [Promise.resolve('ok')] : [Promise.reject(new Error('no relay accepted'))]
   })
 }));
 
@@ -60,6 +64,7 @@ const distress = (): Event => {
 };
 
 beforeEach(async () => {
+  relaysUp = true;
   vi.resetModules();
   ({ board } = await import('./board.svelte'));
   board.start();
@@ -105,5 +110,63 @@ describe('a Distress arriving after a flood of routine traffic', () => {
     expect(board.waiting).toHaveLength(5);
     expect(board.distress).toHaveLength(1);
     expect(board.routineDropped).toBe(false);
+  });
+});
+
+describe('a watch whose publishes do not land', () => {
+  it('does not report standing down when the world still sees it on station', async () => {
+    // This is what standDown exists to prevent, stated two lines above it: watch state is
+    // replaceable, so going quiet leaves the previous state on the relay and every operator
+    // reading it believes a human is watching. A Dark that fails to publish IS that — and
+    // it is worse than never standing down, because the heartbeat that kept refreshing has
+    // just been cleared, so nothing retries and nothing expires it soon.
+    await board.takeWatch();
+    expect(board.onStation).toBe(true);
+
+    relaysUp = false;
+    await board.standDown();
+    expect(board.onStation).toBe(false);
+    expect(board.stillAdvertised).toBe(true);
+  });
+
+  it('says nobody can see a watch that never announced itself', async () => {
+    // Being on station is a claim made to other people. A holder whose screen says "On
+    // station" while nothing was published is covering nobody and does not know it.
+    relaysUp = false;
+    await board.takeWatch();
+    expect(board.unannounced).toBe(true);
+  });
+
+  it('is quiet when taking the watch actually worked', async () => {
+    await board.takeWatch();
+    expect(board.unannounced).toBe(false);
+    expect(board.stillAdvertised).toBe(false);
+  });
+
+  it('keeps an unsent answer on the board instead of clearing it', async () => {
+    // The result was discarded, so an answer that reached no relay still cleared the item:
+    // the watch believed they had replied and the operator got nothing.
+    deliver(query(1));
+    const item = board.waiting[0]!;
+
+    relaysUp = false;
+    expect(await board.answer(item, 'the shelter on 8th')).toBe(false);
+    expect(board.waiting.map((w) => w.id)).toContain(item.id);
+  });
+
+  it('clears it once the answer has actually gone', async () => {
+    deliver(query(1));
+    const item = board.waiting[0]!;
+    expect(await board.answer(item, 'the shelter on 8th')).toBe(true);
+    expect(board.waiting.map((w) => w.id)).not.toContain(item.id);
+  });
+
+  it('never clears a Distress, even on a successful acknowledgement', async () => {
+    // Acknowledging is telling them somebody is awake, not that it is over. Only a human
+    // ending it clears one [invariant 2].
+    deliver(distress());
+    const item = board.distress[0]!;
+    expect(await board.answer(item, 'awake, on my way')).toBe(true);
+    expect(board.distress.map((w) => w.id)).toContain(item.id);
   });
 });

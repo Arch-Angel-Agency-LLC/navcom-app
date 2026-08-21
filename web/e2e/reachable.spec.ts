@@ -1086,3 +1086,24 @@ test.describe('a watch board under a flood', () => {
     expect(order).toBeTruthy();
   });
 });
+
+test.describe('a watch that cannot reach a relay', () => {
+  /**
+   * Being on station is a claim made to other people. A holder whose screen says "On
+   * station" while nothing was published is covering nobody, and the publish result was
+   * discarded, so they had no way to find out.
+   */
+  test('says nobody can see it, rather than showing a watch nobody is reading', async ({ page }) => {
+    const watchSecret = 'c'.repeat(63) + '3';
+    await seedDevice(page, { callsign: 'Wren', watchSecret, refusePublish: true });
+    await open(page, '/terminal/watch/');
+
+    await page.getByRole('button', { name: /take the watch/i }).click();
+
+    const warning = page.locator('[data-unannounced]');
+    await expect(warning).toBeVisible({ timeout: 10_000 });
+    await expect(warning).toContainText(/nobody can see this watch/i);
+    // And it says what an operator signing on will actually read.
+    await expect(warning).toContainText(/will read Dark/i);
+  });
+});

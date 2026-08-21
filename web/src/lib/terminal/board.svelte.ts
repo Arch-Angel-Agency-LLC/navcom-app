@@ -80,6 +80,11 @@ let entries = $state<BoardEntry[]>([]);
 let waiting = $state<Waiting[]>([]);
 let routineDropped = $state(false);
 let distressDropped = $state(false);
+/** Nobody can see this watch yet, because taking it never reached a relay. */
+let unannounced = $state(false);
+/** Still advertised as staffed, because standing down never reached a relay. */
+let stillAdvertised = $state(false);
+let darkRetry: ReturnType<typeof setInterval> | null = null;
 let onStation = $state(false);
 let since = $state(0);
 let closer: { close(): void } | null = null;
@@ -135,6 +140,27 @@ export const board = {
     return [...waiting]
       .filter((w) => w.type !== 'resupply' && w.type !== 'distress')
       .sort((a, b) => a.at - b.at);
+  },
+
+  /**
+   * Whether taking the watch actually reached anyone.
+   *
+   * Being on station is a claim made *to other people*. A watch holder whose screen says
+   * "On station" while nothing was published is covering nobody and does not know it.
+   */
+  get unannounced(): boolean {
+    return unannounced;
+  },
+
+  /**
+   * Whether standing down actually reached anyone.
+   *
+   * The worse direction by far, and the one this module already explains: watch state is
+   * replaceable, so a Dark that never lands leaves the previous state on the relay and
+   * **every operator goes on believing a human is watching** [invariant 4].
+   */
+  get stillAdvertised(): boolean {
+    return stillAdvertised;
   },
 
   /** Whether routine traffic is arriving faster than the board will hold. */
@@ -206,12 +232,21 @@ export const board = {
 
     since = Math.floor(Date.now() / 1000);
     onStation = true;
-    await publishState(secret, identity.callsign, since);
+    // Reported, not assumed. Everyone out sees the callsign of whoever took it — so if
+    // nothing was published, this operator is covering nobody and needs to know now rather
+    // than at the moment somebody needs them.
+    unannounced = !(await publishState(secret, identity.callsign, since));
     if (beat) clearInterval(beat);
     beat = setInterval(() => {
       const s = watchKey();
       const who = loadIdentity()?.callsign;
-      if (onStation && s && who) void publishState(s, who, since);
+      // The beat is also the retry: a watch that could not announce itself heals here as
+      // soon as there is signal, and the warning clears with it.
+      if (onStation && s && who) {
+        void publishState(s, who, since).then((ok) => {
+          unannounced = !ok;
+        });
+      }
     }, WATCH_BEAT_SECONDS * 1000);
   },
 
@@ -226,15 +261,37 @@ export const board = {
     const secret = watchKey();
     const urls = relays();
     onStation = false;
+    unannounced = false;
     if (beat) clearInterval(beat);
     beat = null;
     if (!secret || urls.length === 0) return;
 
-    const event = finalizeEvent(
-      { ...buildWatchStateEvent(darkInput(), Math.floor(Date.now() / 1000)), content: JSON.stringify(darkState()) },
-      secret
-    );
-    await Promise.allSettled(pool().publish(urls, event));
+    /*
+     * Whether Dark actually landed.
+     *
+     * This function's whole reason for existing is two lines above it: going quiet would
+     * leave the previous state on the relay and every operator reading it would believe a
+     * human was watching. **A Dark that fails to publish produces exactly that** — and it is
+     * worse than never standing down, because the heartbeat that would have kept refreshing
+     * the state has just been cleared, so nothing retries and nothing expires it soon.
+     *
+     * So it retries until it lands, and says so until it does. This is the one place in the
+     * app where going quiet is not a safe default.
+     */
+    if (await publishDark(secret)) return;
+
+    stillAdvertised = true;
+    if (darkRetry) clearInterval(darkRetry);
+    darkRetry = setInterval(() => {
+      const s = watchKey();
+      if (!s) return;
+      void publishDark(s).then((ok) => {
+        if (!ok) return;
+        stillAdvertised = false;
+        if (darkRetry) clearInterval(darkRetry);
+        darkRetry = null;
+      });
+    }, WATCH_BEAT_SECONDS * 1000);
   },
 
   /**
@@ -250,14 +307,14 @@ export const board = {
    * acknowledgement and waited is worse off than one who was told plainly. Core refuses it
    * for a `Distress`, and this checks before sending rather than trusting the caller.
    */
-  async answer(item: Waiting, text: string, declining = false): Promise<void> {
+  async answer(item: Waiting, text: string, declining = false): Promise<boolean> {
     const secret = watchKey();
     const urls = relays();
-    if (!secret || urls.length === 0) return;
+    if (!secret || urls.length === 0) return false;
 
     // Refused in core, not here, so no second surface can forget. A watch able to decline a
     // Distress could end it with a tap [invariant 2].
-    if (declining && !declineIsValid(item.type)) return;
+    if (declining && !declineIsValid(item.type)) return false;
 
     const identity = loadIdentity();
     const event = finalizeEvent(
@@ -280,7 +337,16 @@ export const board = {
       ),
       secret
     );
-    await Promise.allSettled(pool().publish(urls, event));
+    /*
+     * Taken off the board only once it has actually gone.
+     *
+     * The result was discarded, so an answer that reached no relay still cleared the item —
+     * the watch believed they had replied and the operator got nothing. Leaving it in place
+     * is what lets somebody notice and try again.
+     */
+    const results = await Promise.allSettled(pool().publish(urls, event));
+    const sent = results.some((r) => r.status === 'fulfilled');
+    if (!sent) return false;
 
     // A Distress stays until a human has actually ended it, which is not something this
     // screen can know. Acknowledging is telling them somebody is awake, not that it is over.
@@ -288,6 +354,7 @@ export const board = {
       waiting = waiting.filter((w) => w.id !== item.id);
       routineDropped = false;
     }
+    return true;
   },
 
   stop(): void {
@@ -296,6 +363,21 @@ export const board = {
     // The beat deliberately survives: closing a screen does not end a watch.
   }
 };
+
+/** Publishes Dark, reporting whether any relay took it. */
+async function publishDark(secret: Uint8Array): Promise<boolean> {
+  const urls = relays();
+  if (urls.length === 0) return false;
+  const event = finalizeEvent(
+    {
+      ...buildWatchStateEvent(darkInput(), Math.floor(Date.now() / 1000)),
+      content: JSON.stringify(darkState())
+    },
+    secret
+  );
+  const results = await Promise.allSettled(pool().publish(urls, event));
+  return results.some((r) => r.status === 'fulfilled');
+}
 
 function darkInput() {
   return {
@@ -311,7 +393,7 @@ function darkInput() {
   };
 }
 
-async function publishState(secret: Uint8Array, callsign: string, at: number): Promise<void> {
+async function publishState(secret: Uint8Array, callsign: string, at: number): Promise<boolean> {
   const urls = relays();
   const event = finalizeEvent(
     buildWatchStateEvent(
@@ -332,7 +414,8 @@ async function publishState(secret: Uint8Array, callsign: string, at: number): P
     ),
     secret
   );
-  await Promise.allSettled(pool().publish(urls, event));
+  const results = await Promise.allSettled(pool().publish(urls, event));
+  return results.some((r) => r.status === 'fulfilled');
 }
 
 /** Folds one signal into the board. */

@@ -81,14 +81,25 @@
     confirmLeave = false;
   }
 
+  /** The answer that did not reach a relay, if any. */
+  let unsent = $state<string | null>(null);
+
   async function send(id: string, declining = false) {
-    const item = board.waiting.find((w) => w.id === id);
+    // Both lists. Distress moved into its own section so it cannot be buried, and looking
+    // only at `waiting` would have made the one signal that matters unanswerable.
+    const item = board.distress.find((w) => w.id === id) ?? board.waiting.find((w) => w.id === id);
     if (!item || busy) return;
     busy = true;
+    unsent = null;
     try {
-      await board.answer(item, text, declining);
-      answering = null;
-      text = '';
+      // Reported rather than assumed. An answer that reached no relay used to clear the
+      // item anyway: the watch believed they had replied and the operator got nothing.
+      if (await board.answer(item, text, declining)) {
+        answering = null;
+        text = '';
+      } else {
+        unsent = id;
+      }
     } finally {
       busy = false;
     }
@@ -184,12 +195,35 @@
         says so — it publishes Dark rather than going quiet, so nobody is left reading a
         stale claim that a human is here.
       </p>
+      {#if board.unannounced}
+        <!--
+          Being on station is a claim made to other people. Nothing was published, so this
+          operator is covering nobody and would not otherwise find out.
+        -->
+        <p class="error" data-unannounced>
+          Nothing has reached a relay, so nobody can see this watch. Operators signing on now
+          will read Dark. It will keep trying.
+        </p>
+      {/if}
       <button onclick={() => board.standDown()}>Stand down</button>
     {:else}
-      <p class="cost">
-        Nobody is published as watching. Operators signing on now will read Dark, which is
-        a supported state and an honest one.
-      </p>
+      {#if board.stillAdvertised}
+        <!--
+          The worse direction, and the one standDown exists to prevent: watch state is
+          replaceable, so a Dark that never landed leaves the previous state on the relay and
+          everybody goes on believing a human is here.
+        -->
+        <p class="error" data-still-advertised>
+          You are still published as the watch. Standing down did not reach a relay, so
+          operators are reading a claim that somebody is here. It will keep trying — stay on
+          signal until this clears.
+        </p>
+      {:else}
+        <p class="cost">
+          Nobody is published as watching. Operators signing on now will read Dark, which is
+          a supported state and an honest one.
+        </p>
+      {/if}
       {#if qualified}
         {#if founded}
           <p class="cost">
@@ -281,6 +315,12 @@
                 <button onclick={() => send(w.id)} disabled={busy}>Send</button>
                 <button onclick={() => (answering = null)}>Cancel</button>
               </div>
+              {#if unsent === w.id}
+                <p class="error" data-answer-unsent>
+                  That did not reach a relay, so they have not received it. It is still on
+                  your board — try again when you have signal.
+                </p>
+              {/if}
               {#if declineIsValid(w.type)}
                 <!--
                   A separate button, not a phrasing of the answer. "Nobody is coming" has to
