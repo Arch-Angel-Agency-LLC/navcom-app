@@ -15,7 +15,7 @@ import { generateSecretKey, getPublicKey } from 'nostr-tools/pure';
 import type { Event } from 'nostr-tools/core';
 import {
   buildCard, buildCorrection, buildDistress, buildInvite, buildPresence, buildSignal,
-  CALLSIGN_MAX, FIELDS_MAX, readCard, readCorrection, readInvite, readPresence,
+  AREA_MAX, CALLSIGN_MAX, FIELDS_MAX, readCard, readCorrection, readInvite, readPresence,
   TEXT_MAX, VALUE_MAX, watchtowerAt, withinLimit, writeCredential
 } from '../src/index.js';
 
@@ -138,5 +138,31 @@ describe('withinLimit', () => {
     expect(withinLimit('   ', 10)).toBe(false);
     expect(withinLimit(undefined, 10)).toBe(false);
     expect(withinLimit(42, 10)).toBe(false);
+  });
+});
+
+describe('the area beside the text', () => {
+  it('is capped on every signal that carries one', () => {
+    // Missed in the first cap pass, which capped `text` and walked past the field next to
+    // it. A Distress carries both, and it lands on whoever holds the board.
+    const over = long(AREA_MAX + 1);
+    expect(() => buildSignal(wren, to, 'on-station', {
+      area: over, expected_duration: 7200, routine_interval: null,
+      share_position: false, position: null
+    }, T)).toThrow();
+    expect(() => buildDistress(wren, to, { position: null, area: over }, T)).toThrow();
+    expect(() => buildSignal(wren, to, 'query', { text: 'bed tonight', area: over }, T)).toThrow();
+  });
+
+  it('leaves a district alone', () => {
+    expect(() => buildDistress(wren, to, { position: null, area: 'North Riverfront' }, T)).not.toThrow();
+  });
+
+  it('is refused on the way in, for a peer', () => {
+    const peerSecret = generateSecretKey();
+    const [event] = buildPresence(wren, [getPublicKey(peerSecret)], {
+      callsign: 'Wren', status: 'out', area: long(AREA_MAX + 1), until: T
+    }, T);
+    expect(readPresence(peerSecret, event!, [getPublicKey(wren)])).toBeNull();
   });
 });

@@ -9,7 +9,7 @@
  */
 
 import { sealToGroup, type WatchtowerAddress } from '../crypto/group.js';
-import { TEXT_MAX, withinLimit } from '../limits.js';
+import { AREA_MAX, TEXT_MAX, withinLimit } from '../limits.js';
 import type { SecretKey } from '../crypto/keys.js';
 import { KIND_DISTRESS, KIND_SIGNAL, tagRecipient, tagSignalType, type SignalType } from './kinds.js';
 
@@ -157,6 +157,11 @@ function checkedText(payload: SignalPayload | DistressPayload): void {
   const text = (payload as { text?: unknown }).text;
   if (text !== undefined && text !== null && !withinLimit(text, TEXT_MAX)) {
     throw new SignalError(`Keep it to ${TEXT_MAX} characters.`);
+  }
+  // The field beside it, missed the first time. A Distress carries both.
+  const area = (payload as { area?: unknown }).area;
+  if (area !== undefined && area !== null && !withinLimit(area, AREA_MAX)) {
+    throw new SignalError(`An area is ${AREA_MAX} characters or fewer — a district, never an address.`);
   }
 }
 

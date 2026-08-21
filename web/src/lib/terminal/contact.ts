@@ -79,6 +79,27 @@ export function distressMessage(note: DistressNote): string {
 }
 
 /**
+ * The stored number, made safe to put in a URI.
+ *
+ * A number is kept exactly as the operator typed it, which is right — they know what their
+ * own dialler takes — but *"exactly as typed"* and *"pasted into a URL"* are not the same
+ * thing, and this is where that gap bites.
+ *
+ * **A `#` ends the URI and starts a fragment.** An extension or a DTMF digit — `555-1234#22`,
+ * an ordinary thing to have in an address book — truncates the number to `555-1234` and turns
+ * *the entire help message* into a fragment the messaging app never sees. The operator taps
+ * their one-tap safety net and gets a blank message addressed to the wrong number, at the
+ * moment they are least able to notice.
+ *
+ * So: `#` and `*` are percent-encoded (RFC 3966 allows both, escaped), spaces are dropped
+ * because a URI may not contain one, and `+` and the visual separators `-.()` are left alone
+ * because diallers expect them. Nothing is validated and nothing is rejected — this only
+ * changes what goes in the link, never what is stored or shown.
+ */
+export const dialable = (number: string): string =>
+  number.replace(/\s+/g, '').replace(/#/g, '%23').replace(/\*/g, '%2A');
+
+/**
  * A link that opens the messaging app with the text ready to send.
  *
  * `?&body=` rather than `?body=` or `&body=`: iOS historically wants an ampersand after the
@@ -86,9 +107,9 @@ export function distressMessage(note: DistressNote): string {
  * folklore rather than a standard, and worth leaving alone.
  */
 export function smsLink(contact: EmergencyContact, message: string): string {
-  return `sms:${contact.number}?&body=${encodeURIComponent(message)}`;
+  return `sms:${dialable(contact.number)}?&body=${encodeURIComponent(message)}`;
 }
 
 export function callLink(contact: EmergencyContact): string {
-  return `tel:${contact.number}`;
+  return `tel:${dialable(contact.number)}`;
 }

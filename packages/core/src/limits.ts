@@ -41,6 +41,16 @@ export const CALLSIGN_MAX = 48;
 export const TEXT_MAX = 2000;
 
 /**
+ * A coarse area — *"North Riverfront"*, never an address.
+ *
+ * It rides on every signal an operator sends and lands on whoever holds the board, so it is
+ * bounded for the same reason a callsign is. Missed in the first cap pass, which capped
+ * `text` and walked past the field beside it: a `Distress` carries both, and only one of
+ * them was checked.
+ */
+export const AREA_MAX = 120;
+
+/**
  * One field's worth of a directory correction.
  *
  * Every device that carries that area caches every correction about it, so this is the one

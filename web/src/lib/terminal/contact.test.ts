@@ -7,15 +7,7 @@
  */
 
 import { beforeEach, describe, expect, it } from 'vitest';
-import {
-  callLink,
-  clearContact,
-  ContactError,
-  distressMessage,
-  loadContact,
-  saveContact,
-  smsLink
-} from './contact';
+import { ContactError, callLink, clearContact, distressMessage, loadContact, saveContact, smsLink } from './contact';
 import { burn, panicWipe } from './storage';
 
 function installLocalStorage() {
@@ -110,7 +102,40 @@ describe('the links', () => {
     );
   });
 
-  it('dials the number as the operator wrote it', () => {
-    expect(callLink(contact)).toBe('tel:+1 555 0100');
+  it('dials the number the operator wrote, made URI-safe', () => {
+    // This test used to assert the space survived into the link. It doesn't, and a URI may
+    // not contain one — the contract is *stored* as written, *dialled* safely. See the
+    // extension case below for what the loose version cost.
+    expect(callLink(contact)).toBe('tel:+15550100');
+    expect(contact.number).toBe('+1 555 0100');
+  });
+});
+
+describe('a number that is not URI-safe', () => {
+  const withExt = { label: 'Mum', number: '555-1234#22' };
+
+  it('does not let an extension swallow the message', () => {
+    // `#` starts a fragment. Unfixed, the link truncated to `sms:555-1234` and the whole
+    // help message became a fragment the messaging app never receives — a blank message to
+    // the wrong number, at the moment the operator is least able to notice.
+    const link = smsLink(withExt, 'I need help');
+    expect(link).not.toContain('#');
+    expect(new URL(link).hash).toBe('');
+    expect(link).toContain('%23');
+    expect(decodeURIComponent(new URL(link).search)).toContain('I need help');
+  });
+
+  it('keeps a space out of the URI', () => {
+    expect(callLink({ label: 'Mum', number: '+1 (555) 123-4567' })).toBe('tel:+1(555)123-4567');
+  });
+
+  it('leaves an ordinary number exactly as it is', () => {
+    expect(callLink({ label: 'Mum', number: '+15551234567' })).toBe('tel:+15551234567');
+  });
+
+  it('still stores what the operator typed, unchanged', () => {
+    // The link is the only thing that changes. What they see, and what they can copy out to
+    // check, is what they entered.
+    expect(saveContact('Mum', '555-1234#22').number).toBe('555-1234#22');
   });
 });

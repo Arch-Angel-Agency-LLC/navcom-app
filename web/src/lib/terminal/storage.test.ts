@@ -289,3 +289,39 @@ describe('storage that will not parse', () => {
     expect(corruptTiers()).toHaveLength(0);
   });
 });
+
+describe('the salvage copy is part of the tier [invariant 7]', () => {
+  it('panic wipe destroys a damaged wipeable blob too', () => {
+    // Reading corrupt storage keeps the raw text under `.damaged` so it can be recovered by
+    // hand. That copy IS the wipeable tier, and it survived the wipe for two passes: the
+    // operator holds the button down, watches it clear, and it is still on the phone.
+    localStorage.setItem('navcom.wipeable', '{not json');
+    get('wipeable', 'callsign');
+    expect(localStorage.getItem('navcom.wipeable.damaged')).toBe('{not json');
+
+    panicWipe();
+    expect(localStorage.getItem('navcom.wipeable.damaged')).toBeNull();
+    expect(localStorage.getItem('navcom.wipeable')).toBeNull();
+  });
+
+  it('panic wipe still leaves the accruing tier alone, damaged copy included', () => {
+    // "and nothing else" is the other half of the invariant.
+    localStorage.setItem('navcom.accruing', '{not json');
+    get('accruing', 'callsign');
+    panicWipe();
+    expect(localStorage.getItem('navcom.accruing.damaged')).toBe('{not json');
+  });
+
+  it('burn takes both tiers and both salvage copies', () => {
+    localStorage.setItem('navcom.wipeable', '{not json');
+    localStorage.setItem('navcom.accruing', 'also not json');
+    get('wipeable', 'callsign');
+    get('accruing', 'callsign');
+
+    burn();
+    for (const key of ['navcom.wipeable', 'navcom.accruing',
+                       'navcom.wipeable.damaged', 'navcom.accruing.damaged']) {
+      expect(localStorage.getItem(key)).toBeNull();
+    }
+  });
+});

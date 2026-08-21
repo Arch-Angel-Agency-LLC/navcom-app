@@ -23,6 +23,14 @@
 const ACCRUING = 'navcom.accruing';
 const WIPEABLE = 'navcom.wipeable';
 
+/**
+ * Every key one tier's data can occupy — the blob, and the salvage copy of a damaged one.
+ *
+ * One list, used by both destroy paths, so a new key cannot be added to storage and missed
+ * by the wipe.
+ */
+const keysOf = (tierKey: string): string[] => [tierKey, `${tierKey}.damaged`];
+
 export type Tier = 'accruing' | 'wipeable';
 const keyFor = (tier: Tier) => (tier === 'accruing' ? ACCRUING : WIPEABLE);
 
@@ -155,9 +163,21 @@ export function tierSizes(): { accruing: number; wipeable: number } {
  * on a bad night should not have to find a person and be re-provisioned before they can
  * work again.
  */
+/**
+ * Destroys the Wipeable tier [invariant 7].
+ *
+ * **The salvage copy is part of the tier.** A damaged blob is kept under `.damaged` so an
+ * operator can recover it by hand, and for two passes that copy sat outside the wipe: a
+ * phone whose wipeable storage had ever been corrupted kept a readable copy of it through a
+ * panic wipe. The operator holds the button down, watches it clear, and the thing they
+ * destroyed is still on the device.
+ *
+ * Anything holding tier data must be listed here. Adding a key elsewhere and forgetting this
+ * function is exactly how it happened.
+ */
 export function panicWipe(): void {
   if (typeof localStorage === 'undefined') return;
-  localStorage.removeItem(WIPEABLE);
+  for (const key of keysOf(WIPEABLE)) localStorage.removeItem(key);
 }
 
 /**
@@ -169,8 +189,7 @@ export function panicWipe(): void {
  */
 export function burn(): void {
   if (typeof localStorage === 'undefined') return;
-  localStorage.removeItem(WIPEABLE);
-  localStorage.removeItem(ACCRUING);
+  for (const key of [...keysOf(WIPEABLE), ...keysOf(ACCRUING)]) localStorage.removeItem(key);
 }
 
 /**

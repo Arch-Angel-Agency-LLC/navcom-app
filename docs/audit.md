@@ -23,7 +23,7 @@ Each cell is a pass. `—` not started, `✓` done, and a note when it found som
 | Milestone | Surface | R | E | X |
 |---|---|---|---|---|
 | **0** Prove what is built | Browser harness, service worker, offline, seeding, the verification layer itself | **✓** | **✓** | **✓** |
-| **1** One operator alone | Display rules, patrol record, contact, wipe, seeder | — | — | — |
+| **1** One operator alone | Display rules, patrol record, contact, wipe, seeder | **✓** | — | — |
 | **2** One watch staffed | Executor, pager, drills, web push, on-call | — | — | — |
 | **3** Two who met once | Peers, presence, cards, invites, public presence, buddy | — | — | — |
 | **4** Squad with no box | Watch mode, group sealing, board, handover, watch key | — | — | — |
@@ -117,6 +117,46 @@ terminal that will not start because of a bad key is worse than one that asks to
 again — but presenting it as a *fresh phone* is a different and worse lie, and the next write
 destroyed the only copy. A damaged blob is JSON in localStorage and can often be read by
 hand, so it is now kept under a salvage key and Status says not to clear the site's data.
+
+## 1.R — Milestone 1, robustness
+
+Four findings, and two leads that honestly went nowhere.
+
+**A future date was the freshest thing possible.** `ageInDays` subtracted and returned a
+negative, so `last_verified: 2099-01-01` rendered *fresh, high confidence* — and stayed that
+way forever. On its own that is a display bug. Against Milestone 6 it is an attack: corrections
+tie-break on `last_verified`, so anybody could date one 2099 and own a field permanently. One
+day of tolerance is kept for timezones; beyond that a date in the future is unparseable and
+reads *call first*, which is what invariant 9 asks for.
+
+**`area` was uncapped on every signal.** The earlier cross-cutting sweep capped `text` and
+walked straight past the field beside it — a `Distress` carries both, and only one was
+checked. It lands on whoever is holding the board.
+
+**A `#` in a phone number destroyed the distress message.** `smsLink` interpolated the number
+into a URI, so an extension or a DTMF digit — `555-1234#22`, an ordinary address-book entry —
+made everything after the `#` a *fragment*: the number truncated and the entire help text was
+dropped. The operator taps the one-tap safety net and gets a blank message to a wrong number.
+For an operator with no on-call this is the whole safety net, and it failed silently.
+
+**The salvage copy survived panic wipe [invariant 7].** This one was created by 0.X. Keeping a
+corrupt blob under `.damaged` so it can be recovered by hand is right; leaving that copy
+outside the destroy path is not. A phone whose wipeable storage had ever been corrupted kept a
+readable copy of it through a wipe — the operator holds the button down, watches it clear, and
+it is still there. Both destroy paths now take their keys from one list, so a new key cannot be
+added and missed. Checked in both directions: the tests fail against the old wipe.
+
+**Two leads that went nowhere, recorded because rule 3 says so:**
+
+- *Unbounded patrol growth.* `recordPatrol` appends forever with no cap, which looks like the
+  classic exhaustion bug. Measured instead of assumed: one patrol is 125 bytes, so a thousand
+  is 122 kB and five thousand is 610 kB against a 5–10 MB quota. A decade of daily patrols
+  fits. No cap is warranted, and adding one would have thrown away the operator's record to
+  fix a problem that does not exist
+- *The CSV seeder.* Probed with a BOM, CRLF, quoted commas, embedded newlines, ragged rows and
+  a duplicate header column. It handled all of them. Worth noting that a contributor dropping a
+  middle column now degrades *correctly* because of the first finding — the shifted
+  `last_verified` is unparseable, so the record reads *call first* rather than inventing a date
 
 ## Method note, after three passes
 

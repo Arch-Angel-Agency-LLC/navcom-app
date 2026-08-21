@@ -53,12 +53,41 @@ export interface DeriveOptions {
 }
 
 /** Whole days between an ISO date or datetime and `now`. */
+/**
+ * How many days ago something was verified.
+ *
+ * Unparseable returns `Infinity`, which reads as stale everywhere — we cannot establish an
+ * age, and stale is the weakest claim available that is still true.
+ *
+ * ## A date in the future is not fresh
+ *
+ * It used to be the freshest thing possible: a negative age clears every staleness
+ * threshold, so `2030-01-01` rendered as `high` confidence and `99999-01-01` did too. That
+ * is wrong in three different ways at once.
+ *
+ * - A typo. `2036` for `2026` makes a stale record look checked this morning
+ * - A wrong clock. A phone set years ahead writes corrections nobody can outrank
+ * - **A cheap attack on the directory merge.** Corrections are weighed by confidence and
+ *   ties break on the date, so a correction dated 2099 wins against every honest one,
+ *   forever, from anybody
+ *
+ * So beyond a day's tolerance the future reads as **unverifiable** rather than as recent.
+ * One day rather than zero because timezones are real: a record verified this evening in
+ * Auckland is tomorrow in UTC, and calling that a forgery would break honest data to catch
+ * a case that a day's grace already covers.
+ *
+ * The same reasoning `watch-state.ts` already applies to an event stamped in the device's
+ * future, which reads Dark rather than current.
+ */
+export const FUTURE_TOLERANCE_DAYS = 1;
+
 export function ageInDays(at: string, now: Date): number {
   const then = Date.parse(at.length === 10 ? `${at}T00:00:00Z` : at);
   if (Number.isNaN(then)) return Number.POSITIVE_INFINITY;
   const today = Date.parse(`${now.toISOString().slice(0, 10)}T00:00:00Z`);
   const thenDay = Date.parse(`${new Date(then).toISOString().slice(0, 10)}T00:00:00Z`);
-  return Math.floor((today - thenDay) / 86_400_000);
+  const days = Math.floor((today - thenDay) / 86_400_000);
+  return days < -FUTURE_TOLERANCE_DAYS ? Number.POSITIVE_INFINITY : days;
 }
 
 /**
