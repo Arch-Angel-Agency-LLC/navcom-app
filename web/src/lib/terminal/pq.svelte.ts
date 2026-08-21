@@ -83,6 +83,25 @@ export const pq = {
       ...(config ? [config.pubkey, ...config.holders] : [])
     ].filter((k, i, all) => all.indexOf(k) === i);
 
+    /*
+     * Keys for people this device no longer sends to are dropped.
+     *
+     * Nothing removed them. `unpair` takes somebody out of the peer list — *"unilateral,
+     * immediate, and nobody is told"* — and left their key here, so this map became a
+     * **shadow copy of every relationship the device has ever had**, in the accruing tier,
+     * which survives a panic wipe. An operator who unpaired somebody had done so everywhere
+     * except the one place a seized phone would still show it.
+     *
+     * Pruned here rather than in `unpair`, because the same is true of leaving a watch or
+     * withdrawing a card, and a rule that every caller has to remember is one that gets
+     * missed — which is exactly how this happened.
+     */
+    const stale = Object.keys(known).filter((k) => !wanted.includes(k));
+    if (stale.length > 0) {
+      known = Object.fromEntries(Object.entries(known).filter(([k]) => wanted.includes(k)));
+      set('accruing', FIELD, known);
+    }
+
     /**
      * Nobody to talk to means nothing is published.
      *

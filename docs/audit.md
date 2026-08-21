@@ -27,7 +27,7 @@ Each cell is a pass. `—` not started, `✓` done, and a note when it found som
 | **2** One watch staffed | Executor, pager, drills, web push, on-call | **✓** | **✓** | **✓** |
 | **3** Two who met once | Peers, presence, cards, invites, public presence, buddy | **✓** | **✓** | **✓** |
 | **4** Squad with no box | Watch mode, group sealing, board, handover, watch key | **✓** | **✓** | **✓** |
-| **5** Written-down properties | PQC, declined, battery, RTL, watch-state v4 | — | — | — |
+| **5** Written-down properties | PQC, declined, battery, RTL, watch-state v4 | **✓** | — | — |
 | **6** Knowledge gets in | Corrections, merge, needs-checking, notes, promotion | — | — | — |
 | **7** Standing | Credentials, claims, revocation, the watch gate | — | — | — |
 | **9** No single point of failure | Backup and restore, capability sentence, funding | — | — | — |
@@ -490,6 +490,51 @@ timestamp that crossed a device boundary deserves the question *whose clock is t
 **Method note, third occurrence.** `npx tsc` and `npx vitest --root` bypass the npm scripts
 that rebuild core, so both were type-checking and testing against a stale `dist/`. Use the
 package scripts — `npm run check`, `npm test --prefix` — not the tools directly.
+
+## 5.R — Milestone 5, robustness
+
+**The device kept a shadow copy of every relationship it had ever had.** A peer's ML-KEM key
+is cached in the accruing tier, and nothing ever removed one. `unpair` takes somebody out of
+the peer list — *"unilateral, immediate, and nobody is told"* — and left their key behind, so
+`kem_keys` accumulated the pubkey of everyone the operator had ever paired with, **in the tier
+that survives a panic wipe**. An operator who unpaired somebody had done so everywhere except
+the one place a seized phone would still show it.
+
+Pruned on start against the set of people this device would actually send to, rather than in
+`unpair` — because the same is true of leaving a watch and of withdrawing a card, and a rule
+every caller has to remember is one that gets missed. That is how this happened, and it is the
+same shape as the wipe-key list in 1.R.
+
+### Four honest negatives, and one near-miss of my own
+
+**The post-quantum fallback notice is exactly right.** I went looking for a silent downgrade
+and found the opposite: a note rather than a warning, in the same muted colour as every other
+cost on the screen, saying what is actually missing — *"not covered against being stored today
+and opened by a future quantum computer"* — and what would change it. The comment above it
+explains why an orange "insecure" bar would be both alarming and **wrong**, since the message
+is unreadable by anyone today.
+
+**I nearly filed it as missing.** Two searches came back empty and I was ready to report that
+nothing surfaced the cover state at all; both had run from the wrong working directory. A
+finding that a required behaviour is absent is exactly the kind that must be checked twice
+before it is written down, because it accuses the code of something.
+
+**Malformed watch state degrades to Dark, every time.** A future version, no version, an
+unknown state word, a hundred-kilobyte holder, a bare JSON array, not-JSON-at-all — ten hostile
+inputs, ten Darks. That is the safe direction: an operator reads *"no watch"* rather than
+believing somebody is watching [invariant 4], and `readWatchStateAt` even separates `corrupt`
+from `absent` so the reason survives.
+
+**Key bundles refuse everything they should.** Signed by an attacker while claiming the
+owner, junk content, empty content, a truncated key, a two-hundred-kilobyte key — all refused.
+The subscription is filtered by author, so the map cannot be filled by strangers either.
+
+**Battery is absent rather than guessed** on the platforms without the API, which is stated in
+the module and is the correct behaviour for a system whose rule is that nothing estimates.
+
+**One thing noted for 5.E rather than fixed here:** the cover notice counts people
+(*"2 people you send to"*) where this project's own rule is provenance by name — and a name
+would tell the operator *whom* to nudge.
 
 ## 4.X — Milestone 4, edge cases
 
