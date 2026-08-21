@@ -24,7 +24,7 @@ Each cell is a pass. `—` not started, `✓` done, and a note when it found som
 |---|---|---|---|---|
 | **0** Prove what is built | Browser harness, service worker, offline, seeding, the verification layer itself | **✓** | **✓** | **✓** |
 | **1** One operator alone | Display rules, patrol record, contact, wipe, seeder | **✓** | **✓** | **✓** |
-| **2** One watch staffed | Executor, pager, drills, web push, on-call | **✓** | — | — |
+| **2** One watch staffed | Executor, pager, drills, web push, on-call | **✓** | **✓** | — |
 | **3** Two who met once | Peers, presence, cards, invites, public presence, buddy | — | — | — |
 | **4** Squad with no box | Watch mode, group sealing, board, handover, watch key | — | — | — |
 | **5** Written-down properties | PQC, declined, battery, RTL, watch-state v4 | — | — | — |
@@ -273,6 +273,57 @@ suite as `npx vitest run --root packages/watchtower`, which bypasses npm scripts
 the `pretest` that builds core. Watchtower resolves `@navcom/core` to `dist/`, so those runs
 were testing **whatever core last built**, not core as written. It surfaced here only because
 a brand-new core method was missing at runtime. Use `npm test --prefix packages/watchtower`.
+
+## 2.E — Milestone 2, error handling and reporting
+
+**One weekly drill paged everybody roughly six hundred times.** A drill waits out its
+acknowledgement window — ten minutes by default — before it can record a result, and the sweep
+that decides whether one is due runs every second. Nothing marked a drill in flight, so the
+sweep started a new one every second for the entire window, each paging the whole roster.
+Measured at four pages in five seconds with a six-second window; the shipped default is a
+hundred times longer.
+
+**No attacker is required.** This is the ordinary weekly drill, and the mechanism built to
+prove the pager works *without wearing it out* was the thing most likely to destroy it. It is
+also worth noting that 2.R's page budget would not have caught this — drills page directly,
+and deliberately still do, because a real `Distress` must never be refused because a drill
+spent the budget.
+
+Fixed with an in-flight flag, and by re-arming the schedule *before* the window is waited out
+rather than after — otherwise a drill that throws leaves `nextAt` in the past and every
+subsequent sweep considers a drill due, which is the same storm arrived at by a different
+route.
+
+**A watch whose drills stopped ran three months on a dead pass.** Nothing anywhere considered
+a drill's *age*. The demotion rule already handled an absent or failed drill, and a stale one
+walked straight past it: an executor that died in June leaves a passing June drill in the file,
+and the daemon goes on advertising `automated-oncall` on the strength of it. An operator signs
+on and reads a clean sentence. **A dead safety check read exactly like a healthy one** — and
+this is the case that arrives on its own, without anything going wrong on the night.
+
+Invariant 9 says volatile data shows its age. A drill result is the most volatile thing this
+system publishes and it was the one piece that did not. Two weeks — two drill cycles — now
+demotes the claim and puts the age in the sentence. `station` is deliberately unaffected: a
+human at the console is present regardless of what a drill says.
+
+**And the sentence was not true.** `"No drill has ever passed."` was printed for three
+different situations, and only one of them supported it — `last_drill` is the *last* drill, so
+a failure today says nothing about last month. Now: never run, last one failed, or passed *N*
+days ago, each said plainly.
+
+**Two smaller ones on the same path:** a drill result was logged *after* it was written, so a
+filesystem that refused the write threw past the log line and the entire product of a safety
+check vanished — not in the file, not in the log, nowhere. And that write failure was silent;
+it now says what the consequence is, that the watch will keep publishing the previous drill.
+
+**Nothing found in the keyless pager**, and it is worth saying why: `pager/decide.ts` already
+had per-operator rate limiting, multi-relay dedup and an age check, with the reasoning written
+out. **The defence existed in this codebase already — in the component that is not
+safety-critical.** The executor, which is, had none of it.
+
+**Method note.** `npx vitest` does not typecheck. Two test fixtures written in 1.E used `null`
+for fields typed as optional strings and passed anyway; `tsc --noEmit` caught them here. Run
+the typecheck, not only the tests.
 
 ## Milestone 1, after three passes
 

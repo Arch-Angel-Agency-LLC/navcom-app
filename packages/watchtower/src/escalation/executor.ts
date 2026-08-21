@@ -65,6 +65,18 @@ export class EscalationExecutor {
   private drillAcks = new Map<string, { by: Author; atMs: number }[]>();
   private readonly since = now();
   private readonly budget: PageBudget;
+  /**
+   * Whether a drill is already running.
+   *
+   * A drill waits out its acknowledgement window -- ten minutes by default -- before it can
+   * record a result, and the sweep that decides whether one is due runs every second. With
+   * nothing marking it in flight, one weekly drill fired roughly six hundred times, paging
+   * every on-call person once a second for the whole window.
+   *
+   * The mechanism built to prove the pager works without wearing it out was the thing most
+   * likely to destroy it, and no attacker was required.
+   */
+  private drilling = false;
   private sweepHandle: ReturnType<typeof setInterval> | undefined;
   private subCloser: { close: (reason?: string) => void } | undefined;
 
@@ -293,8 +305,32 @@ export class EscalationExecutor {
    */
   async fireDrill(id = randomBytes(16).toString("hex")): Promise<void> {
     if (!this.drillStatePath) return;
+    if (this.drilling) {
+      console.warn("[drill] one is already running -- not starting a second");
+      return;
+    }
 
+    this.drilling = true;
     this.drillAcks.set(id, []);
+
+    /*
+     * Re-armed before the window is waited out, not after.
+     *
+     * The in-flight flag covers this process; this covers the case where the drill throws
+     * or the process restarts mid-window. Without it, `nextAt` stays in the past and every
+     * sweep from then on considers a drill due -- so a failure in the drill path becomes a
+     * drill that pages the roster once a second forever.
+     *
+     * The result overwrites this a moment later. Losing one drill to a crash is the correct
+     * trade against paging everybody until somebody notices.
+     */
+    this.drills = schedule(this.drills?.last ?? null, now(), this.config.escalation.drillWindowDays);
+    try {
+      writeDrillState(this.drillStatePath, this.drills);
+    } catch (err: unknown) {
+      console.error("[drill] could not re-arm the schedule: " + String(err));
+    }
+
     try {
       const result = await runDrill(id, {
         page: this.page,
@@ -307,11 +343,29 @@ export class EscalationExecutor {
         },
       });
 
-      this.drills = schedule(result, now(), this.config.escalation.drillWindowDays);
-      writeDrillState(this.drillStatePath, this.drills);
+      /*
+       * Said out loud before it is written down.
+       *
+       * The order used to be the other way round, so a filesystem that refused the write
+       * threw past the log line and the drill's result -- the entire product of a safety
+       * check -- was lost. A watch that cannot record a drill must still be able to tell
+       * the person reading its logs what the drill found.
+       */
       console.log("[drill] " + drillSentence(result));
+      this.drills = schedule(result, now(), this.config.escalation.drillWindowDays);
+      try {
+        writeDrillState(this.drillStatePath, this.drills);
+      } catch (err: unknown) {
+        // Loud: the daemon reads this file to publish `10910`, so a failure here means the
+        // watch will keep advertising an older drill than the one that just ran.
+        console.error(
+          "[drill] RESULT NOT RECORDED -- " + String(err) +
+            ". The watch will publish the previous drill until this is fixed.",
+        );
+      }
     } finally {
       this.drillAcks.delete(id);
+      this.drilling = false;
     }
   }
 

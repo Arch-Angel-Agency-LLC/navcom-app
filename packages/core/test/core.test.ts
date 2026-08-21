@@ -125,9 +125,9 @@ describe('watch state — what may honestly be published', () => {
   });
 
   it('tells an operator the consequence, not the label', () => {
-    expect(capabilitySentence(publishableWatchState({ ...base, oncall: [] })))
+    expect(capabilitySentence(publishableWatchState({ ...base, oncall: [] }), NOW_S))
       .toMatch(/page nobody and tell you so/);
-    expect(capabilitySentence(darkState())).toMatch(/No watch/);
+    expect(capabilitySentence(darkState(), NOW_S)).toMatch(/No watch/);
   });
 
   it('names who can be raised rather than counting them', () => {
@@ -135,20 +135,69 @@ describe('watch state — what may honestly be published', () => {
     // tells somebody whether they recognise anybody -- and the names are already on `10910`,
     // which is unencrypted, so this reveals nothing new.
     const s = publishableWatchState({ ...base, oncall: [named('Wren'), named('Raven')] });
-    expect(capabilitySentence(s)).toContain('Wren and Raven');
-    expect(capabilitySentence(s)).not.toMatch(/\b2\b/);
+    expect(capabilitySentence(s, NOW_S)).toContain('Wren and Raven');
+    expect(capabilitySentence(s, NOW_S)).not.toMatch(/\b2\b/);
   });
 
   it('says when the ladder is one person deep', () => {
     // 9.3: what is thin, told to the operator relying on it rather than published.
     const s = publishableWatchState({ ...base, oncall: [named('Wren')] });
-    expect(capabilitySentence(s)).toMatch(/one person/i);
-    expect(capabilitySentence(s)).toMatch(/ladder ends/i);
+    expect(capabilitySentence(s, NOW_S)).toMatch(/one person/i);
+    expect(capabilitySentence(s, NOW_S)).toMatch(/ladder ends/i);
   });
 
-  it('says when no drill has ever passed', () => {
-    const s = publishableWatchState({ ...base, state: 'station', holder: 'Wren', holder_kind: 'human', oncall: [named('Raven')], last_drill: null });
-    expect(capabilitySentence(s)).toMatch(/no drill has ever passed/i);
+  it('says which of the three drill situations this is, rather than one line for all of them', () => {
+    // It said "No drill has ever passed." for never-run, for failed, and for a pass so old
+    // the executor had plainly stopped. Only the first of those was something the payload
+    // could support: `last_drill` is the LAST one, so a failure today says nothing about
+    // whether one passed last month.
+    const station = { ...base, state: 'station' as const, holder: 'Wren', holder_kind: 'human' as const, oncall: [named('Raven')] };
+    const drill = (result: 'pass' | 'fail', at: number) => ({
+      at, result, author: { kind: 'node' as const, callsign: 'watch' }, acknowledged: []
+    });
+
+    expect(capabilitySentence(publishableWatchState({ ...station, last_drill: null }), NOW_S))
+      .toMatch(/no drill has ever run/i);
+    expect(capabilitySentence(publishableWatchState({ ...station, last_drill: drill('fail', NOW_S) }), NOW_S))
+      .toMatch(/the last drill failed/i);
+    expect(capabilitySentence(publishableWatchState({ ...station, last_drill: drill('pass', NOW_S) }), NOW_S))
+      .not.toMatch(/drill/i);
+  });
+
+  it('shows a stale drill its age instead of letting it read as clean [invariant 9]', () => {
+    // An executor that died in June leaves a passing June drill in the file forever. The
+    // watch went on advertising on the strength of it: a dead safety check read exactly
+    // like a healthy one.
+    const at = NOW_S - 90 * 24 * 60 * 60;
+    const s = publishableWatchState({
+      ...base, state: 'station', holder: 'Wren', holder_kind: 'human', oncall: [named('Raven')],
+      last_drill: { at, result: 'pass', author: { kind: 'node', callsign: 'watch' }, acknowledged: [] }
+    });
+    const sentence = capabilitySentence(s, NOW_S);
+    expect(sentence).toMatch(/passed 90 days ago/);
+    expect(sentence).toMatch(/nothing has tested this since/i);
+  });
+
+  it('will not advertise on-call on the strength of a drill that has gone stale', () => {
+    // The demotion already existed for an absent or failed drill. A stale pass walked past
+    // it, which is the case that happens on its own rather than needing anything to go
+    // wrong on the night.
+    const oncall = [named('Raven')];
+    const fresh = { at: NOW_S, result: 'pass' as const, author: { kind: 'node' as const, callsign: 'watch' }, acknowledged: [] };
+    const stale = { ...fresh, at: NOW_S - 90 * 24 * 60 * 60 };
+
+    expect(publishableWatchState({ ...base, state: 'automated-oncall', oncall, last_drill: fresh }).state)
+      .toBe('automated-oncall');
+    expect(publishableWatchState({ ...base, state: 'automated-oncall', oncall, last_drill: stale }).state)
+      .toBe('automated');
+  });
+
+  it('leaves a human at the console alone — they are present regardless', () => {
+    // `station` is a person, not a ladder claim, so a stale drill must not demote it.
+    const stale = { at: NOW_S - 90 * 24 * 60 * 60, result: 'pass' as const, author: { kind: 'node' as const, callsign: 'watch' }, acknowledged: [] };
+    expect(publishableWatchState({
+      ...base, state: 'station', holder: 'Wren', holder_kind: 'human', oncall: [named('Raven')], last_drill: stale
+    }).state).toBe('station');
   });
 
   it('does not let a human at the console hide an empty ladder', () => {
@@ -158,7 +207,7 @@ describe('watch state — what may honestly be published', () => {
     const s = publishableWatchState({
       ...base, state: 'station', holder: 'Wren', holder_kind: 'human', oncall: [], last_drill: null
     });
-    const sentence = capabilitySentence(s);
+    const sentence = capabilitySentence(s, NOW_S);
     expect(sentence).toContain('Wren is at the console');
     expect(sentence).toMatch(/nobody is on call/i);
     expect(sentence).toMatch(/pages nobody and tells you so/i);

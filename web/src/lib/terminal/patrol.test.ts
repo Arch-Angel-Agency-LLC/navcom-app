@@ -141,7 +141,7 @@ describe('when the phone is full', () => {
   it('does not clear the history it failed to copy', () => {
     // Three unchecked writes meant the copy failed and the original was cleared anyway —
     // the one operation whose whole purpose is not losing the record was what lost it.
-    recordPatrol({ started: 1, ended: 2, area: 'North', note: null });
+    recordPatrol({ started: 1, ended: 2, area: 'North' });
     expect(patrols()).toHaveLength(1);
 
     const release = jam();
@@ -156,7 +156,7 @@ describe('when the phone is full', () => {
   it('leaves the setting where the record actually is', () => {
     // A setting that says "kept" while the record sits in the wipeable tier would send the
     // operator into a panic wipe believing their history was safe.
-    recordPatrol({ started: 1, ended: 2, area: null, note: null });
+    recordPatrol({ started: 1, ended: 2, area: '' });
     const release = jam();
     try {
       setKeepHistory(true);
@@ -170,7 +170,7 @@ describe('when the phone is full', () => {
   it('says a patrol was not recorded, rather than returning as though it were', () => {
     const release = jam();
     try {
-      expect(recordPatrol({ started: 3, ended: 4, area: null, note: null })).toBe(false);
+      expect(recordPatrol({ started: 3, ended: 4, area: '' })).toBe(false);
       expect(storageError()).toMatch(/out of storage/);
     } finally {
       release();
@@ -187,7 +187,7 @@ describe('when the phone is full', () => {
     const unsubscribe = onStorageError((m) => heard.push(m));
     const release = jam();
     try {
-      recordPatrol({ started: 5, ended: 6, area: null, note: null });
+      recordPatrol({ started: 5, ended: 6, area: '' });
     } finally {
       release();
       unsubscribe();
@@ -204,7 +204,7 @@ describe('a patrol field that is not a list', () => {
     // nothing and says nothing.
     set('wipeable', 'patrols', { nope: true });
     expect(patrols()).toEqual([]);
-    expect(() => recordPatrol({ started: 1, ended: 2, area: null, note: null })).not.toThrow();
+    expect(() => recordPatrol({ started: 1, ended: 2, area: '' })).not.toThrow();
     expect(patrols()).toHaveLength(1);
   });
 

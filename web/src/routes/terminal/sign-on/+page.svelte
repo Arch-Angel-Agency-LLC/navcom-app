@@ -46,7 +46,7 @@
 <!-- What you are signing on to, said before you sign on, not after. -->
 <section class="told" data-told>
   <h2>What is behind you</h2>
-  <p>{capabilitySentence(watch.state)}</p>
+  <p>{capabilitySentence(watch.state, Math.floor(Date.now() / 1000))}</p>
 </section>
 
 {#if watch.state.state === 'dark'}

@@ -143,12 +143,37 @@ export interface WatchStateInput {
  *    claim is exactly what a drill tests, so an untested ladder cannot be advertised [C29].
  *    `station` is unaffected — a human is genuinely present regardless.
  */
+/**
+ * How long a passing drill is worth anything.
+ *
+ * Drills run weekly, so a result older than two of those windows does not mean the ladder is
+ * fine — it means **the thing that tests the ladder has stopped running**. An executor that
+ * died in June leaves a passing June drill in the file forever, and until this existed the
+ * daemon went on advertising `automated-oncall` on the strength of it. A dead safety check
+ * read exactly like a healthy one.
+ *
+ * Invariant 9 says volatile data shows its age. A drill result is the most volatile thing
+ * this system publishes, and it was the one piece that did not.
+ */
+export const DRILL_FRESH_SECONDS = 14 * 24 * 60 * 60;
+
+/** Whether a drill result is recent enough to stand for anything. */
+export function drillIsCurrent(drill: DrillResult | null, now: number): boolean {
+  if (!drill) return false;
+  return now - drill.at <= DRILL_FRESH_SECONDS;
+}
+
 export function publishableWatchState(input: WatchStateInput): WatchStatePayload {
   const reachable = pageableNow(input.oncall, input.now);
   let state = input.state;
 
   if (state === 'automated-oncall') {
-    const unproven = input.last_drill === null || input.last_drill.result === 'fail';
+    // A stale pass is not a pass. See DRILL_FRESH_SECONDS: it means the executor stopped,
+    // and the last thing it managed to write outlives it.
+    const unproven =
+      input.last_drill === null ||
+      input.last_drill.result === 'fail' ||
+      !drillIsCurrent(input.last_drill, input.now);
     if (reachable.length === 0 || unproven) state = 'automated';
   }
 
@@ -341,7 +366,16 @@ function namesOf(oncall: OnCall[]): string {
   return `${names.slice(0, -1).join(', ')} and ${names.at(-1)}`;
 }
 
-export function capabilitySentence(s: WatchStatePayload): string {
+function drillClause(drill: DrillResult | null, now: number): string {
+  if (!drill) return ' No drill has ever run.';
+  if (drill.result === 'fail') return ' The last drill failed.';
+  if (drillIsCurrent(drill, now)) return '';
+
+  const days = Math.floor((now - drill.at) / 86_400);
+  return ` The last drill passed ${days} days ago, so nothing has tested this since.`;
+}
+
+export function capabilitySentence(s: WatchStatePayload, now: number): string {
   const reachable = namesOf(s.oncall);
   /*
    * What is thin, said to the operator relying on it.
@@ -355,8 +389,16 @@ export function capabilitySentence(s: WatchStatePayload): string {
     s.oncall.length === 1
       ? ' One person, so if they miss it the ladder ends there.'
       : '';
-  const drill =
-    s.last_drill?.result === 'pass' ? '' : ' No drill has ever passed.';
+  /*
+   * What the drill actually says, rather than one sentence for three different situations.
+   *
+   * It read "No drill has ever passed." for all of them, which is an assertion the payload
+   * cannot support — `last_drill` is the last one, so a failure today says nothing about
+   * whether one passed last month. And a *stale* pass produced no caveat at all: an operator
+   * signed on reading a clean sentence while the process that runs drills had been dead for
+   * three months.
+   */
+  const drill = drillClause(s.last_drill, now);
 
   if (s.state === 'dark') {
     return 'No watch. Distress will page nobody — the terminal will tell you so, and it still works offline.';

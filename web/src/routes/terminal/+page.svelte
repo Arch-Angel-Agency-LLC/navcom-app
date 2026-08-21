@@ -331,7 +331,7 @@
 
 <!-- The consequence, not the label. A word like "Automated" is not enough on its own. -->
 <section class="consequence" data-capability>
-  <p>{capabilitySentence(s)}</p>
+  <p>{capabilitySentence(s, Math.floor(Date.now() / 1000))}</p>
 </section>
 
 {#if s.state === 'dark' && configured}

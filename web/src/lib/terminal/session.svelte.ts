@@ -207,7 +207,7 @@ export const operator = {
       at: now,
       area,
       expectedUntil: now + Math.round(hours * 3600),
-      toldAtSignOn: capabilitySentence(state),
+      toldAtSignOn: capabilitySentence(state, Math.floor(Date.now() / 1000)),
       routineInterval: routineMinutes === null ? null : routineMinutes * 60
     };
     // Wipeable: tonight's data. Panic wipe removes it; identity survives.
