@@ -34,8 +34,19 @@ describe('every capability has a screen', () => {
     // Two screens once shipped without being cached, and both were screens whose whole
     // point is working without a signal.
     const cached = new Set<string>(TERMINAL_ROUTES.map((r) => `terminal/${r}`));
-    for (const screen of CAPABILITY_SCREENS) {
-      expect(cached.has(screen), `${screen} is not cached offline`).toBe(true);
+    // `on-visit` screens are cached the first time they are opened rather than precached --
+    // "only what you open is kept", because carrying every metro would fill a cheap phone.
+    // Asserted separately below rather than exempted silently.
+    for (const c of CAPABILITIES.filter((x) => (x.cached ?? 'precache') === 'precache')) {
+      expect(cached.has(c.screen), `${c.screen} is not cached offline`).toBe(true);
+    }
+  });
+
+  it('every on-visit screen was actually built, since nothing precaches it', () => {
+    // The failure this guards: a screen that is neither in the shell nor in the build is
+    // simply absent, and the precache check above would not have looked.
+    for (const c of CAPABILITIES.filter((x) => x.cached === 'on-visit')) {
+      expect(existsSync(join(BUILD, c.screen, 'index.html')), `${c.screen} was not built`).toBe(true);
     }
   });
 });

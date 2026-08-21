@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { readDevice, seedDevice, open } from './device';
+import { readDevice, seedDevice, serviceWorkerReady, open } from './device';
 
 /**
  * Every control an operator is told about is on the screen and operable.
@@ -557,6 +557,75 @@ test.describe('resupply', () => {
     await expect(page.getByRole('heading', { name: /^restock$/i })).toBeVisible();
     await expect(page.getByRole('heading', { name: /waiting on you/i })).toBeVisible();
     await expect(page.getByText(/nothing has run out/i)).toBeVisible();
+  });
+});
+
+test.describe('reporting a problem with a record', () => {
+  const AREA = '/terminal/directory/st-louis/';
+
+  test('says what a report can and cannot do, before anybody makes one', async ({ page }) => {
+    await seedDevice(page, OUT);
+    await open(page, AREA);
+
+    await expect(page.getByText(/cannot delete this listing or\s+overrule anybody/i)).toBeVisible();
+    await expect(page.getByText(/nobody has to approve it/i)).toBeVisible();
+  });
+
+  test('is one tap from the record, with no form and no account', async ({ page }) => {
+    // Display rule 4: "reporting must always be easier than fixing". Until now the app could
+    // render a flag and not set one, so reporting was impossible while fixing needed a pull
+    // request.
+    await seedDevice(page, OUT);
+    await open(page, AREA);
+
+    await page.getByRole('button', { name: /report a problem/i }).first().click();
+    await expect(page.getByRole('button', { name: /^closed$/i }).first()).toBeVisible();
+    await expect(page.getByRole('button', { name: /^wrong$/i }).first()).toBeVisible();
+  });
+
+  test('a report adds a note and never removes the listing', async ({ page }) => {
+    // The abuse answer, end to end. Nobody adjudicates between operators, so the shape of
+    // the data has to be what makes a hostile report survivable.
+    await seedDevice(page, OUT);
+    await open(page, AREA);
+
+    const before = await page.locator('[data-record]').count();
+    await page.getByRole('button', { name: /report a problem/i }).first().click();
+    await page.getByRole('button', { name: /^closed$/i }).first().click();
+
+    await expect(page.locator('[data-report]').first()).toBeVisible();
+    await expect(page.locator('[data-report]').first()).toContainText(/reported this/i);
+    // The listing is still there, and still says so.
+    expect(await page.locator('[data-record]').count()).toBe(before);
+    await expect(page.getByText(/the published listing is still underneath/i).first()).toBeVisible();
+  });
+
+  test('a report survives losing the network, because the directory does', async ({ page, context }) => {
+    await seedDevice(page, OUT);
+    await open(page, AREA);
+    // Nothing is served offline until the worker is actually running.
+    await serviceWorkerReady(page);
+    await page.getByRole('button', { name: /report a problem/i }).first().click();
+    await page.getByRole('button', { name: /^closed$/i }).first().click();
+    await expect(page.locator('[data-report]').first()).toBeVisible();
+
+    // The region page is cached ON VISIT, not precached -- "only what you open is kept" --
+    // so cutting the network before the worker has it tests the race rather than the
+    // feature. Same wait the offline spec uses.
+    await page.waitForFunction(async () => {
+      for (const name of await caches.keys()) {
+        if (await (await caches.open(name)).match('/terminal/directory/st-louis/')) return true;
+      }
+      return false;
+    }, undefined, { timeout: 15_000 });
+
+    await context.setOffline(true);
+    // Reload rather than navigate, which is the pattern offline.spec.ts already proves: a
+    // fresh `goto` offline has to re-resolve the whole route, and what this test is about is
+    // whether the correction survived, not whether routing does.
+    await page.reload();
+    await page.waitForSelector('html[data-hydrated="true"]', { timeout: 20_000 });
+    await expect(page.locator('[data-report]').first()).toBeVisible();
   });
 });
 

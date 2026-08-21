@@ -50,6 +50,18 @@ export interface Capability {
   claims: string[];
   /** A CSS selector for the thing a person operates. Checked in a real browser. */
   control?: string;
+  /**
+   * How this screen survives losing signal.
+   *
+   * `precache` — in the service worker's shell, available before it is ever opened. The
+   * default, and right for every screen an operator might need cold.
+   *
+   * `on-visit` — cached the first time it is opened, and not before. Right for the directory
+   * regions: *"only what you open is kept"*, because carrying every metro would fill a cheap
+   * phone with places nobody will go. The manifest models it because the app already does,
+   * and a check that demanded precaching here would be demanding the wrong thing.
+   */
+  cached?: 'precache' | 'on-visit';
   requires: Requirement[];
 }
 
@@ -102,6 +114,21 @@ export const CAPABILITIES: Capability[] = [
       'Opening it is what saves it',
       'Only what you open is kept'
     ],
+    requires: []
+  },
+  {
+    name: 'Report a problem with a record',
+    screen: 'terminal/directory/st-louis/',
+    claims: [
+      // Display rule 4's own words, finally true in both halves: the app could render a
+      // flag and not set one, so reporting was impossible while fixing needed a pull request.
+      'Report a problem',
+      // The abuse answer, said where somebody reports. Nobody adjudicates, so the shape of
+      // the data has to be what makes it survivable.
+      'cannot delete this listing or overrule anybody',
+      'nobody has to approve it'
+    ],
+    cached: 'on-visit',
     requires: []
   },
   {

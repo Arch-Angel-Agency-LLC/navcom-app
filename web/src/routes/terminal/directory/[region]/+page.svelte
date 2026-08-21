@@ -20,6 +20,8 @@
     type ResourceType
   } from '$lib/directory';
   import { AVAILABILITY_FIELDS, FIELD_LABELS, INTAKE_FIELDS, labelValue } from '$lib/directory/load';
+  import { mergeCorrections } from '@navcom/core';
+  import { corrections } from '$lib/terminal/corrections.svelte';
   import { onMount } from 'svelte';
 
   let { data } = $props();
@@ -52,8 +54,20 @@
   let hydrated = $state(false);
   const now = $derived(hydrated ? new Date() : new Date(data.built));
 
+  /** Which record's report control is open. One at a time — this is not a form. */
+  let reporting = $state<string | null>(null);
+
+  async function report(id: string, flag: string) {
+    await corrections.submit(id, { flag });
+    reporting = null;
+  }
+
   onMount(() => {
     hydrated = true;
+
+    // Scoped to the area actually carried. Asking a relay for every correction on the
+    // network would pull places this operator will never go, on a phone counting bytes.
+    corrections.start(data.records.map((r: ResourceRecord) => r.id));
 
     // Ask to be saved for offline.
     //
@@ -61,7 +75,24 @@
     // client-side navigation, which fetches this page's DATA and never its HTML. Without
     // this the document was never cached, and an operator who browsed to their area and
     // then lost signal found nothing. Reloading by hand cached it; nobody reloads by hand.
-    navigator.serviceWorker?.controller?.postMessage({ cache: location.pathname });
+    //
+    // **Waits for a worker rather than asking whichever one happens to exist.** On a first
+    // visit `controller` is null -- the worker is still installing -- so the optional call
+    // that used to be here silently did nothing, and an operator whose very first action was
+    // opening their area got it uncached. The same failure as the client-navigation one
+    // above, one layer down, and invisible for the same reason: nothing errored.
+    void navigator.serviceWorker?.ready
+      .then((registration) => {
+        const worker = navigator.serviceWorker.controller ?? registration.active;
+        worker?.postMessage({ cache: location.pathname });
+      })
+      .catch(() => undefined);
+
+    // Last, and it must stay last: everything above runs on mount, and an early `return`
+    // here silently makes the rest of this function dead code. That is exactly what
+    // happened when corrections were added -- the caching call sat below a return for an
+    // afternoon, nothing errored, and the area simply stopped being saved.
+    return () => corrections.stop();
   });
 
   const byType = $derived(
@@ -95,6 +126,17 @@
     If a watch is up, <strong><a href="/terminal/query/">ask it instead</a></strong> — somebody
     with both hands free and a real screen can answer things this list cannot. This is what
     you have when nobody is watching, and it is worse, on purpose.
+  </p>
+  <p class="cost">
+    <!--
+      Tenth time this session a claim landed behind a conditional the prerendered page cannot
+      reach — here, behind the report control itself. The rule holds again, and for the usual
+      reason: what a report can and cannot do is read before somebody makes one, not after.
+    -->
+    <strong>You can report a problem with any listing below.</strong> It goes out under your
+    callsign and <strong>adds</strong> what you saw — it cannot delete this listing or
+    overrule anybody, and nobody has to approve it. Reporting is meant to be easier than
+    fixing.
   </p>
 </section>
 
@@ -132,7 +174,14 @@
 
     {#if isOpen(group.type)}
       <div class="records">
-        {#each group.records as record (record.id)}
+        {#each group.records as published (published.id)}
+          <!--
+            Live corrections merged over the published record before anything is displayed.
+            The rules that weigh them are the directory's own -- an in-person check from last
+            night beats a website scrape from March because confidence already said so.
+          -->
+          {@const merged = mergeCorrections(published, corrections.about(published.id), now)}
+          {@const record = merged.record}
           {@const meta = displayRecord(record, now)}
           <article
             class="rec"
@@ -154,6 +203,19 @@
 
             <h3>{record.name}</h3>
 
+            <!--
+              Rule 3 applied to reports, which are NOT properties of the record: a hostile
+              flag must not make a shelter unusable for everybody. Attributed and dated, so a
+              reader weighs them like any other attestation.
+            -->
+            {#each merged.reports as r (r.by)}
+              <p class="report" data-report>
+                <strong>{r.verified_by}</strong> reported this
+                {labelValue(r.fields.flag ?? '')} on {r.last_verified}.
+                The listing below is unchanged.
+              </p>
+            {/each}
+
             <dl>
               <FieldRow field="address" label={FIELD_LABELS.address ?? 'Address'}
                 display={displayField(record, 'address', now)} />
@@ -168,6 +230,28 @@
                   display={displayField(record, field, now)} />
               {/each}
             </dl>
+
+            {#if merged.reports.length > 0 || Object.keys(merged.sources).length > 0}
+              <p class="corrected" data-corrected>
+                Carries {Object.keys(merged.sources).length > 0 ? 'corrections' : 'a report'}
+                from operators. Nothing was removed — the published listing is still underneath.
+              </p>
+            {/if}
+
+            <!--
+              6.2. Reporting must always be easier than fixing, and until now it was
+              impossible while fixing needed a pull request. One tap, no form, no account.
+            -->
+            {#if reporting === record.id}
+              <div class="row">
+                <button class="drop" onclick={() => report(record.id, 'reported_closed')}>Closed</button>
+                <button class="drop" onclick={() => report(record.id, 'reported_wrong')}>Wrong</button>
+                <button class="drop" onclick={() => (reporting = null)}>Cancel</button>
+              </div>
+              <p class="cost">Goes out under your callsign.</p>
+            {:else}
+              <button class="drop" onclick={() => (reporting = record.id)}>Report a problem</button>
+            {/if}
           </article>
         {/each}
       </div>
@@ -203,6 +287,14 @@
   .rec h3 { font-size: 1.15rem; margin: 0 0 .4rem; color: var(--t-ink); }
   dl { margin: 0; }
 
+  .report {
+    margin: 0 0 .5rem; color: var(--t-oncall); font-size: .9rem;
+    border-inline-start: 2px solid var(--t-oncall); padding-inline-start: .6rem;
+  }
+  .corrected { margin: .4rem 0 0; color: var(--t-faint); font-size: .82rem; }
+  .row { display: flex; gap: .5rem; flex-wrap: wrap; margin-top: .5rem; }
+  .drop { min-height: 2.4rem; font-size: .85rem; padding: 0 .8rem;
+          border-color: var(--t-line); color: var(--t-faint); margin-top: .5rem; }
   .flag {
     color: var(--t-dark); border: 1px solid var(--t-dark);
     padding: .4rem .6rem; margin: 0 0 .5rem; font-weight: 700; font-size: .92rem;

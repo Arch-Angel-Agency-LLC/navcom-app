@@ -671,10 +671,10 @@ it delivers the whole milestone's value without waiting on anybody.
 
 | | Item | Owner | Cost |
 |---|---|---|---|
-| 6.1 | **Corrections merge over the cached directory at read time** | agent | The spine. Without it nothing else in this milestone reaches a reader |
-| 6.2 | **Flag a record in one tap** | agent | Display rule 4 is **half-built**: the app renders a flag and cannot set one. Its own words are *"reporting must always be easier than fixing"*, and today reporting is impossible while fixing needs a pull request |
+| 6.1 | ~~Corrections merge over the cached directory at read time~~ | **done** | The spine. Cached alongside the directory, so a correction is there in the car park with no bars — live when you do not need it and gone when you do would be exactly the wrong shape |
+| 6.2 | ~~Flag a record in one tap~~ | **done** | Display rule 4 is true in both halves now. One tap from the record, no form, no account |
 | 6.3 | **Correct a field from the phone** | agent | The Convert has the best directory knowledge in the network and the most reason to be unlinkable. She cannot add a line without a laptop |
-| 6.4 | **Corrections are additive and never delete** | agent | **This is also the abuse answer.** A hostile flag adds a claim with an author and an age; it removes nothing. The reader sees both and weighs by provenance, which the display rules already do — so no adjudication is needed, and [`declined.md`](declined.md) does not have to be contradicted |
+| 6.4 | ~~Corrections are additive and never delete~~ | **done** | **The abuse answer.** A hostile flag adds a claim with an author and an age and removes nothing — tested end to end, from the button to the record still being there |
 | 6.5 | **The directory says what it does not know** | agent | *"Contribute something"* is paralysing; *"you are passing St Pat's tonight, ask them one thing"* is an errand. A needs-checking list from blank and stale fields — the schema already knows both |
 | 6.6 | **Capture cold, correct warm** | agent | You learn a shelter shut intake at 20:30 standing outside in the rain and cannot type a schema field. A local note pinned to a record, never transmitted, that becomes a correction at home |
 | 6.7 | **Nothing about a person, guided at the point of writing** | agent | Free text captured in the field is the likeliest place in the whole system for invariant 1 to be broken. Same pattern as the `Query` screen, which already does this |
