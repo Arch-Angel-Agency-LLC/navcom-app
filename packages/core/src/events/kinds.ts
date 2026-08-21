@@ -30,6 +30,15 @@ export const KIND_CARD = 10911;
 export const KIND_KEY_BUNDLE = 10912;
 
 /**
+ * Addressable. A correction to a directory record — *"St Pat's shut intake at 20:30"*.
+ *
+ * Keyed on the record, so an operator's latest word about a place replaces their earlier
+ * word rather than accumulating. Signed by the contact key, so contributing publicly costs
+ * no operational exposure.
+ */
+export const KIND_CORRECTION = 30911;
+
+/**
  * Ephemeral. *"Raven is out tonight."* A name and a region, and nothing else ever.
  *
  * Also signed by the contact key, so it is verifiably the same Raven whose card is up
