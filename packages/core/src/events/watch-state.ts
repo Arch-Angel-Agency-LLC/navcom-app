@@ -326,21 +326,61 @@ export const darkState = (): WatchStatePayload => ({
  * What an operator is actually told before going out — the consequence, not the label.
  * A word like "Automated" is not enough on its own.
  */
+/**
+ * Who can actually be raised, by name.
+ *
+ * **Never a count.** A number invites gaming and tells a reader nothing they can act on;
+ * *"Wren and Raven"* tells somebody whether they recognise anybody. The names are already
+ * public — `10910` is unencrypted and carries the roster — so this reveals nothing new, it
+ * just stops the sentence hiding behind a total.
+ */
+function namesOf(oncall: OnCall[]): string {
+  const names = oncall.map((o) => o.author.callsign).filter((n): n is string => !!n);
+  if (names.length === 0) return '';
+  if (names.length === 1) return names[0]!;
+  return `${names.slice(0, -1).join(', ')} and ${names.at(-1)}`;
+}
+
 export function capabilitySentence(s: WatchStatePayload): string {
+  const reachable = namesOf(s.oncall);
+  /*
+   * What is thin, said to the operator relying on it.
+   *
+   * Not published anywhere new — this rides on the sentence that already goes to somebody at
+   * sign-on. Naming the on-call roster *to the world* would hand an adversary the one name
+   * worth targeting; naming it to the person about to walk out the door is the entire point
+   * of a capability receipt.
+   */
+  const thin =
+    s.oncall.length === 1
+      ? ' One person, so if they miss it the ladder ends there.'
+      : '';
+  const drill =
+    s.last_drill?.result === 'pass' ? '' : ' No drill has ever passed.';
+
   if (s.state === 'dark') {
     return 'No watch. Distress will page nobody — the terminal will tell you so, and it still works offline.';
   }
+
   if (s.state === 'station') {
     const who = s.holder ? `${s.holder} is` : 'A human is';
-    return `${who} at the console right now.`;
+    /*
+     * The state that looks strongest is the one that used to say least.
+     *
+     * "Wren is at the console right now" is true and is not a ladder. Wren can be asleep by
+     * 3am, and if the roster is empty a Distress still pages nobody — which an operator was
+     * never told, because this branch returned before it got to escalation. The strongest
+     * word on the screen was hiding the weakest fact behind it.
+     */
+    if (!reachable) {
+      return `${who} at the console. Nobody is on call, so if they cannot be raised, Distress pages nobody and tells you so.`;
+    }
+    return `${who} at the console, and ${reachable} on call.${thin}${drill}`;
   }
-  if (s.oncall.length === 0) {
+
+  if (!reachable) {
     return 'An agent holds the board. Distress will page nobody and tell you so.';
   }
-  const n = s.oncall.length;
-  const drill =
-    s.last_drill?.result === 'pass'
-      ? ' Last drill passed.'
-      : ' No passing drill on record.';
-  return `An agent holds the board. ${n} on-call, reachable now.${drill}`;
+  return `An agent holds the board. ${reachable} on call, reachable now.${thin}${drill}`;
 }
+

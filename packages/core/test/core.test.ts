@@ -120,11 +120,48 @@ describe('watch state — what may honestly be published', () => {
     expect(darkState().agent_health).toBe('down');
   });
 
+  const named = (callsign: string, channel: 'sms' | 'console-open' = 'sms') => ({
+    author: { kind: 'node' as const, callsign }, channel, expires: NOW_S + 3600
+  });
+
   it('tells an operator the consequence, not the label', () => {
-    expect(capabilitySentence(publishableWatchState(base))).toMatch(/2 on-call, reachable now/);
     expect(capabilitySentence(publishableWatchState({ ...base, oncall: [] })))
       .toMatch(/page nobody and tell you so/);
     expect(capabilitySentence(darkState())).toMatch(/No watch/);
+  });
+
+  it('names who can be raised rather than counting them', () => {
+    // A number invites gaming and tells a reader nothing they can act on. "Wren and Raven"
+    // tells somebody whether they recognise anybody -- and the names are already on `10910`,
+    // which is unencrypted, so this reveals nothing new.
+    const s = publishableWatchState({ ...base, oncall: [named('Wren'), named('Raven')] });
+    expect(capabilitySentence(s)).toContain('Wren and Raven');
+    expect(capabilitySentence(s)).not.toMatch(/\b2\b/);
+  });
+
+  it('says when the ladder is one person deep', () => {
+    // 9.3: what is thin, told to the operator relying on it rather than published.
+    const s = publishableWatchState({ ...base, oncall: [named('Wren')] });
+    expect(capabilitySentence(s)).toMatch(/one person/i);
+    expect(capabilitySentence(s)).toMatch(/ladder ends/i);
+  });
+
+  it('says when no drill has ever passed', () => {
+    const s = publishableWatchState({ ...base, state: 'station', holder: 'Wren', holder_kind: 'human', oncall: [named('Raven')], last_drill: null });
+    expect(capabilitySentence(s)).toMatch(/no drill has ever passed/i);
+  });
+
+  it('does not let a human at the console hide an empty ladder', () => {
+    // The state that looks strongest used to say least. "Wren is at the console right now"
+    // is true and is not a ladder -- Wren can be asleep by 3am, and with an empty roster a
+    // Distress still pages nobody, which this branch never mentioned.
+    const s = publishableWatchState({
+      ...base, state: 'station', holder: 'Wren', holder_kind: 'human', oncall: [], last_drill: null
+    });
+    const sentence = capabilitySentence(s);
+    expect(sentence).toContain('Wren is at the console');
+    expect(sentence).toMatch(/nobody is on call/i);
+    expect(sentence).toMatch(/pages nobody and tells you so/i);
   });
 });
 
