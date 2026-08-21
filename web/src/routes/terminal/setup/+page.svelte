@@ -128,6 +128,16 @@
         goes</strong> with ordinary encryption and <strong>Status says so</strong> — nothing
         is held back, and nothing pretends to cover more than it did.
       </p>
+      <p class="note">
+        <!--
+          identity.md: "no recovery method means no recovery", stated plainly at persona
+          creation rather than after a phone is dropped, when it is only a fact about the past.
+        -->
+        <strong>Nobody can give this back to you.</strong> There is no account, so a lost
+        phone is a lost persona unless you have made
+        <a href="/terminal/backup/">a backup</a> — and choosing not to is a real choice
+        rather than an oversight.
+      </p>
       <input id="callsign" bind:value={callsign} autocomplete="off" spellcheck="false" />
       <button type="submit">Generate keypair</button>
     </form>

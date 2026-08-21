@@ -762,8 +762,8 @@ deploy account. All the same person.
 
 | | Item | Owner | Cost |
 |---|---|---|---|
-| 9.1 | **Identity recovery** | agent | Key loss is far likelier than seizure, and both wipe paths are built for the dramatic case. `identity.md` designs three options — printed code, social recovery through endorsers, or **nothing, stated plainly as a real choice.** Today it is silently the third |
-| 9.2 | **Move to a new phone** | agent | Identity, peers, standing and card carried across deliberately. Without it an upgrade is indistinguishable from a burn |
+| 9.1 | ~~Identity recovery~~ | **done** | Operator-held backup and a printed recovery code, per [`identity.md`](product/identity.md). *"No recovery method means no recovery"* is now stated **at persona creation**, not after a phone is dropped when it is only a fact about the past. Social recovery remains unbuilt |
+| 9.2 | ~~Move to a new phone~~ | **done** | The same mechanism — a backup you can restore *is* how you move. Carries the accruing tier and **not tonight**, because a backup that carried the wipeable tier would carry the thing a panic wipe destroys |
 | 9.3 | **Tell operators what is thin — do not publish it** | agent | The first draft proposed publishing *"on call: Jono"*, which hands an adversary the one name worth targeting. **It rides on the capability sentence instead**, which already goes to the operator at sign-on and nowhere else. They are the person who needs it; the world is not |
 | 9.4 | **Somebody else can deploy** | **human** | Named for people and infrastructure in the first draft and missed for shipping. One Vercel account is a single point of failure for the artifact everybody reads |
 | 9.5 | **The work is paid for** | agent | [`funding.md`](product/funding.md). *"Operators buy supplies out of pocket, and the person doing the most is often the one who can least afford it."* Interacts with 9.1 — self-custody means a lost phone can mean lost funds, so recovery comes first |

@@ -394,6 +394,7 @@
     <a href="/terminal/directory/">Directory</a>
     <a href="/terminal/patrols/">Your patrols</a>
     <a href="/terminal/log/">What the watch wrote</a>
+    <a href="/terminal/backup/">Backup</a>
     <a href="/terminal/wipe/">Wipe this device</a>
     <a href="/terminal/standing/">Standing</a>
     <a href="/terminal/on-call/">On call</a>

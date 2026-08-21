@@ -1,0 +1,80 @@
+/**
+ * Carrying an identity to another phone, and getting it back after a dropped one.
+ *
+ * The blob is meant to live wherever the operator chooses — a note app, a USB stick, a
+ * printout in a drawer. Every one of those is somewhere it can be found by somebody who
+ * should not have it, so the passphrase is doing real work rather than ceremonial work.
+ */
+
+import { describe, expect, it } from 'vitest';
+import { BackupError, isBackup, openBackup, sealBackup } from '../src/index.js';
+
+const kit = { secret: 'a'.repeat(64), callsign: 'Wren', peers: [{ callsign: 'Raven' }] };
+
+describe('a backup round trip', () => {
+  it('comes back exactly as it went in', () => {
+    expect(openBackup('correct horse battery', sealBackup('correct horse battery', kit))).toEqual(kit);
+  });
+
+  it('differs every time, even for the same data and passphrase', () => {
+    // A fresh salt per backup. Two identical blobs would tell somebody holding both that
+    // nothing had changed between them.
+    expect(sealBackup('same', kit)).not.toBe(sealBackup('same', kit));
+  });
+
+  it('reveals nothing in the clear', () => {
+    const blob = sealBackup('pw', kit);
+    expect(blob).not.toContain('Wren');
+    expect(blob).not.toContain('Raven');
+    expect(blob).not.toContain('a'.repeat(64));
+  });
+});
+
+describe('what it refuses', () => {
+  it('refuses an empty passphrase rather than encrypting in name only', () => {
+    expect(() => sealBackup('', kit)).toThrow(BackupError);
+    expect(() => sealBackup('   ', kit)).toThrow(BackupError);
+  });
+
+  it('refuses the wrong passphrase', () => {
+    expect(() => openBackup('wrong', sealBackup('right', kit))).toThrow(BackupError);
+  });
+
+  it('says the same thing for a wrong passphrase as for a damaged blob', () => {
+    // Deliberate. Telling them apart would tell somebody holding a stolen backup whether
+    // they were getting closer, and an operator who mistyped tries again either way.
+    const blob = sealBackup('right', kit);
+    const damaged = JSON.stringify({ ...JSON.parse(blob), data: 'AAAA' });
+    const wrong = (() => { try { openBackup('wrong', blob); } catch (e) { return (e as Error).message; } })();
+    const broken = (() => { try { openBackup('right', damaged); } catch (e) { return (e as Error).message; } })();
+    expect(wrong).toBe(broken);
+  });
+
+  it('refuses anything that is not a backup', () => {
+    for (const junk of ['', 'not json', '{}', '[]', '{"v":99,"salt":"aa","data":"bb"}']) {
+      expect(() => openBackup('pw', junk), junk).toThrow(BackupError);
+    }
+  });
+});
+
+describe('telling a backup from a recovery code', () => {
+  it('recognises a backup', () => {
+    expect(isBackup(sealBackup('pw', kit))).toBe(true);
+  });
+
+  it('does not mistake a bare secret for one', () => {
+    // A recovery code is the identity secret and nothing else -- printable, and restoring
+    // who you are without what you hold.
+    expect(isBackup('a'.repeat(64))).toBe(false);
+  });
+});
+
+describe('a passphrase people can actually type', () => {
+  it('normalises, so an accented character typed two ways still opens it', () => {
+    // The same passphrase composed differently -- e + combining acute vs precomposed é --
+    // is the same passphrase to a person, and a restore that fails for that reason is
+    // indistinguishable from a lost identity.
+    const blob = sealBackup('café north', kit);
+    expect(openBackup('café north', blob)).toEqual(kit);
+  });
+});

@@ -20,4 +20,5 @@ export * from './merkle.js';
 export * from './review.js';
 export * from './validate.js';
 export * from './transport.js';
+export * from './backup.js';
 export * from './directory/index.js';

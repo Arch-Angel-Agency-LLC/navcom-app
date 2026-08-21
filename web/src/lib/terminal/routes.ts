@@ -24,6 +24,7 @@ export const TERMINAL_ROUTES = [
   'on-call/',
   'resupply/',
   'standing/',
+  'backup/',
   'log/',
   'wipe/'
 ] as const;

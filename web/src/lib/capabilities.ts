@@ -75,6 +75,8 @@ export const CAPABILITIES: Capability[] = [
       // they are anonymous. They are not, and it is said where the key is generated.
       'This is a pseudonym, not anonymity',
       'everything you sign with it links together',
+      // identity.md requires this at persona creation, not after the phone is dropped.
+      'Nobody can give this back to you',
       // The watch section must read as optional, or an operator who knows nobody believes
       // their setup is unfinished.
       'the section below is optional'
@@ -307,6 +309,20 @@ export const CAPABILITIES: Capability[] = [
     ],
     control: '#cred',
     requires: ['identity']
+  },
+  {
+    name: 'Backup and recovery',
+    screen: 'terminal/backup/',
+    claims: [
+      // identity.md requires this be stated plainly, and it has to be read before somebody
+      // needs it rather than after.
+      'there is nobody to ask for your identity back',
+      'a backup you never made does not exist',
+      // The passphrase is the only control, so it must not read as ceremony.
+      'Nothing can recover this if you forget it'
+    ],
+    control: '#rblob',
+    requires: []
   },
   {
     name: 'Wipe this device',
