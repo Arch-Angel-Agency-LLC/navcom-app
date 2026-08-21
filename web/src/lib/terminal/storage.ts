@@ -26,13 +26,46 @@ const WIPEABLE = 'navcom.wipeable';
 export type Tier = 'accruing' | 'wipeable';
 const keyFor = (tier: Tier) => (tier === 'accruing' ? ACCRUING : WIPEABLE);
 
+/**
+ * Tiers whose stored text would not parse.
+ *
+ * Reading corrupt storage as empty is right — a terminal that will not start because of a
+ * bad key is worse than one that asks to be set up again — but it presented as a **first
+ * run**, which is a different and much worse lie. An operator whose identity blob got
+ * damaged saw "pick a callsign" and concluded they had been wiped.
+ */
+const corrupt = new Set<Tier>();
+
+export const corruptTiers = (): Tier[] => [...corrupt];
+
 function read(tier: Tier): Record<string, unknown> {
   if (typeof localStorage === 'undefined') return {};
+  const raw = localStorage.getItem(keyFor(tier));
+  if (raw === null) return {};
+
   try {
-    return JSON.parse(localStorage.getItem(keyFor(tier)) ?? '{}') as Record<string, unknown>;
+    const parsed = JSON.parse(raw) as Record<string, unknown>;
+    corrupt.delete(tier);
+    return parsed;
   } catch {
-    // Corrupt storage reads as empty rather than throwing. A terminal that will not start
-    // because of a bad key is worse than one that asks to be set up again.
+    /*
+     * Kept, not discarded.
+     *
+     * The next write would have overwritten the damaged text and destroyed the only copy —
+     * and a damaged blob is JSON in localStorage, which somebody can often read by hand. A
+     * decade of standing is worth a few kilobytes of salvage.
+     *
+     * Written once: a second failure must not overwrite the salvage with a copy of itself
+     * after the first write has already replaced the original.
+     */
+    corrupt.add(tier);
+    const salvageKey = `${keyFor(tier)}.damaged`;
+    try {
+      if (localStorage.getItem(salvageKey) === null) localStorage.setItem(salvageKey, raw);
+    } catch {
+      // No room to keep it. Nothing to be done, and losing the salvage must not also stop
+      // the terminal starting.
+    }
     return {};
   }
 }

@@ -103,10 +103,47 @@ sw.addEventListener('install', (event) => {
   event.waitUntil(cacheShell().then(() => sw.skipWaiting()));
 });
 
+/**
+ * Moves the areas an operator chose to carry into the new version's cache.
+ *
+ * **A deploy used to silently throw them away.** The cache name carries the build version,
+ * so activating a new one deleted the old cache whole — and the directory areas live there
+ * too, added on visit rather than shipped in the shell. An operator who was carrying
+ * St. Louis, opened the app once on wifi, and then went out with no signal found nothing.
+ * Nothing told them, because from the app's point of view nothing had gone wrong.
+ *
+ * "Opening it is what saves it" was quietly revoked by an unrelated event.
+ *
+ * The pages carried over are the previous build's HTML, which is the right trade: a
+ * prerendered record page is readable without its scripts, and a readable record with a
+ * build-time age beats an empty screen. The next visit on a connection replaces it.
+ */
+async function carryAreasForward(): Promise<void> {
+  const names = (await caches.keys()).filter((k) => k !== CACHE);
+  if (names.length === 0) return;
+
+  const current = await caches.open(CACHE);
+  for (const name of names) {
+    try {
+      const old = await caches.open(name);
+      for (const request of await old.keys()) {
+        if (!isAreaPage(new URL(request.url).pathname)) continue;
+        // Never overwrite what this version already has.
+        if (await current.match(request)) continue;
+        const hit = await old.match(request);
+        if (hit) await current.put(request, hit);
+      }
+    } catch {
+      // One unreadable old cache must not stop the rest being carried, or the new version
+      // activating at all.
+    }
+  }
+}
+
 sw.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches
-      .keys()
+    carryAreasForward()
+      .then(() => caches.keys())
       .then((keys) => Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k))))
       .then(() => sw.clients.claim())
   );

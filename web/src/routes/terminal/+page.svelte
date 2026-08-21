@@ -9,18 +9,20 @@
   import { pq } from '$lib/terminal/pq.svelte';
   import { loadConfig } from '$lib/terminal/config';
   import { loadIdentity } from '$lib/terminal/identity';
-  import { storageError } from '$lib/terminal/storage';
+  import { corruptTiers, storageError } from '$lib/terminal/storage';
   import { offline } from '$lib/terminal/offline.svelte';
 
   const s = $derived(watch.state);
   let configured = $state(false);
   let identity = $state<ReturnType<typeof loadIdentity>>(null);
   let full = $state<string | null>(null);
+  let damaged = $state(false);
 
   onMount(() => {
     configured = loadConfig() !== null;
     identity = loadIdentity();
     full = storageError();
+    damaged = corruptTiers().length > 0;
     void offline.checkShell();
     watch.start();
     presence.start();
@@ -259,6 +261,20 @@
   <p class="error" data-shell-gaps>
     Some of this app did not save for offline use, so parts of it may need a connection.
     Reopening on a good signal usually fixes it.
+  </p>
+{/if}
+
+{#if damaged}
+  <!--
+    Reading corrupt storage as empty is right. Presenting it as a FIRST RUN is not: an
+    operator whose identity blob got damaged saw "pick a callsign" and concluded they had
+    been wiped. The damaged text is kept rather than overwritten, because it is JSON in
+    localStorage and somebody can often read it by hand.
+  -->
+  <p class="error" data-damaged>
+    Some of this phone's saved data could not be read, so it is starting as though it were
+    new. <strong>The damaged copy has been kept</strong> rather than overwritten — do not
+    clear this site's data if you want somebody to try to recover it.
   </p>
 {/if}
 

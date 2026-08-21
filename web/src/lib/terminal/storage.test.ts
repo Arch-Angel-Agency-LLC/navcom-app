@@ -11,8 +11,8 @@
 
 import { beforeEach, describe, expect, it } from 'vitest';
 import {
-  burn, burnCaches, burnConfirmed, clearField, clearStorageError, get, panicWipe,
-  set, storageError, tierSizes, tierSummary
+  burn, burnCaches, burnConfirmed, clearField, clearStorageError, corruptTiers, get,
+  panicWipe, set, storageError, tierSizes, tierSummary
 } from './storage';
 
 /** Enough of the real thing for these assertions; the browser API is tiny here. */
@@ -216,5 +216,76 @@ describe('when it can save', () => {
     set('accruing', 'callsign', 'Wren');
     expect(tierSizes().accruing).toBeGreaterThan(0);
     expect(tierSizes().wipeable).toBe(0);
+  });
+});
+
+
+/**
+ * Storage that is damaged rather than absent.
+ *
+ * Reading it as empty is right — a terminal that will not start because of a bad key is
+ * worse than one that asks to be set up again. Presenting it as a **first run** is not: an
+ * operator whose identity blob got damaged saw "pick a callsign" and concluded they had been
+ * wiped, and the next write destroyed the only copy.
+ */
+function installDamagedStorage() {
+  const store = new Map<string, string>([['navcom.accruing', '{ not json']]);
+  (globalThis as Record<string, unknown>).localStorage = {
+    getItem: (k: string) => store.get(k) ?? null,
+    setItem: (k: string, v: string) => void store.set(k, v),
+    removeItem: (k: string) => void store.delete(k),
+    _store: store
+  };
+  return store;
+}
+
+describe('storage that will not parse', () => {
+  it('still starts, rather than refusing to', () => {
+    installDamagedStorage();
+    expect(() => get('accruing', 'callsign')).not.toThrow();
+    expect(get('accruing', 'callsign')).toBeNull();
+  });
+
+  it('says so, instead of looking like a fresh phone', () => {
+    installDamagedStorage();
+    get('accruing', 'callsign');
+    expect(corruptTiers()).toContain('accruing');
+  });
+
+  it('keeps the damaged text instead of overwriting it', () => {
+    // The next write would have destroyed the only copy -- and a damaged blob is JSON in
+    // localStorage, which somebody can often read by hand. A decade of standing is worth a
+    // few kilobytes of salvage.
+    const store = installDamagedStorage();
+    set('accruing', 'callsign', 'Wren');
+    expect(store.get('navcom.accruing.damaged')).toBe('{ not json');
+    expect(store.get('navcom.accruing')).toContain('Wren');
+  });
+
+  it('does not overwrite the salvage with a copy of itself', () => {
+    // A second failure after the first write has already replaced the original.
+    const store = installDamagedStorage();
+    set('accruing', 'callsign', 'Wren');
+    store.set('navcom.accruing', '{ broken again');
+    set('accruing', 'callsign', 'Raven');
+    expect(store.get('navcom.accruing.damaged')).toBe('{ not json');
+  });
+
+  it('stops reporting once the tier reads again', () => {
+    installDamagedStorage();
+    get('accruing', 'callsign');
+    expect(corruptTiers()).toContain('accruing');
+
+    installLocalStorage();
+    set('accruing', 'callsign', 'Wren');
+    get('accruing', 'callsign');
+    expect(corruptTiers()).not.toContain('accruing');
+  });
+
+  it('treats absent storage as absent, not as damaged', () => {
+    // A first run really is a first run, and must not be reported as a loss.
+    installLocalStorage();
+    expect(get('accruing', 'callsign')).toBeNull();
+    expect(corruptTiers()).toHaveLength(0);
   });
 });

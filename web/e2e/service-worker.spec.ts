@@ -100,3 +100,44 @@ test('says nothing about carrying when it cannot tell', async ({ page }) => {
   await expect(page.locator('[data-carried]')).toHaveCount(0);
   await expect(page.locator('h1')).toBeVisible();
 });
+
+test('a deploy does not throw away the areas an operator carries', async ({ page }) => {
+  // 0.X. The cache name carries the build version, so activating a new one deleted the old
+  // cache whole -- and areas live there too, added on visit rather than shipped in the
+  // shell. Carry St. Louis, open the app once on wifi after a deploy, go out with no signal,
+  // find nothing. "Opening it is what saves it", quietly revoked by an unrelated event.
+  await seedDevice(page, WREN);
+  await open(page, '/terminal/');
+  await serviceWorkerReady(page);
+
+  const AREA = '/terminal/directory/st-louis/';
+
+  // A previous version's cache, holding an area the operator chose to carry.
+  await page.evaluate(async (area) => {
+    const old = await caches.open('navcom-terminal-previous');
+    await old.put(area, new Response('<html><body>carried</body></html>', {
+      headers: { 'content-type': 'text/html' }
+    }));
+  }, AREA);
+
+  // Force a fresh install and activate, which is what a deploy does.
+  await page.evaluate(async () => {
+    for (const r of await navigator.serviceWorker.getRegistrations()) await r.unregister();
+  });
+  await page.reload();
+  await serviceWorkerReady(page);
+  await page.waitForFunction(async () => {
+    const names = await caches.keys();
+    return names.length > 0 && !names.includes('navcom-terminal-previous');
+  }, undefined, { timeout: 15_000 });
+
+  // The old cache is gone, and the area came with it rather than going with it.
+  const survived = await page.evaluate(async (area) => {
+    for (const name of await caches.keys()) {
+      const hit = await (await caches.open(name)).match(area);
+      if (hit) return (await hit.text()).includes('carried');
+    }
+    return false;
+  }, AREA);
+  expect(survived, 'the carried area survived the version change').toBe(true);
+});

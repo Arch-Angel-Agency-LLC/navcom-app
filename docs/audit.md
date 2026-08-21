@@ -22,7 +22,7 @@ Each cell is a pass. `—` not started, `✓` done, and a note when it found som
 
 | Milestone | Surface | R | E | X |
 |---|---|---|---|---|
-| **0** Prove what is built | Browser harness, service worker, offline, seeding, the verification layer itself | **✓** | **✓** | — |
+| **0** Prove what is built | Browser harness, service worker, offline, seeding, the verification layer itself | **✓** | **✓** | **✓** |
 | **1** One operator alone | Display rules, patrol record, contact, wipe, seeder | — | — | — |
 | **2** One watch staffed | Executor, pager, drills, web push, on-call | — | — | — |
 | **3** Two who met once | Peers, presence, cards, invites, public presence, buddy | — | — | — |
@@ -97,3 +97,29 @@ carrying this" when we cannot tell would invent a fact.
 **Not a product bug, worth recording anyway:** a whole spec file failed at once mid-pass
 because the preview server was serving a half-written build while `npm run build` was still
 running. Re-running serially passed. Chaining a build into a test run races the harness.
+
+## 0.X — Milestone 0, edge cases
+
+Two findings, both about a boundary nobody crosses on purpose.
+
+**A deploy threw away every area an operator was carrying.** The cache name carries the build
+version, so activating a new one deleted the old cache whole — and directory areas live there
+too, added on visit rather than shipped in the shell. Carry St. Louis, open the app once on
+wifi after a deploy, go out with no signal, find nothing. *"Opening it is what saves it"*,
+quietly revoked by an unrelated event.
+
+Areas are now carried forward before the old cache is deleted. **This one has real evidence**:
+the test fails without the migration and passes with it, which was checked in both directions
+after the `addAll` test turned out to prove nothing.
+
+**Corrupt storage was indistinguishable from a first run.** Reading it as empty is right — a
+terminal that will not start because of a bad key is worse than one that asks to be set up
+again — but presenting it as a *fresh phone* is a different and worse lie, and the next write
+destroyed the only copy. A damaged blob is JSON in localStorage and can often be read by
+hand, so it is now kept under a salvage key and Status says not to clear the site's data.
+
+## Method note, after three passes
+
+Three passes on one milestone produced findings that compound: 0.R made the worker know what
+it failed to cache, 0.E found nothing read it, 0.X found that a deploy silently discarded
+what it had. Any one of these done as a single sweep would have stopped after the first.
