@@ -9,6 +9,7 @@
  */
 
 import { sealToGroup, type WatchtowerAddress } from '../crypto/group.js';
+import { TEXT_MAX, withinLimit } from '../limits.js';
 import type { SecretKey } from '../crypto/keys.js';
 import { KIND_DISTRESS, KIND_SIGNAL, tagRecipient, tagSignalType, type SignalType } from './kinds.js';
 
@@ -144,6 +145,21 @@ export const RESPONSE_WINDOW: Record<SignalType | 'distress', number | null> = {
   distress: null
 };
 
+export class SignalError extends Error {}
+
+/**
+ * Refuses text longer than a person writes.
+ *
+ * At the boundary rather than on the input, because a `maxlength` stops only the operator
+ * who typed it — not a relay, a fork, or a restored backup.
+ */
+function checkedText(payload: SignalPayload | DistressPayload): void {
+  const text = (payload as { text?: unknown }).text;
+  if (text !== undefined && text !== null && !withinLimit(text, TEXT_MAX)) {
+    throw new SignalError(`Keep it to ${TEXT_MAX} characters.`);
+  }
+}
+
 export function buildSignal(
   secret: SecretKey,
   to: WatchtowerAddress,
@@ -151,6 +167,7 @@ export function buildSignal(
   payload: SignalPayload,
   createdAt: number
 ) {
+  checkedText(payload);
   return {
     kind: KIND_SIGNAL,
     created_at: createdAt,
@@ -176,6 +193,7 @@ export function buildDistress(
   payload: DistressPayload,
   createdAt: number
 ) {
+  checkedText(payload);
   return {
     kind: KIND_DISTRESS,
     created_at: createdAt,

@@ -3,6 +3,7 @@ import type { Event } from 'nostr-tools/core';
 import { open, seal } from '../crypto/envelope.js';
 import type { SecretKey } from '../crypto/keys.js';
 import { KIND_PEER_PRESENCE, tagRecipient } from './kinds.js';
+import { CALLSIGN_MAX, withinLimit } from '../limits.js';
 import type { Position } from './signal.js';
 
 /**
@@ -159,7 +160,10 @@ export function readPresence(
 
   try {
     const payload = JSON.parse(inner.content) as PresencePayload;
-    if (!payload.callsign || (payload.status !== 'out' && payload.status !== 'stood-down')) {
+    if (!withinLimit(payload.callsign, CALLSIGN_MAX)) return null;
+    if (payload.status !== 'out' && payload.status !== 'stood-down') return null;
+    // A peer's area lands on this screen too, so it is bounded for the same reason.
+    if (payload.area !== null && payload.area !== undefined && !withinLimit(payload.area, CALLSIGN_MAX * 2)) {
       return null;
     }
     return { from: inner.pubkey, payload, at: inner.created_at };

@@ -9,14 +9,17 @@
   import { pq } from '$lib/terminal/pq.svelte';
   import { loadConfig } from '$lib/terminal/config';
   import { loadIdentity } from '$lib/terminal/identity';
+  import { storageError } from '$lib/terminal/storage';
 
   const s = $derived(watch.state);
   let configured = $state(false);
   let identity = $state<ReturnType<typeof loadIdentity>>(null);
+  let full = $state<string | null>(null);
 
   onMount(() => {
     configured = loadConfig() !== null;
     identity = loadIdentity();
+    full = storageError();
     watch.start();
     presence.start();
     void battery.start();
@@ -243,6 +246,15 @@
     {pq.uncovered().length === 1 ? 'one person you send to' : `${pq.uncovered().length} people you send to`}
     to open the app once, and it happens on its own after that.
   </p>
+{/if}
+
+{#if full}
+  <!--
+    The one storage failure that must not be silent. An operator whose phone is out of room
+    silently stops recording patrols -- the thing they rely on being there afterwards -- and
+    would find out by looking for it later.
+  -->
+  <p class="error" data-storage-full>{full}</p>
 {/if}
 
 {#if operator.error}

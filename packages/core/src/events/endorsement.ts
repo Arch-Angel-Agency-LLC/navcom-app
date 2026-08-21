@@ -2,6 +2,7 @@ import { finalizeEvent, verifyEvent } from 'nostr-tools/pure';
 import type { Event } from 'nostr-tools/core';
 import type { SecretKey } from '../crypto/keys.js';
 import { KIND_CREDENTIAL, KIND_CLAIM, KIND_REVOCATION } from './kinds.js';
+import { CALLSIGN_MAX, withinLimit } from '../limits.js';
 
 /**
  * Vouching for somebody, without creating a record of them.
@@ -98,7 +99,9 @@ export function writeCredential(
   createdAt: number
 ): Event {
   if (!SCOPES.includes(payload.scope)) throw new EndorsementError('Unknown scope.');
-  if (!payload.endorser.trim()) throw new EndorsementError('A credential needs a callsign.');
+  if (!withinLimit(payload.endorser, CALLSIGN_MAX)) {
+    throw new EndorsementError(`A credential needs a callsign of ${CALLSIGN_MAX} characters or fewer.`);
+  }
   if (!ISO_DATE.test(payload.at)) throw new EndorsementError('`at` must be YYYY-MM-DD.');
 
   return finalizeEvent(
@@ -172,7 +175,7 @@ export function readEndorsement(credential: Event, claim: Event): Endorsement | 
   try {
     const p = JSON.parse(credential.content) as Partial<CredentialPayload>;
     if (typeof p.scope !== 'string' || !SCOPES.includes(p.scope as Scope)) return null;
-    if (typeof p.endorser !== 'string' || !p.endorser.trim()) return null;
+    if (!withinLimit(p.endorser, CALLSIGN_MAX)) return null;
     if (typeof p.at !== 'string' || !ISO_DATE.test(p.at)) return null;
 
     return {

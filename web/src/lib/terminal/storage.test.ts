@@ -10,7 +10,10 @@
  */
 
 import { beforeEach, describe, expect, it } from 'vitest';
-import { burn, burnCaches, burnConfirmed, clearField, get, panicWipe, set, tierSummary } from './storage';
+import {
+  burn, burnCaches, burnConfirmed, clearField, clearStorageError, get, panicWipe,
+  set, storageError, tierSizes, tierSummary
+} from './storage';
 
 /** Enough of the real thing for these assertions; the browser API is tiny here. */
 function installLocalStorage() {
@@ -139,5 +142,79 @@ describe('tierSummary tells the operator what a wipe would take', () => {
   it('stops naming a field once it is gone', () => {
     clearField('wipeable', 'draft');
     expect(tierSummary().wipeable).toEqual(['signon']);
+  });
+});
+
+
+/**
+ * What happens when the phone runs out of room.
+ *
+ * Added by audit. The one storage failure that must not be silent: quota is typically
+ * 5–10 MB, and this device accumulates a metro's corrections, peers, endorsements and a
+ * patrol record. **An operator whose storage is full silently stops recording patrols** and
+ * finds out by looking for one later.
+ */
+function installRefusingStorage(name = 'QuotaExceededError') {
+  const store = new Map<string, string>();
+  (globalThis as Record<string, unknown>).localStorage = {
+    getItem: (k: string) => store.get(k) ?? null,
+    setItem: () => {
+      const e = new Error('exceeded the quota');
+      e.name = name;
+      throw e;
+    },
+    removeItem: (k: string) => void store.delete(k)
+  };
+}
+
+describe('a device that cannot save', () => {
+  it('reports the failure rather than throwing into whoever was writing', () => {
+    // Throwing surfaces as a rejected click somewhere with no message.
+    installRefusingStorage();
+    expect(() => set('accruing', 'callsign', 'Wren')).not.toThrow();
+    expect(set('accruing', 'callsign', 'Wren')).toBe(false);
+  });
+
+  it('says it is out of room, in words an operator can act on', () => {
+    installRefusingStorage();
+    set('accruing', 'callsign', 'Wren');
+    expect(storageError()).toMatch(/out of storage/i);
+    expect(storageError()).toMatch(/clearing an area/i);
+  });
+
+  it('distinguishes a full phone from a refusing one', () => {
+    // Private browsing throws here too. Both mean "this was not saved", but only one is
+    // fixed by clearing an area, so only one says so.
+    installRefusingStorage('SecurityError');
+    set('accruing', 'callsign', 'Wren');
+    expect(storageError()).not.toMatch(/out of storage/i);
+    expect(storageError()).toMatch(/could not be saved/i);
+  });
+
+  it('clears the report once a write succeeds', () => {
+    installRefusingStorage();
+    set('accruing', 'callsign', 'Wren');
+    expect(storageError()).not.toBeNull();
+
+    installLocalStorage();
+    expect(set('accruing', 'callsign', 'Wren')).toBe(true);
+    expect(storageError()).toBeNull();
+  });
+});
+
+describe('when it can save', () => {
+  it('says so, and the value is there', () => {
+    installLocalStorage();
+    expect(set('accruing', 'callsign', 'Wren')).toBe(true);
+    expect(get<string>('accruing', 'callsign')).toBe('Wren');
+    expect(storageError()).toBeNull();
+  });
+
+  it('can say what is taking the room', () => {
+    // A measurement of a device, not a count of anything anybody did.
+    installLocalStorage();
+    set('accruing', 'callsign', 'Wren');
+    expect(tierSizes().accruing).toBeGreaterThan(0);
+    expect(tierSizes().wipeable).toBe(0);
   });
 });

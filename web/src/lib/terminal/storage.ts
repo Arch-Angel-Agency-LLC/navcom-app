@@ -37,9 +37,50 @@ function read(tier: Tier): Record<string, unknown> {
   }
 }
 
-function write(tier: Tier, data: Record<string, unknown>): void {
-  if (typeof localStorage === 'undefined') return;
-  localStorage.setItem(keyFor(tier), JSON.stringify(data));
+/**
+ * Whether the last write failed, and why.
+ *
+ * A failed write is the one storage failure that must not be silent. Quota is finite —
+ * typically 5–10 MB — and this device accumulates corrections for a whole metro, peers,
+ * endorsements and a patrol record. **An operator whose storage is full silently stops
+ * recording patrols**, which is the thing they rely on being there afterwards.
+ */
+let lastError: string | null = null;
+
+export const storageError = (): string | null => lastError;
+export const clearStorageError = (): void => {
+  lastError = null;
+};
+
+/**
+ * Writes a tier, reporting failure rather than throwing into whichever handler was writing.
+ *
+ * Throwing would surface as a rejected click somewhere with no message, and the operator
+ * would find out that nothing had been saved by looking for it later. So the failure is
+ * recorded and returned, and the screens that write ask.
+ */
+function write(tier: Tier, data: Record<string, unknown>): boolean {
+  if (typeof localStorage === 'undefined') return false;
+  try {
+    localStorage.setItem(keyFor(tier), JSON.stringify(data));
+    lastError = null;
+    return true;
+  } catch (e) {
+    /*
+     * Matched on the error's NAME, not its text.
+     *
+     * The first version tested `name + message` for "quota", which misclassified any other
+     * failure whose message happened to mention it -- and the two need different words,
+     * because only one of them is fixed by clearing an area. Private-browsing modes throw a
+     * SecurityError here; Firefox has historically used its own quota name.
+     */
+    const name = e instanceof Error ? e.name : '';
+    const outOfRoom = name === 'QuotaExceededError' || name === 'NS_ERROR_DOM_QUOTA_REACHED';
+    lastError = outOfRoom
+      ? 'This phone is out of storage, so that was not saved. Clearing an area you no longer carry will free some.'
+      : 'That could not be saved on this phone.';
+    return false;
+  }
 }
 
 export function get<T>(tier: Tier, field: string): T | null {
@@ -47,16 +88,31 @@ export function get<T>(tier: Tier, field: string): T | null {
   return v === undefined ? null : (v as T);
 }
 
-export function set(tier: Tier, field: string, value: unknown): void {
+/** Returns whether it was actually stored, so a caller can say so. */
+export function set(tier: Tier, field: string, value: unknown): boolean {
   const data = read(tier);
   data[field] = value;
-  write(tier, data);
+  return write(tier, data);
 }
 
 export function clearField(tier: Tier, field: string): void {
   const data = read(tier);
   delete data[field];
   write(tier, data);
+}
+
+/**
+ * Roughly how much this device is holding, in bytes.
+ *
+ * For telling an operator what is taking the room before they have to guess. Not a
+ * count of anything anybody did — a measurement of a device.
+ */
+export function tierSizes(): { accruing: number; wipeable: number } {
+  if (typeof localStorage === 'undefined') return { accruing: 0, wipeable: 0 };
+  return {
+    accruing: (localStorage.getItem(ACCRUING) ?? '').length,
+    wipeable: (localStorage.getItem(WIPEABLE) ?? '').length
+  };
 }
 
 /**

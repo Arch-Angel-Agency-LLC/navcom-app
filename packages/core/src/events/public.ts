@@ -2,6 +2,7 @@ import { finalizeEvent, verifyEvent } from 'nostr-tools/pure';
 import type { Event } from 'nostr-tools/core';
 import type { SecretKey } from '../crypto/keys.js';
 import { KIND_CARD, KIND_PUBLIC_PRESENCE } from './kinds.js';
+import { CALLSIGN_MAX, withinLimit } from '../limits.js';
 
 /**
  * An operator's public face — the card, and *"I am out tonight."*
@@ -104,7 +105,9 @@ export class CardError extends Error {}
  */
 export function buildCard(contactSecret: SecretKey, card: Card, createdAt: number): Event {
   const callsign = card.callsign.trim();
-  if (!callsign) throw new CardError('A card needs a callsign.');
+  if (!withinLimit(callsign, CALLSIGN_MAX)) {
+    throw new CardError(`A card needs a callsign of ${CALLSIGN_MAX} characters or fewer.`);
+  }
   if (!/^[a-z0-9-]+$/.test(card.region)) throw new CardError('A card needs a region.');
 
   const doing = card.doing?.trim();
@@ -165,7 +168,7 @@ export function readCard(event: Event): PublishedCard | null {
     if (!(CARD_FIELDS as readonly string[]).includes(key)) return null;
   }
 
-  if (typeof c.callsign !== 'string' || !c.callsign.trim()) return null;
+  if (!withinLimit(c.callsign, CALLSIGN_MAX)) return null;
   if (typeof c.region !== 'string' || !/^[a-z0-9-]+$/.test(c.region)) return null;
   if (c.doing !== undefined && (typeof c.doing !== 'string' || c.doing.length > DOING_MAX)) {
     return null;

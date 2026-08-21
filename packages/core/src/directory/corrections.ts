@@ -4,6 +4,7 @@ import type { SecretKey } from '../crypto/keys.js';
 import { KIND_CORRECTION } from '../events/kinds.js';
 import { confidenceForField } from './confidence.js';
 import { displayField, type FieldDisplay } from './display.js';
+import { CALLSIGN_MAX, FIELDS_MAX, VALUE_MAX, withinLimit } from '../limits.js';
 import type { Confidence, Method, ResourceField, ResourceRecord } from './types.js';
 import { FIELD_CLASS } from './volatility.js';
 
@@ -100,8 +101,8 @@ export function buildCorrection(
   createdAt: number
 ): Event {
   if (!correction.record.trim()) throw new CorrectionError('A correction needs a record.');
-  if (!correction.verified_by.trim()) {
-    throw new CorrectionError('A correction needs a callsign, or `anonymous`.');
+  if (!withinLimit(correction.verified_by, CALLSIGN_MAX)) {
+    throw new CorrectionError(`A correction needs a callsign of ${CALLSIGN_MAX} characters or fewer, or \`anonymous\`.`);
   }
   if (!METHODS.includes(correction.method)) throw new CorrectionError('Unknown method.');
   if (!ISO_DATE.test(correction.last_verified)) {
@@ -112,9 +113,17 @@ export function buildCorrection(
     if (!CORRECTABLE.includes(k as ResourceField)) {
       throw new CorrectionError(`"${k}" is not a field of a record.`);
     }
+    if (typeof v === 'string' && v.length > VALUE_MAX) {
+      throw new CorrectionError(`"${k}" is longer than ${VALUE_MAX} characters.`);
+    }
     return typeof v === 'string' && v.trim() !== '';
   });
   if (fields.length === 0) throw new CorrectionError('A correction that asserts nothing is not one.');
+  if (fields.length > FIELDS_MAX) {
+    // Somebody with more to say than this is doing the maintainer's job, and should be in
+    // the maintainer's path rather than broadcasting a re-import.
+    throw new CorrectionError(`A correction says at most ${FIELDS_MAX} things at once.`);
+  }
 
   return finalizeEvent(
     {
@@ -141,7 +150,7 @@ export function readCorrection(event: Event): (Correction & { by: string }) | nu
   try {
     const c = JSON.parse(event.content) as Partial<Correction>;
     if (typeof c.record !== 'string' || !c.record) return null;
-    if (typeof c.verified_by !== 'string' || !c.verified_by) return null;
+    if (!withinLimit(c.verified_by, CALLSIGN_MAX)) return null;
     if (typeof c.method !== 'string' || !METHODS.includes(c.method)) return null;
     if (typeof c.last_verified !== 'string' || !ISO_DATE.test(c.last_verified)) return null;
     if (!c.fields || typeof c.fields !== 'object' || Array.isArray(c.fields)) return null;
@@ -150,8 +159,9 @@ export function readCorrection(event: Event): (Correction & { by: string }) | nu
       // Refused, not trimmed. The field somebody will eventually try to add here is a
       // coordinate, or a sentence about a person.
       if (!CORRECTABLE.includes(k as ResourceField)) return null;
-      if (typeof v !== 'string') return null;
+      if (typeof v !== 'string' || v.length > VALUE_MAX) return null;
     }
+    if (Object.keys(c.fields).length > FIELDS_MAX) return null;
     // The `d` tag is what a relay indexed; if it disagrees with the payload, one of them is
     // lying and neither is worth guessing about.
     if (event.tags.find((t) => t[0] === 'd')?.[1] !== c.record) return null;

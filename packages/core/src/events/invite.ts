@@ -3,6 +3,7 @@ import type { Event } from 'nostr-tools/core';
 import { open, seal } from '../crypto/envelope.js';
 import type { SecretKey } from '../crypto/keys.js';
 import { KIND_INVITE, tagRecipient } from './kinds.js';
+import { CALLSIGN_MAX, withinLimit } from '../limits.js';
 
 /**
  * *"Here is my key. I would like to pair."*
@@ -75,7 +76,9 @@ export function buildInvite(
   recipientKem?: string
 ): Event {
   const callsign = payload.callsign.trim();
-  if (!callsign) throw new InviteError('An invite needs a callsign.');
+  if (!withinLimit(callsign, CALLSIGN_MAX)) {
+    throw new InviteError(`An invite needs a callsign of ${CALLSIGN_MAX} characters or fewer.`);
+  }
   const note = payload.note?.trim();
   if (note && note.length > NOTE_MAX) throw new InviteError(`Keep it to ${NOTE_MAX} characters.`);
 
@@ -140,7 +143,7 @@ export function readInvite(secret: SecretKey, wrap: Event): Invite | null {
 
   try {
     const payload = JSON.parse(inner.content) as InvitePayload;
-    if (typeof payload.callsign !== 'string' || !payload.callsign.trim()) return null;
+    if (!withinLimit(payload.callsign, CALLSIGN_MAX)) return null;
     if (payload.note !== undefined) {
       if (typeof payload.note !== 'string' || payload.note.length > NOTE_MAX) return null;
     }
