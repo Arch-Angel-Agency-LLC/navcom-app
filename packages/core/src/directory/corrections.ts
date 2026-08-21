@@ -263,3 +263,59 @@ export function mergeCorrections(
 
   return { record, sources, reports };
 }
+
+/**
+ * What this record most needs somebody to find out.
+ *
+ * *"Contribute something"* is paralysing — it asks an operator to audit a database. *"You are
+ * passing St Pat's tonight; ask them one thing"* is an errand, and an errand gets done.
+ *
+ * The schema already knows both halves of this: which fields are blank, and how stale the
+ * rest are. Nothing new has to be collected, and nobody has to be assigned anything —
+ * [invariant 6] says nothing tasks anyone, so this returns **what is missing**, never a
+ * request addressed to a person.
+ *
+ * Ordered by what decides whether somebody gets a bed. A blank `pets` turns a person away at
+ * the door; a blank `languages` rarely does.
+ */
+export function needsChecking(
+  record: ResourceRecord,
+  corrections: readonly (Correction & { by: string })[],
+  now: Date,
+  limit = 3
+): ResourceField[] {
+  const merged = mergeCorrections(record, corrections, now).record;
+
+  const missing = ASK_FIRST.filter((field) => {
+    const value = merged[field];
+    return value === undefined || value === null || String(value).trim() === '';
+  });
+  if (missing.length >= limit) return missing.slice(0, limit);
+
+  // Nothing blank left worth asking about, so fall back to what has gone stale. A value
+  // nobody has confirmed in a season is a value worth a question, not a value to distrust.
+  const stale = ASK_FIRST.filter(
+    (field) => !missing.includes(field) && confidenceForField(merged, field, now) === 'stale'
+  );
+  return [...missing, ...stale].slice(0, limit);
+}
+
+/**
+ * The order to ask in, most consequential first.
+ *
+ * A blank `pets` turns somebody away at the door — it is the commonest reason a person
+ * refuses a bed. A blank `languages` almost never does. This ordering is a claim about the
+ * street rather than about the schema, and it is the sort of claim that should be corrected
+ * by somebody who works one.
+ */
+const ASK_FIRST: readonly ResourceField[] = [
+  'intake_hours',
+  'pets',
+  'id_required',
+  'capacity_signal',
+  'sobriety',
+  'accepts',
+  'curfew',
+  'hours',
+  'phone'
+];

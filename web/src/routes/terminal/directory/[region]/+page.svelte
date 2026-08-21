@@ -16,11 +16,12 @@
     displayField,
     displayRecord,
     RESOURCE_TYPES,
+    type ResourceField,
     type ResourceRecord,
     type ResourceType
   } from '$lib/directory';
   import { AVAILABILITY_FIELDS, FIELD_LABELS, INTAKE_FIELDS, labelValue } from '$lib/directory/load';
-  import { mergeCorrections } from '@navcom/core';
+  import { mergeCorrections, needsChecking, CORRECTABLE_FIELDS, FIELD_OPTIONS } from '@navcom/core';
   import { corrections } from '$lib/terminal/corrections.svelte';
   import { onMount } from 'svelte';
 
@@ -56,11 +57,25 @@
 
   /** Which record's report control is open. One at a time — this is not a form. */
   let reporting = $state<string | null>(null);
+  /** Which field is being corrected, once somebody has picked one. */
+  let correcting = $state<ResourceField | null>(null);
+  let typed = $state('');
 
   async function report(id: string, flag: string) {
     await corrections.submit(id, { flag });
     reporting = null;
   }
+
+  async function fix(id: string, field: ResourceField, value: string) {
+    if (!value.trim()) return;
+    await corrections.submit(id, { [field]: value.trim() });
+    reporting = null;
+    correcting = null;
+    typed = '';
+  }
+
+  /** Options for the field being corrected, or null where it is free text. */
+  const options = $derived(correcting ? (FIELD_OPTIONS[correcting] ?? null) : null);
 
   onMount(() => {
     hydrated = true;
@@ -181,6 +196,7 @@
             night beats a website scrape from March because confidence already said so.
           -->
           {@const merged = mergeCorrections(published, corrections.about(published.id), now)}
+          {@const asks = needsChecking(published, corrections.about(published.id), now)}
           {@const record = merged.record}
           {@const meta = displayRecord(record, now)}
           <article
@@ -231,6 +247,19 @@
               {/each}
             </dl>
 
+            <!--
+              6.5, and the reason it is on the record rather than in a list of its own. An
+              errand is something you do while you are already there; a task list is
+              something you open on purpose, which nobody does.
+            -->
+            {#if asks.length > 0}
+              <p class="asks" data-asks>
+                <strong>Nobody knows</strong>
+                {asks.map((f) => (FIELD_LABELS[f] ?? f).toLowerCase()).join(', ')}.
+                If you are there, ask.
+              </p>
+            {/if}
+
             {#if merged.reports.length > 0 || Object.keys(merged.sources).length > 0}
               <p class="corrected" data-corrected>
                 Carries {Object.keys(merged.sources).length > 0 ? 'corrections' : 'a report'}
@@ -242,15 +271,52 @@
               6.2. Reporting must always be easier than fixing, and until now it was
               impossible while fixing needed a pull request. One tap, no form, no account.
             -->
-            {#if reporting === record.id}
+            {#if reporting === record.id && correcting}
+              <!--
+                Most of what an operator learns at a door is an enum, so most corrections are
+                a tap. That is the difference between one made standing outside in the cold
+                and one meant for later that never happens.
+              -->
+              <p class="cost">{FIELD_LABELS[correcting] ?? correcting}</p>
+              {#if options}
+                <div class="row">
+                  {#each options as opt (opt)}
+                    <button class="drop" onclick={() => fix(record.id, correcting!, opt)}>
+                      {labelValue(opt)}
+                    </button>
+                  {/each}
+                </div>
+              {:else}
+                <input class="fix" bind:value={typed} autocomplete="off"
+                  placeholder={String(record[correcting] ?? '')} />
+                <p class="cost">
+                  <strong>Write about the place, not the person.</strong> What the door does —
+                  never who was at it, or why.
+                </p>
+                <div class="row">
+                  <button class="drop" onclick={() => fix(record.id, correcting!, typed)}>Send</button>
+                </div>
+              {/if}
+              <button class="drop" onclick={() => { correcting = null; typed = ''; }}>Back</button>
+            {:else if reporting === record.id}
               <div class="row">
                 <button class="drop" onclick={() => report(record.id, 'reported_closed')}>Closed</button>
                 <button class="drop" onclick={() => report(record.id, 'reported_wrong')}>Wrong</button>
-                <button class="drop" onclick={() => (reporting = null)}>Cancel</button>
+              </div>
+              <p class="cost">Or say what changed:</p>
+              <div class="row">
+                {#each CORRECTABLE_FIELDS as field (field)}
+                  <button class="drop" onclick={() => { correcting = field; typed = ''; }}>
+                    {FIELD_LABELS[field] ?? field}
+                  </button>
+                {/each}
               </div>
               <p class="cost">Goes out under your callsign.</p>
+              <button class="drop" onclick={() => (reporting = null)}>Cancel</button>
             {:else}
-              <button class="drop" onclick={() => (reporting = record.id)}>Report a problem</button>
+              <button class="drop" onclick={() => { reporting = record.id; correcting = null; }}>
+                Report a problem
+              </button>
             {/if}
           </article>
         {/each}
@@ -291,6 +357,11 @@
     margin: 0 0 .5rem; color: var(--t-oncall); font-size: .9rem;
     border-inline-start: 2px solid var(--t-oncall); padding-inline-start: .6rem;
   }
+  .asks {
+    margin: .4rem 0 0; color: var(--t-muted); font-size: .88rem;
+    border-inline-start: 2px solid var(--t-line-strong); padding-inline-start: .6rem;
+  }
+  .fix { width: 100%; margin-top: .4rem; }
   .corrected { margin: .4rem 0 0; color: var(--t-faint); font-size: .82rem; }
   .row { display: flex; gap: .5rem; flex-wrap: wrap; margin-top: .5rem; }
   .drop { min-height: 2.4rem; font-size: .85rem; padding: 0 .8rem;

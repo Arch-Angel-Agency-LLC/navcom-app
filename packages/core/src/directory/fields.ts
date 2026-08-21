@@ -6,7 +6,11 @@
  * called — a CLI, a test, a consumer — imports this instead.
  */
 
-import type { ResourceField } from './types.js';
+import {
+  ACCEPTS, ACCESSIBILITY, BELONGINGS, CAPACITY_SIGNAL, COST, ID_REQUIRED, PETS,
+  REPORTS_TO, SEASONAL, SEX_OFFENDER_OK, SOBRIETY,
+  type ResourceField
+} from './types.js';
 
 /**
  * Human labels. Written from the reader's side of the screen — someone deciding whether a
@@ -43,6 +47,59 @@ export const INTAKE_FIELDS: ResourceField[] = [
 
 export const AVAILABILITY_FIELDS: ResourceField[] = [
   'hours', 'intake_hours', 'seasonal', 'capacity_signal'
+];
+
+/**
+ * The options a field accepts, where it accepts a fixed set.
+ *
+ * **Most of what an operator learns at a door is an enum**, and that changes what correcting
+ * a record has to feel like. *"They turned us away because of the dog"* is `pets: no` — a
+ * tap, not typing, which is the difference between a correction somebody makes standing
+ * outside in the cold and one they mean to make later and never do.
+ *
+ * It also carries the invariant for free: **an enum cannot contain a sentence about a
+ * person.** Only the free-text fields need guidance at the point of writing, and this is
+ * what tells them apart.
+ *
+ * `null` means free text. Absent means the field is not something a correction offers.
+ */
+export const FIELD_OPTIONS: Partial<Record<ResourceField, readonly string[] | null>> = {
+  // What decides whether somebody gets in. These are the corrections worth making.
+  accepts: ACCEPTS,
+  pets: PETS,
+  sobriety: SOBRIETY,
+  id_required: ID_REQUIRED,
+  referral_required: ID_REQUIRED,
+  sex_offender_ok: SEX_OFFENDER_OK,
+  reports_to: REPORTS_TO,
+  belongings: BELONGINGS,
+  accessibility: ACCESSIBILITY,
+  cost: COST,
+  seasonal: SEASONAL,
+  capacity_signal: CAPACITY_SIGNAL,
+  // Free text, because a door does not open on a vocabulary.
+  hours: null,
+  intake_hours: null,
+  curfew: null,
+  max_stay: null,
+  phone: null
+};
+
+/**
+ * Fields an operator is offered when correcting, in the order they matter at a door.
+ *
+ * Deliberately short. Twenty-nine fields on a phone in the dark is a list nobody reads, and
+ * the ones below are the ones that decide whether a person gets a bed tonight.
+ */
+export const CORRECTABLE_FIELDS: readonly ResourceField[] = [
+  'capacity_signal',
+  'intake_hours',
+  'hours',
+  'pets',
+  'id_required',
+  'sobriety',
+  'accepts',
+  'phone'
 ];
 
 /** Readable labels for enum values, so the page never shows a snake_case token. */

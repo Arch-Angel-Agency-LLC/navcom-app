@@ -600,6 +600,59 @@ test.describe('reporting a problem with a record', () => {
     await expect(page.getByText(/the published listing is still underneath/i).first()).toBeVisible();
   });
 
+  test('says what nobody knows, so contributing is an errand rather than an audit', async ({ page }) => {
+    // "Contribute something" asks an operator to audit a database. "You are there, ask them
+    // one thing" gets done. The schema already knows which fields are blank.
+    await seedDevice(page, OUT);
+    await open(page, AREA);
+
+    const asks = page.locator('[data-asks]').first();
+    await expect(asks).toBeVisible();
+    await expect(asks).toContainText(/nobody knows/i);
+    await expect(asks).toContainText(/if you are there, ask/i);
+  });
+
+  test('stops asking once somebody has answered', async ({ page }) => {
+    // Continuing to ask is how a contribution list becomes noise.
+    await seedDevice(page, OUT);
+    await open(page, AREA);
+
+    const first = page.locator('[data-record]').first();
+    const before = await first.locator('[data-asks]').innerText();
+    // Correct the first thing it asked about.
+    await first.getByRole('button', { name: /report a problem/i }).click();
+    await first.getByRole('button', { name: /^intake$/i }).click();
+    await first.locator('input.fix').fill('19:00-20:30');
+    await first.getByRole('button', { name: /^send$/i }).click();
+
+    await expect(first.locator('[data-asks]')).not.toHaveText(before);
+  });
+
+  test('most corrections are a tap, because the schema is enums', async ({ page }) => {
+    // The difference between a correction made standing outside in the cold and one meant
+    // for later that never happens.
+    await seedDevice(page, OUT);
+    await open(page, AREA);
+
+    const first = page.locator('[data-record]').first();
+    await first.getByRole('button', { name: /report a problem/i }).click();
+    await first.getByRole('button', { name: /^pets$/i }).click();
+    // Options, not a text box.
+    await expect(first.locator('input.fix')).toHaveCount(0);
+    // Options rendered as buttons, whatever the schema calls them.
+    await expect(first.getByRole('button', { name: /^no$/i })).toBeVisible();
+  });
+
+  test('guides away from writing about a person, only where text is possible', async ({ page }) => {
+    await seedDevice(page, OUT);
+    await open(page, AREA);
+
+    const first = page.locator('[data-record]').first();
+    await first.getByRole('button', { name: /report a problem/i }).click();
+    await first.getByRole('button', { name: /^open$/i }).click();
+    await expect(first.getByText(/write about the place, not the person/i)).toBeVisible();
+  });
+
   test('a report survives losing the network, because the directory does', async ({ page, context }) => {
     await seedDevice(page, OUT);
     await open(page, AREA);

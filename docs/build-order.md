@@ -673,11 +673,11 @@ it delivers the whole milestone's value without waiting on anybody.
 |---|---|---|---|
 | 6.1 | ~~Corrections merge over the cached directory at read time~~ | **done** | The spine. Cached alongside the directory, so a correction is there in the car park with no bars — live when you do not need it and gone when you do would be exactly the wrong shape |
 | 6.2 | ~~Flag a record in one tap~~ | **done** | Display rule 4 is true in both halves now. One tap from the record, no form, no account |
-| 6.3 | **Correct a field from the phone** | agent | The Convert has the best directory knowledge in the network and the most reason to be unlinkable. She cannot add a line without a laptop |
+| 6.3 | ~~Correct a field from the phone~~ | **done** | **Most corrections are a tap, not typing** — what an operator learns at a door is usually an enum, and the schema already knew that. Free text only where a door genuinely does not open on a vocabulary |
 | 6.4 | ~~Corrections are additive and never delete~~ | **done** | **The abuse answer.** A hostile flag adds a claim with an author and an age and removes nothing — tested end to end, from the button to the record still being there |
-| 6.5 | **The directory says what it does not know** | agent | *"Contribute something"* is paralysing; *"you are passing St Pat's tonight, ask them one thing"* is an errand. A needs-checking list from blank and stale fields — the schema already knows both |
+| 6.5 | ~~The directory says what it does not know~~ | **done** | *"Nobody knows intake, pets. If you are there, ask."* On the record rather than in a list of its own: an errand is done while you are already there; a task list is opened on purpose, which nobody does |
 | 6.6 | **Capture cold, correct warm** | agent | You learn a shelter shut intake at 20:30 standing outside in the rain and cannot type a schema field. A local note pinned to a record, never transmitted, that becomes a correction at home |
-| 6.7 | **Nothing about a person, guided at the point of writing** | agent | Free text captured in the field is the likeliest place in the whole system for invariant 1 to be broken. Same pattern as the `Query` screen, which already does this |
+| 6.7 | ~~Nothing about a person, guided at the point of writing~~ | **done** | Shown only where text is possible, which is the minority of fields — an enum cannot contain a sentence about somebody |
 | 6.8 | **Promotion into the published directory** | **human, periodic** | Somebody reads the live corrections and writes the good ones into the CSV. Minutes a week. **The bottleneck is deliberate** — a public artifact that anybody can rewrite is not an artifact anybody can rely on |
 | 6.9 | Intake rules from the people who know them | **human, local** | Was 1.2. It stays human; 6.1–6.7 are what make it possible from a phone rather than a text editor |
 

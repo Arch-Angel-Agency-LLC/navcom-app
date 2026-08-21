@@ -17,6 +17,7 @@ import {
   buildCorrection,
   CorrectionError,
   mergeCorrections,
+  needsChecking,
   readCorrection,
   type Correction,
   type ResourceRecord
@@ -182,5 +183,64 @@ describe('who signed it', () => {
   it('is about one record, so a relay can be asked for just that place', () => {
     const event = buildCorrection(wren, correction(), 1_755_300_000);
     expect(event.tags).toEqual([['d', 'st-louis-example']]);
+  });
+});
+
+describe('what to ask, so contributing is an errand rather than an audit', () => {
+  it('names the blanks that decide whether somebody gets in', () => {
+    const skeleton = base({ pets: undefined, id_required: undefined, intake_hours: undefined });
+    const asks = needsChecking(skeleton, [], NOW);
+    expect(asks).toContain('pets');
+    expect(asks).toContain('intake_hours');
+  });
+
+  it('asks about the door before it asks about anything else', () => {
+    // A blank `pets` turns somebody away -- the commonest reason a person refuses a bed. A
+    // blank `languages` almost never does.
+    const skeleton = base({ pets: undefined, intake_hours: undefined, phone: undefined });
+    expect(needsChecking(skeleton, [], NOW)[0]).toBe('intake_hours');
+  });
+
+  it('is short, because a list of everything is a list nobody reads', () => {
+    const skeleton = base({
+      pets: undefined, id_required: undefined, intake_hours: undefined,
+      capacity_signal: undefined, sobriety: undefined, accepts: undefined
+    });
+    expect(needsChecking(skeleton, [], NOW)).toHaveLength(3);
+  });
+
+  it('stops asking once somebody has answered', () => {
+    // The errand is done. Continuing to ask is how a contribution list becomes noise.
+    const skeleton = base({ pets: undefined, intake_hours: undefined });
+    const answered = readable(wren, correction({ fields: { pets: 'no' } }));
+    expect(needsChecking(skeleton, [answered], NOW)).not.toContain('pets');
+  });
+
+  it('falls back to what has gone stale when nothing is blank', () => {
+    // A value nobody has confirmed in a season is worth a question, not distrust.
+    const old = base({
+      pets: 'yes', id_required: 'no', intake_hours: '19:00-21:00',
+      capacity_signal: 'often_full', sobriety: 'no_questions', accepts: 'single_men',
+      curfew: '22:00', phone: '314-555-0100', last_verified: '2025-01-01'
+    });
+    expect(needsChecking(old, [], NOW).length).toBeGreaterThan(0);
+  });
+
+  it('asks for nothing when a record is complete and fresh', () => {
+    const good = base({
+      pets: 'yes', id_required: 'no', intake_hours: '19:00-21:00',
+      capacity_signal: 'often_full', sobriety: 'no_questions', accepts: 'single_men',
+      curfew: '22:00', phone: '314-555-0100',
+      last_verified: '2026-08-19', method: 'in_person', verified_by: 'Wren'
+    });
+    expect(needsChecking(good, [], NOW)).toEqual([]);
+  });
+
+  it('tasks nobody — it returns fields, never a person', () => {
+    // Invariant 6: nothing tasks anyone. This says what is missing; who goes and asks is
+    // never the system's business.
+    const asks = needsChecking(base({ pets: undefined }), [], NOW);
+    expect(asks.every((a) => typeof a === 'string')).toBe(true);
+    expect(JSON.stringify(asks)).not.toMatch(/callsign|operator|assign/i);
   });
 });
