@@ -24,6 +24,28 @@ urls = ["wss://relay.damus.io", "wss://nos.lol"]
 paging_window_seconds = 300
 contact_window_seconds = 300
 
+# How many times this watch is willing to wake somebody, and how often.
+#
+# The watch's address is meant to be handed out, so anybody holding it can publish a signed
+# 20911 from a key they made a second ago. Unbounded, three hundred of those page a real
+# person three hundred times -- which is how escalation dies. Not by being wrong: by being
+# ignored on the night it is right.
+#
+# Past the budget the ladder still opens and the operator is still told, and what they are
+# told is the truth -- that nobody could be paged. The ladder is allowed to fail. It is never
+# allowed to fail silently.
+#
+# Twenty an hour is deliberately generous. A squad having twenty separate emergencies in an
+# hour has a situation this number is not relevant to; a flood passes it in under a second.
+# If you raise it, raise it because your squad is large, not because it looks low.
+max_pages_per_window = 20
+page_budget_window_seconds = 3600
+
+# How long a finished ladder is kept before it is dropped. Long enough that a late duplicate
+# of the same 20911 finds it rather than starting a second ladder. Live ladders are never
+# dropped at any age.
+ladder_retention_seconds = 3600
+
 # Drills. Unannounced, randomised inside the window, and published -- a watch that cannot
 # demonstrate a passing drill is presumed broken, and 10910 carries the last result so a
 # client sees it before signing on.

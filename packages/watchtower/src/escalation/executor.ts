@@ -18,6 +18,7 @@ import { KIND_SIGNAL, KIND_DISTRESS, KIND_RESPONSE } from "../shared/kinds.js";
 import { pageAll } from "./pager.js";
 import { due, readDrillState, runDrill, schedule, writeDrillState, type DrillState } from "./drills.js";
 import type { EscalationConfig } from "./config.js";
+import { pageBudget, type PageBudget } from "./budget.js";
 
 /**
  * The escalation executor.
@@ -63,6 +64,7 @@ export class EscalationExecutor {
   /** Acknowledgements arriving for a drill rather than a real Distress. */
   private drillAcks = new Map<string, { by: Author; atMs: number }[]>();
   private readonly since = now();
+  private readonly budget: PageBudget;
   private sweepHandle: ReturnType<typeof setInterval> | undefined;
   private subCloser: { close: (reason?: string) => void } | undefined;
 
@@ -74,6 +76,10 @@ export class EscalationExecutor {
     this.page = opts.page ?? pageAll;
     this.drillStatePath = opts.drillStatePath;
     this.pool = opts.pool ?? new SimplePool({ enableReconnect: true });
+    this.budget = pageBudget(
+      this.config.escalation.maxPagesPerWindow,
+      this.config.escalation.pageBudgetWindowSeconds,
+    );
     if (this.drillStatePath) {
       this.drills =
         readDrillState(this.drillStatePath) ??
@@ -101,7 +107,7 @@ export class EscalationExecutor {
    * human acknowledgement means somebody has it. Get this wrong and a phone stops retrying
    * because a machine said "paging".
    */
-  private async report(ladder: Ladder, distressId: string): Promise<void> {
+  private async report(ladder: Ladder, distressId: string, note?: string): Promise<void> {
     const responder: Author =
       ladder.state === "acknowledged" && ladder.acknowledgedBy
         ? ladder.acknowledgedBy
@@ -110,7 +116,10 @@ export class EscalationExecutor {
     const payload: ResponsePayload = {
       type: ladder.state === "acknowledged" ? "ack" : "escalation-status",
       responder,
-      text: ladderReport(ladder),
+      // `note` is what only this process knows: whether a page actually went out. The
+      // ladder's own sentence describes the state machine, and the state machine cannot see
+      // a command that exited non-zero.
+      text: note ? `${ladderReport(ladder)} ${note}` : ladderReport(ladder),
       provenance: null,
     };
 
@@ -152,6 +161,28 @@ export class EscalationExecutor {
     await this.report(ladder, event.id);
 
     if (ladder.state === "paging") {
+      /*
+       * The budget is spent before the roster is touched.
+       *
+       * Anybody holding this watch's address -- which is meant to be handed out -- can
+       * publish a signed 20911 from a key made a second ago. Unbounded, three hundred of
+       * them woke a real person three hundred times, which is how escalation dies: not by
+       * being wrong, but by being ignored on the night it is right.
+       */
+      if (!this.budget.take(now())) {
+        console.error(
+          `[page] BUDGET SPENT -- refusing to page for ${event.id.slice(0, 8)}. ` +
+            `More than ${this.config.escalation.maxPagesPerWindow} pages in ` +
+            `${this.config.escalation.pageBudgetWindowSeconds}s. This watch is being flooded.`,
+        );
+        await this.report(
+          ladder,
+          event.id,
+          "The watch could not page anyone -- too many alerts at once. Nobody has been woken.",
+        );
+        return;
+      }
+
       const results = await this.page(
         this.config.escalation.oncall,
         `NavCom DISTRESS from ${event.pubkey.slice(0, 8)} -- ack in the console`,
@@ -159,6 +190,24 @@ export class EscalationExecutor {
       for (const r of results) {
         console.log(
           `[page] ${r.callsign} via ${r.channel}: ${r.dispatched ? "dispatched" : `FAILED ${r.error}`}`,
+        );
+      }
+
+      /*
+       * Whether the page went out is something only this process knows, and until now it
+       * went into the log and nowhere else. Every command could exit non-zero -- a dead SMS
+       * gateway, a missing binary -- and the operator was still told "Paging Wren." That is
+       * a silent failure of invariant 2 dressed as a success.
+       *
+       * An empty result is not a failure: a roster of console-open entries dispatches
+       * nothing because those people are already watching a console.
+       */
+      if (results.length > 0 && results.every((r) => !r.dispatched)) {
+        console.error(`[page] EVERY CHANNEL FAILED for ${event.id.slice(0, 8)}`);
+        await this.report(
+          ladder,
+          event.id,
+          "No page could be sent -- every channel failed. Nobody has been woken.",
         );
       }
     }
@@ -279,6 +328,10 @@ export class EscalationExecutor {
           console.error("[drill] failed: " + String(err));
         });
       }
+
+      // Finished ladders are dropped here rather than at the moment they finish, so a late
+      // duplicate of the same 20911 still finds one and does not open a second.
+      this.ladders.reap(now(), this.config.escalation.ladderRetentionSeconds);
 
       for (const ladder of this.ladders.tickAll(now(), this.windows)) {
         this.report(ladder, ladder.distressId).catch((err: unknown) => {

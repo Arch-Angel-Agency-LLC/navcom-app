@@ -209,6 +209,31 @@ export class LadderRegistry {
     return next;
   }
 
+  /**
+   * Drops ladders that finished long enough ago to be nobody's business.
+   *
+   * The map grew forever. On a box meant to run for months that is a slow leak, and under a
+   * flood of `20911` from fresh keys it is a fast one — every ladder ever opened stayed
+   * resident and was walked once a second.
+   *
+   * **Only terminal ladders, and only after a retention window.** A live ladder is never
+   * reaped at any age: a `paging` ladder that vanished would stop escalating with nobody
+   * told, which is invariant 2 failing in the exact silent way it forbids. Acknowledged and
+   * exhausted ladders are kept a while longer so a late duplicate of the same `20911` finds
+   * the finished ladder rather than starting a second one.
+   */
+  reap(now: number, retentionSeconds: number): number {
+    let dropped = 0;
+    for (const [id, ladder] of this.ladders) {
+      const terminal = ladder.state === 'acknowledged' || ladder.state === 'exhausted';
+      if (!terminal) continue;
+      if (now - ladder.stateSince < retentionSeconds) continue;
+      this.ladders.delete(id);
+      dropped++;
+    }
+    return dropped;
+  }
+
   /** Live ladders. Deliberately not persisted — a ladder outlives nothing. */
   all(): Ladder[] {
     return [...this.ladders.values()];

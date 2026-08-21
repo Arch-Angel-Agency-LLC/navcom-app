@@ -24,7 +24,7 @@ Each cell is a pass. `—` not started, `✓` done, and a note when it found som
 |---|---|---|---|---|
 | **0** Prove what is built | Browser harness, service worker, offline, seeding, the verification layer itself | **✓** | **✓** | **✓** |
 | **1** One operator alone | Display rules, patrol record, contact, wipe, seeder | **✓** | **✓** | **✓** |
-| **2** One watch staffed | Executor, pager, drills, web push, on-call | — | — | — |
+| **2** One watch staffed | Executor, pager, drills, web push, on-call | **✓** | — | — |
 | **3** Two who met once | Peers, presence, cards, invites, public presence, buddy | — | — | — |
 | **4** Squad with no box | Watch mode, group sealing, board, handover, watch key | — | — | — |
 | **5** Written-down properties | PQC, declined, battery, RTL, watch-state v4 | — | — | — |
@@ -226,6 +226,53 @@ manifest but not the reverse, and thirty-odd seeded regions do have zero records
 picker looked like it would offer an area whose page was never prerendered. It already filters
 on record count, and the comment there says why. Checked rather than assumed, and it was
 already right.
+
+## 2.R — Milestone 2, robustness
+
+**A stranger can page your on-call human as many times as they like.** Measured, not argued:
+three hundred `20911` from three hundred fresh keys produced **three hundred pages** to a real
+person's phone, and three hundred ladders that were never released. Nothing here is
+privileged — the watch's address is meant to be handed out, and a signed Distress costs a key
+made a second ago.
+
+This is not a denial of service against a server. It is an attack on the one mechanism in
+this system where failure means somebody is hurt, and `CLAUDE.md` already names the kill
+trigger: *alarm fatigue destroys the one mechanism where failure means someone is hurt.* A
+pager that has cried wolf four hundred times is not answered on the night it is real, and no
+amount of correct ladder logic survives that.
+
+Bounded now, at twenty pages an hour by default — generous enough that a real night never
+reaches it, and passed by a flood in under a second. **The bound does not weaken invariant 2**,
+which is the whole question: past the budget the ladder still opens, the operator is still
+told, and what they are told is that nobody could be paged. The ladder is allowed to fail. It
+is never allowed to fail silently.
+
+**And one found on the way: a failed page was reported as a successful one.** Every channel
+could exit non-zero — a dead gateway, a missing binary — and the operator was still told
+`"Paging Wren."` The dispatch result went to the log and nowhere else. That is invariant 2
+failing in exactly the silent way it forbids, and it needed no attacker at all. The node now
+adds what only the node knows; the ladder's own sentence describes a state machine that cannot
+see a command's exit status.
+
+**Ladders accumulated forever.** Every ladder ever opened stayed resident and was walked once
+a second, on a box meant to run for months. Terminal ladders are dropped after a retention
+window; **live ladders are never dropped at any age**, because a `paging` ladder that vanished
+would stop escalating with nobody told.
+
+**What was deliberately not changed.** The executor answers a `Distress` from anybody, not
+just from known operators. Restricting that would need an enrollment step this build does not
+have, and it changes *who a watch will answer* — a much larger decision than a rate limit, and
+not one to make inside an audit pass. The budget was chosen precisely because it bounds the
+harm without deciding that question.
+
+Spec, example config and failure-mode list all updated; two new numbered failure modes.
+Checked in both directions — the three flood tests fail against the unbounded version.
+
+**Method note, and this one is mine rather than the code's.** I had been running the watchtower
+suite as `npx vitest run --root packages/watchtower`, which bypasses npm scripts and therefore
+the `pretest` that builds core. Watchtower resolves `@navcom/core` to `dist/`, so those runs
+were testing **whatever core last built**, not core as written. It surfaced here only because
+a brand-new core method was missing at runtime. Use `npm test --prefix packages/watchtower`.
 
 ## Milestone 1, after three passes
 

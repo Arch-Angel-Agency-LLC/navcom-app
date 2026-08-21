@@ -139,6 +139,34 @@ Registering a channel is a **condition of the role**, enforced at startup: an on
 with no way to wake anyone is refused rather than paged into nothing and then reported as
 paged.
 
+**A dispatch that failed MUST be reported as a failure.** A command exiting non-zero — a dead
+gateway, a missing binary — means nobody was woken, and the operator MUST NOT be told
+`"Paging Wren."` when that happened. The ladder's own sentence describes the state machine,
+which cannot see a command's exit status; the node adds what only it knows.
+
+## Paging budget
+
+A watch MUST bound how many pages it will dispatch in a window.
+
+The watch's address is **meant to be handed out**, so anybody holding it can publish a signed
+`20911` from a key created a second ago. Unbounded, this pages a real person once per event —
+and a pager that has cried wolf four hundred times is not answered on the night it is real.
+Alarm fatigue is the failure mode that destroys escalation outright, so it is bounded here
+rather than left to a relay or an operator's patience.
+
+Past the budget the node MUST still open the ladder and MUST still report to the operator,
+and the report MUST say plainly that nobody could be paged. **The ladder is allowed to fail;
+it is never allowed to fail silently** [invariant 2]. Refusing to page while reporting
+`"Paging Wren."` would be the invariant failing in exactly the way it forbids.
+
+The bound is global rather than per-key: a flood already arrives from one fresh key per
+event, so a per-key limit is free to defeat. Defaults are deliberately generous — 20 pages an
+hour — so that a real night never reaches the limit and a flood passes it immediately.
+
+Live ladders MUST NOT be dropped at any age. Terminal ladders MAY be dropped after a
+retention window, which must be long enough that a late duplicate `20911` still finds the
+finished ladder rather than starting a second one.
+
 ## Emergency contact
 
 - Encrypted at rest; decryptable **only** during an active escalation [C39]
@@ -180,3 +208,6 @@ Not optional — these are the point of the spec:
 6. Agent degraded → escalation MUST still fire; it is the one path that cannot depend on
    agent health
 7. Duplicate distress → single ladder, not two
+8. Flood of `20911` from unknown keys → paging bounded, **every** operator still told, and
+   what they are told is that nobody could be paged
+9. Every paging channel fails → operator told nobody was woken, not told they were paged

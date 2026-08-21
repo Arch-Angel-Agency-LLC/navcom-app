@@ -49,11 +49,32 @@ export interface EscalationConfig {
     drillAckWindowSeconds: number;
     /** Where results are written for the daemon to read when it publishes `10910`. */
     drillStatePath: string;
+    /**
+     * The most pages this watch will dispatch inside one window.
+     *
+     * Not tuning — a bound on how many times a stranger with the watch's address can wake a
+     * real person. Past it the ladder still runs and the operator is still told, and what
+     * they are told is that nobody could be paged.
+     */
+    maxPagesPerWindow: number;
+    pageBudgetWindowSeconds: number;
+    /** How long a finished ladder is kept before it is dropped. */
+    ladderRetentionSeconds: number;
     oncall: OnCallEntry[];
   };
 }
 
-const DEFAULTS = { pagingWindowSeconds: 300, contactWindowSeconds: 300, drillWindowDays: 7, drillAckWindowSeconds: 600, drillStatePath: "/var/lib/navcom/drill.json" };
+const DEFAULTS = {
+  pagingWindowSeconds: 300, contactWindowSeconds: 300, drillWindowDays: 7,
+  drillAckWindowSeconds: 600, drillStatePath: "/var/lib/navcom/drill.json",
+  /*
+   * Twenty pages an hour. A squad having twenty separate emergencies in an hour has a
+   * situation no rate limit is relevant to; a flood passes this in under a second.
+   */
+  maxPagesPerWindow: 20, pageBudgetWindowSeconds: 3_600,
+  /* An hour after it finishes, so a late duplicate still finds it. */
+  ladderRetentionSeconds: 3_600,
+};
 const CHANNELS = ["sms", "voice", "push", "console-open"] as const;
 const RELAY_URL = /^wss?:\/\/.+/;
 
@@ -127,6 +148,9 @@ export function loadEscalationConfig(path: string): EscalationConfig {
       drill_window_days?: number;
       drill_ack_window_seconds?: number;
       drill_state_path?: string;
+      max_pages_per_window?: number;
+      page_budget_window_seconds?: number;
+      ladder_retention_seconds?: number;
       oncall?: unknown;
     };
   };
@@ -150,6 +174,9 @@ export function loadEscalationConfig(path: string): EscalationConfig {
       drillWindowDays: positiveNumber(raw.escalation?.drill_window_days, "drill_window_days", DEFAULTS.drillWindowDays, path),
       drillAckWindowSeconds: positiveNumber(raw.escalation?.drill_ack_window_seconds, "drill_ack_window_seconds", DEFAULTS.drillAckWindowSeconds, path),
       drillStatePath: raw.escalation?.drill_state_path ?? DEFAULTS.drillStatePath,
+      maxPagesPerWindow: positiveNumber(raw.escalation?.max_pages_per_window, "max_pages_per_window", DEFAULTS.maxPagesPerWindow, path),
+      pageBudgetWindowSeconds: positiveNumber(raw.escalation?.page_budget_window_seconds, "page_budget_window_seconds", DEFAULTS.pageBudgetWindowSeconds, path),
+      ladderRetentionSeconds: positiveNumber(raw.escalation?.ladder_retention_seconds, "ladder_retention_seconds", DEFAULTS.ladderRetentionSeconds, path),
       oncall: parseOnCall(raw.escalation?.oncall, path),
     },
   };

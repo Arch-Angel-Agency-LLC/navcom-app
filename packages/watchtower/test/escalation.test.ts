@@ -34,14 +34,16 @@ function onCallEntry(callsign: string, pubkey?: string, channel: OnCallEntry["de
   };
 }
 
-function fakeConfig(oncall: OnCallEntry[] = []): EscalationConfig {
+function fakeConfig(oncall: OnCallEntry[] = [], over: Partial<EscalationConfig["escalation"]> = {}): EscalationConfig {
   return {
     identity: { privkeyPath: "/dev/null" },
     relays: { urls: ["wss://fake.relay"] },
     escalation: {
       pagingWindowSeconds: 300, contactWindowSeconds: 300,
       drillWindowDays: 7, drillAckWindowSeconds: 1, drillStatePath: "/dev/null/nope",
+      maxPagesPerWindow: 20, pageBudgetWindowSeconds: 3_600, ladderRetentionSeconds: 3_600,
       oncall,
+      ...over,
     },
   };
 }
@@ -68,11 +70,15 @@ let executors: EscalationExecutor[] = [];
 /** Typed to pageAll's signature so `mock.calls[0][0]` is the roster, not `never`. */
 const noopPager = () => vi.fn<typeof pageAll>(async () => []);
 
-function build(oncall: OnCallEntry[] = [], page: ReturnType<typeof noopPager> = noopPager()) {
+function build(
+  oncall: OnCallEntry[] = [],
+  page: ReturnType<typeof noopPager> = noopPager(),
+  over: Partial<EscalationConfig["escalation"]> = {},
+) {
   const secretKey = generateSecretKey();
   const pubkey = getPublicKey(secretKey);
   const { pool, published, deliver } = fakePool();
-  const executor = new EscalationExecutor({ config: fakeConfig(oncall), secretKey, pubkey, pool, page });
+  const executor = new EscalationExecutor({ config: fakeConfig(oncall, over), secretKey, pubkey, pool, page });
   executors.push(executor);
   executor.start();
   return { executor, pubkey, published, deliver, page };
@@ -104,8 +110,12 @@ function ackFrom(responder: Uint8Array, watchtower: string, distressId: string):
 
 async function reports(published: Event[], operator: Uint8Array, watchtower: string) {
   await vi.waitFor(() => expect(published.length).toBeGreaterThan(0));
+  const mine = getPublicKey(operator);
   return published
     .filter((e) => e.kind === KIND_RESPONSE)
+    // Sealed to one operator each. Under a flood the pool holds other people's reports too,
+    // and trying to open those is not a failure — it is the sealing working.
+    .filter((e) => e.tags.find((t) => t[0] === "p")?.[1] === mine)
     .map((e) => openResponse<ResponsePayload>(operator, watchtower, e.content));
 }
 
@@ -398,5 +408,101 @@ describe("6 — the agent cannot impair escalation", () => {
     const operator = generateSecretKey();
     // `deliver` IS the relay subscription callback. That it exists is the assertion.
     expect(() => deliver(distressFrom(operator, pubkey))).not.toThrow();
+  });
+});
+
+describe("a watch being flooded", () => {
+  /**
+   * The address is meant to be handed out, so anybody can publish a signed `20911` from a
+   * key they made a second ago. Unbounded, three hundred of them paged a real person three
+   * hundred times — which is how escalation dies. Not by being wrong, by being ignored on
+   * the night it is right.
+   */
+  const strangerDistress = (watchtower: string): Event => {
+    const stranger = generateSecretKey();
+    return finalizeEvent(
+      {
+        kind: KIND_DISTRESS,
+        tags: [["p", watchtower]],
+        content: sealSignal(stranger, [watchtower], { position: null, area: "x" }),
+        created_at: Math.floor(Date.now() / 1000),
+      },
+      stranger,
+    );
+  };
+
+  it("stops waking people once the budget is spent", async () => {
+    const page = noopPager();
+    const { pubkey, deliver } = build([onCallEntry("Wren")], page, { maxPagesPerWindow: 3 });
+
+    for (let i = 0; i < 40; i++) deliver(strangerDistress(pubkey));
+    await vi.waitFor(() => expect(page.mock.calls.length).toBeGreaterThan(0));
+    await new Promise((r) => setTimeout(r, 150));
+
+    expect(page.mock.calls.length).toBe(3);
+  });
+
+  it("still tells every operator, because the ladder may fail but never silently", async () => {
+    // Invariant 2. Refusing to page is allowed; refusing to page without saying so is not.
+    const operator = generateSecretKey();
+    const { pubkey, published, deliver } = build([onCallEntry("Wren")], noopPager(), {
+      maxPagesPerWindow: 1,
+    });
+
+    // The flood spends the budget, and then a real operator's Distress arrives. This is the
+    // case that decides whether the limit is defensible at all: they get no page, and they
+    // are told exactly that rather than being shown "Paging Wren."
+    deliver(strangerDistress(pubkey));
+    await vi.waitFor(() => expect(published.length).toBeGreaterThan(0));
+    deliver(distressFrom(operator, pubkey));
+    const said = await vi.waitFor(async () => {
+      const all = await reports(published, operator, pubkey);
+      expect(all.some((r) => /could not page anyone/i.test(r.text ?? ""))).toBe(true);
+      return all;
+    });
+    expect(said.some((r) => /nobody has been woken/i.test(r.text ?? ""))).toBe(true);
+  });
+
+  it("does not hold every ladder it has ever opened", async () => {
+    // An empty roster and no emergency contact is failure mode 1: the ladder opens straight
+    // into EXHAUSTED rather than waiting out a window with nobody on the other end. That is
+    // a terminal state, so retention decides how long it stays resident.
+    const { executor, pubkey, deliver } = build([], noopPager(), { ladderRetentionSeconds: 1 });
+
+    for (let i = 0; i < 50; i++) deliver(strangerDistress(pubkey));
+    await vi.waitFor(() => expect(executor.ladders.all().length).toBeGreaterThan(10));
+    const peak = executor.ladders.all().length;
+
+    await vi.waitFor(() => expect(executor.ladders.all().length).toBeLessThan(peak), { timeout: 8_000 });
+  }, 12_000);
+
+  it("tells the operator when every channel failed, rather than claiming it paged", async () => {
+    // The dispatch result went into the log and nowhere else. A dead gateway meant the
+    // operator was told "Paging Wren." while nobody had been woken at all.
+    const stranger = generateSecretKey();
+    const failing = vi.fn<typeof pageAll>(async () => [
+      { callsign: "Wren", channel: "sms", dispatched: false, error: "ENOENT" },
+    ]);
+    const { pubkey, published, deliver } = build([onCallEntry("Wren")], failing);
+
+    deliver(distressFrom(stranger, pubkey));
+    const said = await vi.waitFor(async () => {
+      const all = await reports(published, stranger, pubkey);
+      expect(all.some((r) => /every channel failed/i.test(r.text ?? ""))).toBe(true);
+      return all;
+    });
+    expect(said.some((r) => /nobody has been woken/i.test(r.text ?? ""))).toBe(true);
+  });
+
+  it("says nothing extra when the page did go out", async () => {
+    const stranger = generateSecretKey();
+    const working = vi.fn<typeof pageAll>(async () => [
+      { callsign: "Wren", channel: "sms", dispatched: true },
+    ]);
+    const { pubkey, published, deliver } = build([onCallEntry("Wren")], working);
+
+    deliver(distressFrom(stranger, pubkey));
+    const said = await reports(published, stranger, pubkey);
+    expect(said[0]!.text).toBe("Paging Wren.");
   });
 });
