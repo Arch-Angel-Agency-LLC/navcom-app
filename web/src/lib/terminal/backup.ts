@@ -29,12 +29,30 @@ export interface Kit {
   accruing: Record<string, unknown>;
 }
 
+export class BackupError extends Error {}
+
+/**
+ * The accruing tier, or a refusal.
+ *
+ * **Damaged is not the same as empty**, and this returned `{}` for both. 0.X established that
+ * corrupt storage reads as empty everywhere else, which is the right call — a terminal that
+ * will not start is worse than one asking to be set up again. It is the wrong call *here*: it
+ * means an operator whose storage is damaged makes a backup, is told it worked, keeps it for
+ * a year, and it holds **nothing**. The one artifact meant to survive a lost phone, silently
+ * empty.
+ */
 function accruing(): Record<string, unknown> {
   if (typeof localStorage === 'undefined') return {};
+  const raw = localStorage.getItem('navcom.accruing');
+  if (raw === null) return {};
   try {
-    return JSON.parse(localStorage.getItem('navcom.accruing') ?? '{}') as Record<string, unknown>;
+    const parsed = JSON.parse(raw) as Record<string, unknown>;
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) throw new Error('not an object');
+    return parsed;
   } catch {
-    return {};
+    throw new BackupError(
+      'This phone\u2019s storage is damaged, so a backup would be empty. Nothing has been written. Status has more about what can be salvaged.'
+    );
   }
 }
 
@@ -58,6 +76,12 @@ export const lastMade = (): string | null => get<string>('accruing', MADE);
 export function makeBackup(passphrase: string): string {
   const all = accruing();
   const kept = Object.fromEntries(Object.entries(all).filter(([k]) => !DEVICE_ONLY.includes(k)));
+  // A blob that looks like a backup and holds nothing is worse than no backup, because the
+  // operator stops worrying about it.
+  if (Object.keys(kept).length === 0) {
+    throw new BackupError('There is nothing on this phone to back up yet.');
+  }
+
   const blob = sealBackup(passphrase, {
     v: 1,
     at: new Date().toISOString().slice(0, 10),
@@ -131,6 +155,12 @@ export function restore(passphrase: string, blob: string): { keys: number } {
    * records when it was made, and that is the more useful truth: **how old the safety net
    * they are now standing on actually is.**
    */
+  if (restored.length === 0) {
+    // "Restored 0 things" read as a success. It is not one, and an operator told it worked
+    // stops looking for the backup that would have.
+    throw new RestoreError('That backup holds nothing. Whatever it was made from, it did not have anything on it.');
+  }
+
   if (typeof kit.at === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(kit.at)) {
     set('accruing', MADE, kit.at);
   }

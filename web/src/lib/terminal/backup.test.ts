@@ -130,3 +130,44 @@ describe('whether this operator has a backup at all', () => {
     expect(lastMade()).toMatch(/^\d{4}-\d{2}-\d{2}$/);
   });
 });
+
+describe('a backup that would hold nothing', () => {
+  it('is refused rather than sealed', () => {
+    // A blob that looks like a backup and holds nothing is worse than no backup, because the
+    // operator stops worrying about it.
+    expect(() => makeBackup(PASS)).toThrow(/nothing on this phone to back up/i);
+  });
+
+  it('says the storage is damaged rather than quietly backing up an empty tier', () => {
+    // 0.X established that corrupt storage reads as empty everywhere else, which is right —
+    // a terminal that will not start is worse than one asking to be set up again. It is the
+    // wrong call here: the operator makes a backup, is told it worked, keeps it for a year,
+    // and it holds nothing.
+    localStorage.setItem('navcom.accruing', '{not json');
+    expect(() => makeBackup(PASS)).toThrow(/storage is damaged/i);
+  });
+
+  it('points at where the damage can be looked at', () => {
+    localStorage.setItem('navcom.accruing', '{not json');
+    expect(() => makeBackup(PASS)).toThrow(/Status/);
+  });
+
+  it('refuses to report a restore of nothing as a success', () => {
+    // "Restored 0 things" read as a success. An operator told it worked stops looking for
+    // the backup that would have.
+    expect(() => restore(PASS, sealBackup(PASS, { v: 1, at: '2026-08-21', accruing: {} })))
+      .toThrow(/holds nothing/i);
+  });
+
+  it('still seals and restores a real one', () => {
+    set('accruing', 'callsign', 'Wren');
+    const blob = makeBackup(PASS);
+    const store = new Map<string, string>();
+    (globalThis as Record<string, unknown>).localStorage = {
+      getItem: (k: string) => store.get(k) ?? null,
+      setItem: (k: string, v: string) => void store.set(k, v),
+      removeItem: (k: string) => void store.delete(k)
+    };
+    expect(restore(PASS, blob).keys).toBeGreaterThan(0);
+  });
+});

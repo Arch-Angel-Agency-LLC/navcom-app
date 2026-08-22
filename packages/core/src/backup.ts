@@ -52,8 +52,28 @@ interface Envelope {
   data: string;
 }
 
+/**
+ * The passphrase, as the person who typed it would recognise it.
+ *
+ * **NFKC** because the same characters can be different bytes depending on which keyboard
+ * produced them, and an operator who set up on one device and restores on another must not
+ * be refused their own passphrase.
+ *
+ * **Trimmed** for the same reason, and it is the same decision rather than a second one. The
+ * blob is meant to live *"a note app, a USB stick, a printout in a drawer"* — every one of
+ * those is a place a passphrase gets **pasted**, and a paste carries a trailing newline or
+ * space more often than not. Untrimmed, that made a backup permanently unopenable, and
+ * because a wrong passphrase and a damaged blob are deliberately indistinguishable, the
+ * operator could never learn that a space was the whole problem. A decade of standing, lost
+ * to whitespace.
+ *
+ * The entropy given up is nil: nobody's passphrase is strong because it ends in a space.
+ *
+ * Both sealing and opening go through here, so the two cannot disagree about what a
+ * passphrase is — which is the failure this module could least afford.
+ */
 const keyFrom = (passphrase: string, salt: Uint8Array): Uint8Array =>
-  scrypt(passphrase.normalize('NFKC'), salt, KDF);
+  scrypt(passphrase.trim().normalize('NFKC'), salt, KDF);
 
 /**
  * Seals everything an operator would need on another phone.

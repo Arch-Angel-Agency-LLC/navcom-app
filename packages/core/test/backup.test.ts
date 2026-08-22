@@ -78,3 +78,42 @@ describe('a passphrase people can actually type', () => {
     expect(openBackup('café north', blob)).toEqual(kit);
   });
 });
+
+describe('a passphrase as the person who typed it would recognise it', () => {
+  it('opens when it was pasted with a trailing space', () => {
+    // The blob is meant to live in a note app, a USB stick, a printout in a drawer — every
+    // one of those is a place a passphrase gets pasted, and a paste carries a trailing
+    // newline or space more often than not. Untrimmed, that made a backup permanently
+    // unopenable, and because a wrong passphrase and a damaged blob are deliberately
+    // indistinguishable the operator could never learn a space was the whole problem.
+    const blob = sealBackup('correct horse', { kept: true });
+    expect(openBackup('correct horse ', blob)).toEqual({ kept: true });
+    expect(openBackup(' correct horse', blob)).toEqual({ kept: true });
+    expect(openBackup('\ncorrect horse\n', blob)).toEqual({ kept: true });
+  });
+
+  it('opens one that was sealed with the stray space instead', () => {
+    // Symmetric, because both sides go through the same place.
+    const blob = sealBackup('correct horse ', { kept: true });
+    expect(openBackup('correct horse', blob)).toEqual({ kept: true });
+  });
+
+  it('opens when the same characters were typed on a different keyboard', () => {
+    // `café` is one code point or two depending on the keyboard, and they render the same.
+    const precomposed = 'café';
+    const decomposed = 'café';
+    expect(precomposed).not.toBe(decomposed);
+    expect(openBackup(decomposed, sealBackup(precomposed, { kept: true }))).toEqual({ kept: true });
+  });
+
+  it('still refuses a passphrase that is only whitespace', () => {
+    // Trimming must not turn "no passphrase" into a passphrase.
+    expect(() => sealBackup('   ', { kept: true })).toThrow();
+    expect(() => sealBackup('\n\t', { kept: true })).toThrow();
+  });
+
+  it('still refuses an actually wrong passphrase', () => {
+    const blob = sealBackup('correct horse', { kept: true });
+    expect(() => openBackup('wrong horse', blob)).toThrow(/wrong passphrase/i);
+  });
+});

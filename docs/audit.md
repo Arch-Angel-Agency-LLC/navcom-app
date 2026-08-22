@@ -30,7 +30,7 @@ Each cell is a pass. `—` not started, `✓` done, and a note when it found som
 | **5** Written-down properties | PQC, declined, battery, RTL, watch-state v4 | **✓** | **✓** | **✓** |
 | **6** Knowledge gets in | Corrections, merge, needs-checking, notes, promotion | **✓** | **✓** | **✓** |
 | **7** Standing | Credentials, claims, revocation, the watch gate | **✓** | **✓** | **✓** |
-| **9** No single point of failure | Backup and restore, capability sentence, funding | **✓** | **✓** | — |
+| **9** No single point of failure | Backup and restore, capability sentence, funding | **✓** | **✓** | **✓** |
 
 ## Rules for a pass
 
@@ -518,6 +518,70 @@ merely uninformative — the sentence **asks the operator to get somebody to ope
 a number does not say who to ask. Now *"Raven needs to open the app once"*. `pq` still returns
 pubkeys and knows nothing about naming, which is the right split; the peer list is where names
 live, so the resolution happens on the screen.
+
+## 9.X — Milestone 9, edge cases
+
+**A decade of standing could be lost to a trailing space.** The blob is meant to live *"a note
+app, a USB stick, a printout in a drawer"* — every one of those is a place a passphrase gets
+**pasted**, and a paste carries a trailing newline or space more often than not. Untrimmed,
+that made a backup permanently unopenable. And because a wrong passphrase and a damaged blob
+are *deliberately* indistinguishable — which is right, and protects somebody holding a stolen
+backup from learning they are close — **the operator could never find out that a space was the
+whole problem.**
+
+Trimmed now, in `keyFrom`, which is the single place both sealing and opening go through, so
+the two cannot come to disagree about what a passphrase is. It is the same decision NFKC
+already made for the same reason, and the entropy given up is nil: nobody's passphrase is
+strong because it ends in a space.
+
+**And a backup of damaged storage looked exactly like a real one.** 0.X established that
+corrupt storage reads as empty everywhere else, which is the right call — a terminal that will
+not start is worse than one asking to be set up again. It is the wrong call *here*: an operator
+whose storage was damaged made a backup, was told it worked, and kept a blob holding
+**nothing**. The one artifact meant to survive a lost phone, silently empty. Refused now at
+both ends — sealing says the storage is damaged and points at Status, and restoring a kit with
+nothing in it no longer reports *"Restored 0 things"* as a success.
+
+That pair is the audit closing on itself: **the first pass established that corrupt storage
+reads as empty, and the last one found the place where that rule is a trap.**
+
+**A negative I nearly recorded without testing it.** My first probe of passphrase
+normalisation compared a precomposed string to a "decomposed" one — and the source file had
+normalised both, so they were identical and the check proved nothing. Built from escapes
+instead, it passes for real. Third time in this audit that a probe measured something other
+than what it claimed, and the only defence that has ever worked is checking that the test fails
+when the behaviour is removed.
+
+## The grid, closed
+
+Twenty-seven passes. What the ceremony bought, in one line: **the findings were not evenly
+distributed, and no single sweep would have reached them.** They clustered in failure paths
+nobody had a reason to visit — a flood, a dead executor, a phone with no signal, a clock that
+moved backwards, a blob pasted with a space on the end.
+
+Six recurring shapes, each found in more than one milestone:
+
+| | Shape | Where |
+|---|---|---|
+| 1 | **An unbounded intake behind a door the design leaves open** | 2.R, 2.E, 3.R, 3.X, 4.R, 6.R |
+| 2 | **Both halves correct, the join untested** | forgery memoisation, PQ envelope, push keys, 6.X, 9.R |
+| 3 | **A discarded publish result** | 3.E, 4.E, 6.E |
+| 4 | **One machine's clock used as everyone's** | 2.X, 3.X, 4.X |
+| 5 | **A second implementation of a rule that already existed** | 1.R vs 7.X, 9.E |
+| 6 | **A documented behaviour connected to nothing** | 7.R revocation, 6.E retry, 5.E reasons |
+
+And the three worst findings share one property: **a failure that leaves visible evidence of
+success.** A correction in your own directory that reached nobody. A credential taken up that
+does not count. A watch that says *On station* to a relay that never heard it. Every other
+silent failure left the operator with nothing to look at; those left them looking at the thing
+they were wrong about.
+
+Test counts moved from 364 core / 244 web / 189 watchtower / 129 browser to **404 / 332 / 202 /
+147** — 447 added, none removed.
+
+**What is still not covered.** Milestone 8 has no row: it is gated on Milestone 6 and unbuilt
+apart from 8.1, the printable sheet, which **is** built and **is** unaudited. That is the one
+known hole in this grid.
 
 ## 9.E — Milestone 9, error handling and reporting
 
