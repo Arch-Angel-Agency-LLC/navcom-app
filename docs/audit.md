@@ -27,7 +27,7 @@ Each cell is a pass. `—` not started, `✓` done, and a note when it found som
 | **2** One watch staffed | Executor, pager, drills, web push, on-call | **✓** | **✓** | **✓** |
 | **3** Two who met once | Peers, presence, cards, invites, public presence, buddy | **✓** | **✓** | **✓** |
 | **4** Squad with no box | Watch mode, group sealing, board, handover, watch key | **✓** | **✓** | **✓** |
-| **5** Written-down properties | PQC, declined, battery, RTL, watch-state v4 | **✓** | **✓** | — |
+| **5** Written-down properties | PQC, declined, battery, RTL, watch-state v4 | **✓** | **✓** | **✓** |
 | **6** Knowledge gets in | Corrections, merge, needs-checking, notes, promotion | — | — | — |
 | **7** Standing | Credentials, claims, revocation, the watch gate | — | — | — |
 | **9** No single point of failure | Backup and restore, capability sentence, funding | — | — | — |
@@ -519,6 +519,42 @@ a number does not say who to ask. Now *"Raven needs to open the app once"*. `pq`
 pubkeys and knows nothing about naming, which is the right split; the peer list is where names
 live, so the resolution happens on the screen.
 
+## 5.X — Milestone 5, edge cases
+
+**This pass overturned a second negative of mine, and this one was load-bearing.** In 5.R I
+recorded that malformed watch state degrades to Dark on ten hostile inputs. I had passed an
+`Event` object to `readWatchState`, which takes a **string** — so every probe failed
+`JSON.parse` and returned Dark for a reason that had nothing to do with the input. Probing the
+actual signature found the opposite of what I had written: the parser validated almost nothing.
+
+That is twice now (4.R was the first) that a wrong *negative* has been the expensive mistake
+rather than a missed positive. Both times the shape was identical — I read a name and believed
+it instead of reading what the code does with it.
+
+Four findings behind it, all reachable from any relay:
+
+**An unknown state word rendered *"An agent holds the board."*** `capabilitySentence` falls
+through to the agent branch for anything it does not recognise, so a watch publishing a word
+this build has never seen told the operator an agent was watching. **A false claim about who
+is on the other end**, on the one screen invariant 4 governs. It reads as Dark now.
+
+**`holder` was neither type-checked nor bounded.** An object rendered as `[object Object]`, and
+a sixty-thousand-character name filled the screen. This is the field an operator reads to know
+*who* is watching, and it is the exact layout attack `CALLSIGN_MAX` exists to prevent —
+enforced everywhere except the one place a stranger's string reaches the Status screen.
+
+**Junk inside `oncall` threw out of `capabilitySentence`**, taking the Status screen with it.
+`Array.isArray` was checked; the elements were not.
+
+**The version was not checked at all.** Older is fine and deliberately so — *"a v2 node
+publishes no root"* — but a payload written to a spec this build has never seen may mean
+something different by the same words. Newer now reads as Dark, and reports itself as
+`corrupt` rather than `absent` or `stale`, which makes 5.E's new explanation land exactly
+right: *"most often the watch is newer than this app."*
+
+**Nothing found in the RTL suite or the battery boundaries**, both of which already had tests
+and held up under the obvious probes.
+
 ## 5.R — Milestone 5, robustness
 
 **The device kept a shadow copy of every relationship it had ever had.** A peer's ML-KEM key
@@ -547,11 +583,10 @@ nothing surfaced the cover state at all; both had run from the wrong working dir
 finding that a required behaviour is absent is exactly the kind that must be checked twice
 before it is written down, because it accuses the code of something.
 
-**Malformed watch state degrades to Dark, every time.** A future version, no version, an
-unknown state word, a hundred-kilobyte holder, a bare JSON array, not-JSON-at-all — ten hostile
-inputs, ten Darks. That is the safe direction: an operator reads *"no watch"* rather than
-believing somebody is watching [invariant 4], and `readWatchStateAt` even separates `corrupt`
-from `absent` so the reason survives.
+**~~Malformed watch state degrades to Dark, every time.~~ This was wrong — see 5.X.** I passed
+an `Event` object to a function that takes a **string**, so every probe failed `JSON.parse` and
+returned Dark for the wrong reason. The parser did not validate its fields at all. The
+correction, and what it cost, are in 5.X.
 
 **Key bundles refuse everything they should.** Signed by an attacker while claiming the
 owner, junk content, empty content, a truncated key, a two-hundred-kilobyte key — all refused.

@@ -9,6 +9,7 @@
  */
 
 import type { Author } from '../attestation.js';
+import { CALLSIGN_MAX, withinLimit } from '../limits.js';
 import type { LogRoot } from '../merkle.js';
 import { KIND_WATCH_STATE } from './kinds.js';
 
@@ -276,7 +277,13 @@ export function readWatchStateAt(
   if (parsed.state === 'dark' && content) {
     // Parsed to dark from malformed content.
     try {
-      JSON.parse(content);
+      const raw = JSON.parse(content) as { v?: unknown; state?: unknown };
+      // A watch newer than this build is unreadable rather than absent or stale, and that is
+      // a different thing to tell an operator: it is fixable by updating, and the watch is
+      // probably alive. `state` present but unreadable means the same.
+      if (!readableVersion(raw?.v) || (raw?.state !== undefined && raw?.state !== 'dark')) {
+        return { state: darkState(), dark: true, reason: 'corrupt', ageSeconds: null };
+      }
     } catch {
       return { state: darkState(), dark: true, reason: 'corrupt', ageSeconds: null };
     }
@@ -311,23 +318,73 @@ export function readWatchStateAt(
  * Parses the payload only. **Prefer `readWatchStateAt`** — this cannot tell a live watch
  * from a stale one, and a replaceable event outlives the daemon that published it.
  */
+const WATCH_STATES: readonly WatchState[] = ['station', 'automated-oncall', 'automated', 'dark'];
+const CHANNELS: readonly OnCall['channel'][] = ['sms', 'voice', 'push', 'console-open'];
+const HEALTH: readonly AgentHealth[] = ['ok', 'degraded', 'down'];
+
+/**
+ * Whether this client can read a payload claiming that version.
+ *
+ * Older is fine and deliberately so — *"a v2 node publishes no root"*, and every field this
+ * client wants is either present or has an honest default. **Newer is not**: a payload
+ * written to a spec this build has never seen may mean something different by the same
+ * words, and guessing is how a client tells an operator a watch is staffed because a field
+ * it did not understand happened to be truthy.
+ */
+const readableVersion = (v: unknown): boolean =>
+  typeof v !== 'number' || (Number.isFinite(v) && v <= WATCH_STATE_VERSION);
+
+/** One on-call declaration, or nothing. Elements were never checked, only the array. */
+function readOnCall(raw: unknown): OnCall | null {
+  if (!raw || typeof raw !== 'object') return null;
+  const o = raw as Partial<OnCall>;
+  const author = o.author as Author | undefined;
+  if (!author || typeof author !== 'object') return null;
+  if (author.kind !== 'human' && author.kind !== 'node' && author.kind !== 'agent') return null;
+  if (author.callsign !== undefined && !withinLimit(author.callsign, CALLSIGN_MAX)) return null;
+  if (!CHANNELS.includes(o.channel as OnCall['channel'])) return null;
+  if (typeof o.expires !== 'number' || !Number.isFinite(o.expires)) return null;
+  return o as OnCall;
+}
+
+/**
+ * Reads a published watch state, or Dark.
+ *
+ * **Everything here arrived from a relay**, so nothing is taken on trust. Found by audit,
+ * and the earlier version checked only that `state` was truthy: an unknown state word
+ * rendered *"An agent holds the board"* — a false claim about who is watching, on the one
+ * screen invariant 4 governs. A `holder` was never type-checked or bounded, so an object
+ * rendered as `[object Object]` and a sixty-thousand-character name filled the screen.
+ * Junk inside `oncall` threw out of `capabilitySentence` and took the screen down with it.
+ *
+ * Anything that does not parse cleanly reads as Dark, which is always the safe direction:
+ * an operator who believes nobody is watching acts for themselves.
+ */
 export function readWatchState(content: string | null | undefined): WatchStatePayload {
   if (!content) return darkState();
   try {
     const p = JSON.parse(content) as Partial<WatchStatePayload>;
-    if (!p.state) return darkState();
+    if (!p || typeof p !== 'object') return darkState();
+    if (!readableVersion(p.v)) return darkState();
+    if (!WATCH_STATES.includes(p.state as WatchState)) return darkState();
+
     return {
-      v: p.v ?? 1,
-      state: p.state,
-      holder: p.holder ?? null,
-      holder_kind: p.holder_kind ?? null,
-      oncall: Array.isArray(p.oncall) ? p.oncall : [],
-      since: p.since ?? 0,
-      agent_health: p.agent_health ?? 'down',
+      v: typeof p.v === 'number' ? p.v : 1,
+      state: p.state as WatchState,
+      // The name an operator reads to know who is watching. Bounded for the same reason
+      // every callsign on somebody else's screen is bounded.
+      holder: withinLimit(p.holder, CALLSIGN_MAX) ? p.holder : null,
+      holder_kind: p.holder_kind === 'human' || p.holder_kind === 'agent' ? p.holder_kind : null,
+      oncall: Array.isArray(p.oncall)
+        ? p.oncall.map(readOnCall).filter((o): o is OnCall => o !== null)
+        : [],
+      since: typeof p.since === 'number' && Number.isFinite(p.since) ? p.since : 0,
+      // Anything unrecognised reads as `down`, never as healthy.
+      agent_health: HEALTH.includes(p.agent_health as AgentHealth) ? (p.agent_health as AgentHealth) : 'down',
       last_drill: p.last_drill ?? null,
       // A v2 node publishes no root. Null reads as "this watch commits to no log", which is
       // the honest reading of its absence rather than a shape to paper over.
-      log_root: p.log_root ?? null
+      log_root: typeof p.log_root === 'string' ? p.log_root : null
     };
   } catch {
     return darkState();

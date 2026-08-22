@@ -4,7 +4,7 @@ import { deriveWeight, ageInDays, known, unknown } from '../src/attestation';
 import { newSecretKey, publicKeyOf, secretFromHex, secretToHex } from '../src/crypto/keys';
 import { open, seal } from '../src/crypto/envelope';
 import { openFromGroup, watchtowerAt } from '../src/crypto/group';
-import { buildWatchStateEvent, capabilitySentence, darkState, pageableNow, publishableWatchState, readWatchState, WATCH_STATE_VERSION } from '../src/events/watch-state';
+import { WATCH_STATE_VERSION, buildWatchStateEvent, capabilitySentence, darkState, pageableNow, publishableWatchState, readWatchState, readWatchStateAt } from '../src/events/watch-state';
 import { readWatchStateAt } from '../src/events/watch-state';
 import { appendEntry, asCompleteLog, emptyLog, entriesAbout, verifyChain, type LogOutcome } from '../src/log';
 import { sendDistressUntilAcknowledged } from '../src/transport';
@@ -753,5 +753,66 @@ describe('distress keeps trying until a human acknowledges', () => {
       }
     ).catch(() => {});
     expect(waits.slice(0, 4)).toEqual([100, 200, 400, 400]);
+  });
+});
+
+describe('a watch state that arrived from a relay', () => {
+  // Everything here came off a public relay, so nothing in it is taken on trust. The earlier
+  // version checked only that `state` was truthy.
+  const NOW = 1_800_000_000;
+  const good = {
+    v: WATCH_STATE_VERSION, state: 'station', holder: 'Wren', holder_kind: 'human',
+    oncall: [], since: NOW, agent_health: 'down', last_drill: null, log_root: null
+  };
+  const read = (over: Record<string, unknown>) =>
+    readWatchState(JSON.stringify({ ...good, ...over }));
+
+  it('does not turn an unknown state word into an agent holding the board', () => {
+    // It rendered "An agent holds the board" — a false claim about who is watching, on the
+    // one screen invariant 4 governs.
+    expect(read({ state: 'pretending' }).state).toBe('dark');
+    expect(read({ state: 7 }).state).toBe('dark');
+    expect(capabilitySentence(read({ state: 'pretending' }), NOW)).toMatch(/No watch/);
+  });
+
+  it('will not put an unbounded name on the operator screen', () => {
+    // The one field an operator reads to know who is watching, never type-checked or
+    // bounded: an object rendered as "[object Object]" and a 60,000-character name filled
+    // the screen.
+    expect(read({ holder: { evil: true } }).holder).toBeNull();
+    expect(read({ holder: 'x'.repeat(60_000) }).holder).toBeNull();
+    expect(read({ holder: 'Wren' }).holder).toBe('Wren');
+  });
+
+  it('survives junk inside the on-call list', () => {
+    // `Array.isArray` was checked and the elements were not, so `namesOf` threw and took the
+    // Status screen with it.
+    const p = read({ oncall: [{ nope: 1 }, 'x', null] });
+    expect(p.oncall).toEqual([]);
+    expect(() => capabilitySentence(p, NOW)).not.toThrow();
+  });
+
+  it('keeps the on-call entries that are real', () => {
+    const real = { author: { kind: 'node', callsign: 'Raven' }, channel: 'sms', expires: NOW + 3600 };
+    expect(read({ oncall: [real, { nope: 1 }] }).oncall).toHaveLength(1);
+  });
+
+  it('reads a watch newer than this build as Dark rather than guessing', () => {
+    // A payload written to a spec this build has never seen may mean something different by
+    // the same words. Older is fine — a v2 node publishes no root, and every field this
+    // client wants has an honest default.
+    expect(read({ v: WATCH_STATE_VERSION + 1 }).state).toBe('dark');
+    expect(read({ v: WATCH_STATE_VERSION - 1 }).state).toBe('station');
+  });
+
+  it('tells the operator that is unreadable, not that it is missing', () => {
+    // The fixes differ: a watch newer than the app is fixable by updating, and the watch is
+    // probably alive.
+    const future = JSON.stringify({ ...good, v: WATCH_STATE_VERSION + 1 });
+    expect(readWatchStateAt(future, { createdAt: NOW, now: NOW }).reason).toBe('corrupt');
+  });
+
+  it('never reads an unrecognised agent health as healthy', () => {
+    expect(read({ agent_health: 'excellent' }).agent_health).toBe('down');
   });
 });
