@@ -1340,3 +1340,36 @@ test.describe('an endorsement dated in the future', () => {
     await expect(page.getByText('0 days ago')).toHaveCount(0);
   });
 });
+
+test.describe('whether this operator has a backup', () => {
+  /**
+   * The screen stated the rule — *"a backup you never made does not exist"* — and the app had
+   * no way to tell an operator which of those two people they were, nor that a backup made
+   * before they had any standing does not hold it.
+   */
+  test('says plainly when they have never made one', async ({ page }) => {
+    await seedDevice(page, { callsign: 'Wren' });
+    await open(page, '/terminal/backup/');
+
+    const said = page.locator('[data-never-backed-up]');
+    await expect(said).toBeVisible({ timeout: 10_000 });
+    await expect(said).toContainText(/not made one on this phone/i);
+    await expect(said).toContainText(/lost phone is a lost persona/i);
+  });
+
+  test('says how old the one they have is', async ({ page }) => {
+    // Standing is built over years and peers accumulate, so a backup made before any of that
+    // does not hold it — a safety net for a version of themselves that no longer exists.
+    await seedDevice(page, {
+      callsign: 'Wren',
+      accruing: { backup_made: '2026-03-14' }
+    });
+    await open(page, '/terminal/backup/');
+
+    const said = page.locator('[data-backup-age]');
+    await expect(said).toBeVisible({ timeout: 10_000 });
+    await expect(said).toContainText(/days ago/i);
+    await expect(said).toContainText(/is\s+not\s+in\s+it/i);
+    await expect(page.locator('[data-never-backed-up]')).toHaveCount(0);
+  });
+});

@@ -6,13 +6,15 @@
    * for one of them and should not have to work out that the other is the same thing.
    */
   import { onMount } from 'svelte';
-  import { secretToHex } from '@navcom/core';
-  import { makeBackup, restore, restoreCode, RestoreError } from '$lib/terminal/backup';
+  import { ageInDays, secretToHex } from '@navcom/core';
+  import { RestoreError, lastMade, makeBackup, restore, restoreCode } from '$lib/terminal/backup';
   import { loadIdentity } from '$lib/terminal/identity';
 
   let identity = $state<ReturnType<typeof loadIdentity>>(null);
   let passphrase = $state('');
   let blob = $state<string | null>(null);
+  /** The date of the last backup on this device, read once on mount. */
+  let made = $state<string | null>(null);
   let copied = $state(false);
   let showCode = $state(false);
 
@@ -21,12 +23,14 @@
   let error = $state<string | null>(null);
   let done = $state<string | null>(null);
 
-  onMount(() => { identity = loadIdentity(); });
+  onMount(() => {
+    made = lastMade(); identity = loadIdentity(); });
 
   function make() {
     error = null;
     try {
       blob = makeBackup(passphrase);
+      made = lastMade();
       copied = false;
     } catch (e) {
       error = e instanceof Error ? e.message : 'Could not make a backup.';
@@ -73,6 +77,26 @@
 </header>
 
 <section>
+  {#if identity}
+    <!--
+      The rule was stated and never applied. "A backup you never made does not exist" is true
+      and general, and the app had no way to tell an operator which of those two people they
+      were — nor that a backup made before they had any standing does not hold it.
+    -->
+    {#if !made}
+      <p class="cost" data-never-backed-up>
+        <strong>You have not made one on this phone.</strong> Nothing here is uploaded or
+        synced, so right now a lost phone is a lost persona.
+      </p>
+    {:else}
+      <p class="cost" data-backup-age>
+        You last made one <strong>{ageInDays(made, new Date())} days ago</strong>. Anything
+        you have taken up since — people you paired with, standing somebody handed you — is
+        not in it.
+      </p>
+    {/if}
+  {/if}
+
   <p>
     <strong>A backup you can restore is how you move to a new phone.</strong> Same thing,
     whether you are replacing a handset on purpose or replacing one you dropped.

@@ -7,7 +7,7 @@
 
 import { describe, expect, it, beforeEach } from 'vitest';
 import { sealBackup } from '@navcom/core';
-import { makeBackup, restore, RestoreError } from './backup';
+import { RestoreError, lastMade, makeBackup, restore } from './backup';
 import { get, set } from './storage';
 
 const PASS = 'correct horse battery staple';
@@ -93,5 +93,40 @@ describe('a backup somebody handed you', () => {
     const damaged = (() => { try { restore(PASS, tampered); } catch (e) { return (e as Error).message; } })();
     expect(wrong).toBe(damaged);
     expect(wrong).toMatch(/wrong passphrase, or the backup is damaged/i);
+  });
+});
+
+describe('whether this operator has a backup at all', () => {
+  it('knows they have not made one', () => {
+    // The screen stated the rule — "a backup you never made does not exist" — and the app
+    // had no way to tell an operator which of those two people they were.
+    expect(lastMade()).toBeNull();
+  });
+
+  it('records the date once one is actually made', () => {
+    set('accruing', 'callsign', 'Wren');
+    makeBackup(PASS);
+    expect(lastMade()).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+  });
+
+  it('does not record one that failed', () => {
+    // An empty passphrase throws, and a backup that threw is not a backup that exists.
+    set('accruing', 'callsign', 'Wren');
+    expect(() => makeBackup('')).toThrow();
+    expect(lastMade()).toBeNull();
+  });
+
+  it("travels with the operator, because it is theirs rather than the handset's", () => {
+    set('accruing', 'callsign', 'Wren');
+    const blob = makeBackup(PASS);
+
+    const store = new Map<string, string>();
+    (globalThis as Record<string, unknown>).localStorage = {
+      getItem: (k: string) => store.get(k) ?? null,
+      setItem: (k: string, v: string) => void store.set(k, v),
+      removeItem: (k: string) => void store.delete(k)
+    };
+    restore(PASS, blob);
+    expect(lastMade()).toMatch(/^\d{4}-\d{2}-\d{2}$/);
   });
 });

@@ -30,7 +30,7 @@ Each cell is a pass. `—` not started, `✓` done, and a note when it found som
 | **5** Written-down properties | PQC, declined, battery, RTL, watch-state v4 | **✓** | **✓** | **✓** |
 | **6** Knowledge gets in | Corrections, merge, needs-checking, notes, promotion | **✓** | **✓** | **✓** |
 | **7** Standing | Credentials, claims, revocation, the watch gate | **✓** | **✓** | **✓** |
-| **9** No single point of failure | Backup and restore, capability sentence, funding | **✓** | — | — |
+| **9** No single point of failure | Backup and restore, capability sentence, funding | **✓** | **✓** | — |
 
 ## Rules for a pass
 
@@ -518,6 +518,38 @@ merely uninformative — the sentence **asks the operator to get somebody to ope
 a number does not say who to ask. Now *"Raven needs to open the app once"*. `pq` still returns
 pubkeys and knows nothing about naming, which is the right split; the peer list is where names
 live, so the resolution happens on the screen.
+
+## 9.E — Milestone 9, error handling and reporting
+
+**The screen stated the rule and could not say whether it applied.** *"A backup you never made
+does not exist"* is on the backup screen, exactly as `identity.md` requires — and **nothing
+recorded whether this operator had made one.** The app could recite the principle and had no
+idea which of those two people was reading it.
+
+The sharper half is the one that arrives on its own: **a backup goes stale.** Standing is built
+over years and peers accumulate, so a backup made before any of that does not hold it. The
+operator has a safety net for a version of themselves that no longer exists, and nothing said
+so. That is invariant 9 — *volatile data shows its age* — applied to the safety net rather than
+to the data.
+
+Both now answered on the screen an operator opens to think about backups, and deliberately
+**not** on Status: this is a fact somebody went looking for, not a nudge to be shown a fact
+they did not ask about.
+
+**A bug in that fix, found by the test I wrote for it.** The date was recorded *after* sealing
+— correct, so a backup that threw is not recorded as one that exists — which meant it never
+travelled inside the blob, and an operator who had **just restored** was told they had never
+made a backup. The kit already carries the date it was sealed, so a restored phone adopts it
+and learns the more useful thing: **how old the safety net they are now standing on actually
+is.**
+
+**Nothing found in the restore errors**, which distinguish an identity already present, a
+version this build does not know, an oversized kit, and a wrong passphrase — each a different
+sentence pointing at a different action.
+
+**Harness note, recurring:** a `toContainText` regex does not normalise whitespace, and the
+phrase spanned a line break in the markup. That is the third time in this project; the fix is
+always `\s+` rather than a shorter phrase.
 
 ## 9.R — Milestone 9, robustness
 

@@ -38,15 +38,34 @@ function accruing(): Record<string, unknown> {
   }
 }
 
+/** When a backup was last made on this device, as an ISO date, or null. */
+const MADE = 'backup_made';
+
+/**
+ * The last time this operator made a backup.
+ *
+ * Recorded because **the screen could state the rule and not whether it applied.** It says
+ * *"a backup you never made does not exist"*, which is true and general, and the app had no
+ * way to tell an operator which of those two people they were.
+ *
+ * The date matters more than the fact. Standing is built over years and peers accumulate, so
+ * a backup made before any of that **does not hold it** — the operator has a safety net for
+ * a version of themselves that no longer exists, and nothing said so.
+ */
+export const lastMade = (): string | null => get<string>('accruing', MADE);
+
 /** Seals what an operator would need. Throws on an empty passphrase. */
 export function makeBackup(passphrase: string): string {
   const all = accruing();
   const kept = Object.fromEntries(Object.entries(all).filter(([k]) => !DEVICE_ONLY.includes(k)));
-  return sealBackup(passphrase, {
+  const blob = sealBackup(passphrase, {
     v: 1,
     at: new Date().toISOString().slice(0, 10),
     accruing: kept
   } satisfies Kit);
+  // After sealing, so a backup that threw is not recorded as one that exists.
+  set('accruing', MADE, new Date().toISOString().slice(0, 10));
+  return blob;
 }
 
 export class RestoreError extends Error {}
@@ -103,6 +122,18 @@ export function restore(passphrase: string, blob: string): { keys: number } {
    */
   const restored = entries.filter(([k]) => !DEVICE_ONLY.includes(k));
   for (const [key, value] of restored) set('accruing', key, value);
+
+  /*
+   * The new phone adopts the date the kit was sealed.
+   *
+   * `MADE` is written after sealing, so it never travels inside a backup — which left an
+   * operator who had just restored being told they had never made one. The kit already
+   * records when it was made, and that is the more useful truth: **how old the safety net
+   * they are now standing on actually is.**
+   */
+  if (typeof kit.at === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(kit.at)) {
+    set('accruing', MADE, kit.at);
+  }
   return { keys: restored.length };
 }
 
