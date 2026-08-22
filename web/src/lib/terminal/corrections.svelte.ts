@@ -71,6 +71,17 @@ let partial = $state(false);
  * storage for 1.5 MB of data. Relays deliver in bursts, so this is the ordinary case rather
  * than the hostile one — a flood only made it visible.
  */
+/**
+ * Corrections this operator made that have not reached a relay.
+ *
+ * The signed events themselves, because republishing needs the signature and the content
+ * both. Kept in the accruing tier beside the corrections — this is the operator's own
+ * contribution and losing it is the failure, which is the same reason their patrol record
+ * lives there.
+ */
+const PENDING = 'corrections_unsent';
+let unsent = $state<Record<string, Event>>({});
+
 let writeQueued = false;
 function persist(): void {
   if (writeQueued) return;
@@ -115,8 +126,10 @@ export const corrections = {
    */
   start(records: readonly string[]): void {
     held = get<Record<string, Stored>>('accruing', FIELD) ?? {};
+    unsent = get<Record<string, Event>>('accruing', PENDING) ?? {};
 
     const urls = relays();
+    if (urls.length > 0) void this.flush();
     if (urls.length === 0 || records.length === 0) return;
 
     closer?.close();
@@ -180,15 +193,62 @@ export const corrections = {
     const event = buildCorrection(secret, correction, Math.floor(Date.now() / 1000));
     const read = readCorrection(event);
     if (read) {
-      // Held locally whether or not a relay takes it. An operator who corrects a record with
-      // no signal must still see their own correction -- and it will publish the next time
-      // this runs with a connection.
+      // Held locally whether or not a relay takes it: an operator who corrects a record with
+      // no signal must still see their own correction. Getting it *out* is handled below.
       held = { ...held, [keyOf(read)]: read };
       persist();
     }
 
-    if (urls.length === 0) return;
-    await Promise.allSettled(pool().publish(urls, event));
+    /*
+     * Whether it actually reached anybody.
+     *
+     * The comment above used to promise this would *"publish the next time this runs with a
+     * connection"*, and **nothing implemented that**. A correction made at a door with no
+     * signal was held locally, failed once, and was never sent again — while appearing in the
+     * operator's own directory, so they had positive evidence it had worked. That is worse
+     * than a silent failure: it is a disguised one.
+     *
+     * It matters most for exactly the person this feature is for. The operator with the best
+     * knowledge is the one standing at the door, and standing at the door is where the signal
+     * is worst.
+     */
+    const results = urls.length > 0
+      ? await Promise.allSettled(pool().publish(urls, event))
+      : [];
+    if (results.some((r) => r.status === 'fulfilled')) return;
+
+    unsent = { ...unsent, [event.id]: event };
+    set('accruing', PENDING, unsent);
+  },
+
+  /**
+   * Retries everything this operator wrote that never got out.
+   *
+   * Called on `start`, which is what the promise in `submit` always described. Silent when
+   * there is nothing to do, and it never blocks a screen — a correction is not urgent, it
+   * just has to eventually arrive.
+   */
+  async flush(): Promise<void> {
+    const urls = relays();
+    const queue = Object.values(unsent);
+    if (urls.length === 0 || queue.length === 0) return;
+
+    const landed: string[] = [];
+    await Promise.all(
+      queue.map(async (event) => {
+        const results = await Promise.allSettled(pool().publish(urls, event));
+        if (results.some((r) => r.status === 'fulfilled')) landed.push(event.id);
+      })
+    );
+    if (landed.length === 0) return;
+
+    unsent = Object.fromEntries(Object.entries(unsent).filter(([id]) => !landed.includes(id)));
+    set('accruing', PENDING, unsent);
+  },
+
+  /** How many of this operator's own corrections have not reached anybody yet. */
+  get unsentCount(): number {
+    return Object.keys(unsent).length;
   },
 
   stop(): void {

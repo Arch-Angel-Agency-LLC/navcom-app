@@ -18,13 +18,17 @@ vi.mock('./identity', () => ({
 }));
 vi.mock('./card', () => ({ ensureContactKey: () => me }));
 vi.mock('./relays', () => ({ relays: () => ['wss://fake.relay'] }));
+/** Whether relays take anything. A doorway in a basement is the ordinary case here. */
+let relaysUp = true;
+
 vi.mock('./pool', () => ({
   pool: () => ({
     subscribeMany: (_u: string[], _f: unknown, p: { onevent: (e: Event) => void }) => {
       deliver = p.onevent;
       return { close: () => {} };
     },
-    publish: () => [Promise.resolve('ok')]
+    publish: () =>
+      relaysUp ? [Promise.resolve('ok')] : [Promise.reject(new Error('no relay accepted'))]
   })
 }));
 
@@ -46,6 +50,7 @@ beforeEach(async () => {
     setItem: (k: string, v: string) => void store.set(k, v),
     removeItem: (k: string) => void store.delete(k)
   };
+  relaysUp = true;
   vi.resetModules();
   ({ corrections } = await import('./corrections.svelte'));
   corrections.start([RECORD, 'other-record']);
@@ -111,5 +116,55 @@ describe('a flood of corrections from strangers', () => {
     for (let i = 0; i < 3; i++) deliver(fromStranger());
     expect(corrections.about(RECORD)).toHaveLength(3);
     expect(corrections.partial).toBe(false);
+  });
+});
+
+describe('a correction made where there is no signal', () => {
+  /** Relays that refuse everything, which is a doorway in a basement. */
+  const offline = () => { relaysUp = false; };
+  const online = () => { relaysUp = true; };
+
+  it('is kept so it can be sent later, rather than lost', async () => {
+    // The comment promised this would "publish the next time this runs with a connection"
+    // and nothing implemented it. The correction appeared in the operator's own directory,
+    // so they had positive evidence it had worked — worse than a silent failure.
+    offline();
+    await corrections.submit(RECORD, { hours: '24/7' });
+    expect(corrections.unsentCount).toBe(1);
+  });
+
+  it('still shows to the operator who made it', async () => {
+    // They were at the door. Not showing it would be its own lie.
+    offline();
+    await corrections.submit(RECORD, { hours: '24/7' });
+    expect(corrections.about(RECORD)).toHaveLength(1);
+  });
+
+  it('goes out on its own once there is signal', async () => {
+    offline();
+    await corrections.submit(RECORD, { hours: '24/7' });
+    expect(corrections.unsentCount).toBe(1);
+
+    online();
+    await corrections.flush();
+    expect(corrections.unsentCount).toBe(0);
+  });
+
+  it('is not queued when it went out the first time', async () => {
+    online();
+    await corrections.submit(RECORD, { hours: '24/7' });
+    expect(corrections.unsentCount).toBe(0);
+  });
+
+  it('survives the app being closed and reopened', async () => {
+    // Kept in the accruing tier beside the corrections themselves — this is the operator's
+    // own contribution, and losing it is the failure.
+    offline();
+    await corrections.submit(RECORD, { hours: '24/7' });
+
+    vi.resetModules();
+    ({ corrections } = await import('./corrections.svelte'));
+    corrections.start([RECORD]);
+    expect(corrections.unsentCount).toBe(1);
   });
 });

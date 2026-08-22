@@ -43,6 +43,13 @@ interface Seed {
    * that actually holds one — so without this, nothing about the board is reachable.
    */
   watchSecret?: string;
+  /**
+   * Arbitrary accruing-tier fields.
+   *
+   * For states a test needs to *start* in rather than drive a whole screen to reach — the
+   * screen's own markup is then not part of what the test depends on.
+   */
+  accruing?: Record<string, unknown>;
   relayEvents?: unknown[];
   /**
    * Accept subscriptions but refuse everything published.
@@ -212,6 +219,7 @@ export async function seedDevice(page: Page, seed: Seed = {}): Promise<void> {
       // Founding is what grants the right to hold it, so a seeded watch is a founded one.
       accruing['watch_founded'] = true;
     }
+    if (s.accruing) Object.assign(accruing, s.accruing);
     if (s.contact) accruing['emergency_contact'] = s.contact;
     if (s.peers) accruing['peers'] = s.peers;
     if (s.keepPatrolHistory !== undefined) accruing['keep_patrol_history'] = s.keepPatrolHistory;

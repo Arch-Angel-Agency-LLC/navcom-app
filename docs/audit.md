@@ -28,7 +28,7 @@ Each cell is a pass. `—` not started, `✓` done, and a note when it found som
 | **3** Two who met once | Peers, presence, cards, invites, public presence, buddy | **✓** | **✓** | **✓** |
 | **4** Squad with no box | Watch mode, group sealing, board, handover, watch key | **✓** | **✓** | **✓** |
 | **5** Written-down properties | PQC, declined, battery, RTL, watch-state v4 | **✓** | **✓** | **✓** |
-| **6** Knowledge gets in | Corrections, merge, needs-checking, notes, promotion | **✓** | — | — |
+| **6** Knowledge gets in | Corrections, merge, needs-checking, notes, promotion | **✓** | **✓** | — |
 | **7** Standing | Credentials, claims, revocation, the watch gate | — | — | — |
 | **9** No single point of failure | Backup and restore, capability sentence, funding | — | — | — |
 
@@ -518,6 +518,40 @@ merely uninformative — the sentence **asks the operator to get somebody to ope
 a number does not say who to ask. Now *"Raven needs to open the app once"*. `pq` still returns
 pubkeys and knows nothing about naming, which is the right split; the peer list is where names
 live, so the resolution happens on the screen.
+
+## 6.E — Milestone 6, error handling and reporting
+
+**A comment promised a behaviour that did not exist.** `submit` held a correction locally and
+published it once, above a comment saying it *"will publish the next time this runs with a
+connection"*. **Nothing implemented that.** A correction made with no signal failed once and
+was never sent again.
+
+What makes this the worst reporting failure in the audit is not the loss — it is that the
+operator had **positive evidence it had worked**. The correction is held locally so they can
+see their own contribution, which is right; it therefore appeared in their directory exactly as
+a successful one would. Every other silent failure found here left the operator with nothing
+to look at. This one showed them the thing they were wrong about.
+
+And it lands on precisely the person the feature exists for. The module's own docstring says
+contributing must not be gated, *"because the operator with the best knowledge is often the
+one with the most reason not to be findable"* — and the operator with the best knowledge is
+the one standing at the door, which is where the signal is worst.
+
+Implemented rather than deleted, because the comment described the right behaviour. Unsent
+corrections are kept as signed events in the accruing tier — beside the corrections
+themselves, and for the same reason the patrol record lives there: **this is the operator's own
+contribution and losing it is the failure**. They go out on the next start with signal, and
+until they do the directory says so plainly, including what happens next.
+
+This is deliberately the opposite call from invites in 3.E, where I declined to add a queue.
+An invite is re-sendable in person to somebody you just met; a correction is something learned
+at a door the operator has already walked away from, and it is already persisted, so retrying
+adds no tier and no new class of stored data.
+
+**Harness note:** `seedDevice` takes arbitrary accruing fields now. The first version of this
+test drove the correction form by guessing at selectors and timed out; starting in the state
+under test rather than driving a screen to reach it means the test depends on the behaviour
+rather than on markup it does not care about.
 
 ## 6.R — Milestone 6, robustness
 

@@ -1174,3 +1174,35 @@ test.describe('the post-quantum cover notice', () => {
     await expect(notice).toContainText(/Unreadable by anyone now/i);
   });
 });
+
+test.describe('a correction made where there is no signal', () => {
+  /**
+   * The operator with the best knowledge is the one standing at the door, and standing at
+   * the door is where the signal is worst. The correction was held locally and published
+   * once; if that failed it was never sent again — while appearing in the operator's own
+   * directory, so they had positive evidence it had worked.
+   */
+  test('tells the operator it has not reached anybody yet', async ({ page }) => {
+    const { generateSecretKey } = await import('nostr-tools/pure');
+    const { buildCorrection } = await import('@navcom/core');
+    const stuck = buildCorrection(generateSecretKey(), {
+      record: 'st-louis-0001', verified_by: 'Wren', method: 'in_person',
+      last_verified: '2026-08-21', fields: { hours: '24/7' }
+    }, 1_800_000_000);
+
+    // Started in the state rather than driven to it: what is under test is whether the
+    // operator is told, not whether a form works.
+    await seedDevice(page, {
+      callsign: 'Wren',
+      refusePublish: true,
+      accruing: { corrections_unsent: { [stuck.id]: stuck } }
+    });
+    await open(page, '/terminal/directory/st-louis/');
+
+    const notice = page.locator('[data-corrections-unsent]');
+    await expect(notice).toBeVisible({ timeout: 10_000 });
+    await expect(notice).toContainText(/has not reached a relay yet/i);
+    // And says what happens next, because a notice you cannot act on is just worry.
+    await expect(notice).toContainText(/go out on their own/i);
+  });
+});

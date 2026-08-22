@@ -152,6 +152,21 @@
   <h1>{data.region.name}</h1>
 </header>
 
+{#if corrections.unsentCount > 0}
+  <!--
+    Held on this device and not yet anywhere else. Said because the correction appears in
+    this operator's own directory either way, so without this they have positive evidence it
+    worked — which is worse than a silent failure.
+  -->
+  <p class="cost" data-corrections-unsent>
+    {corrections.unsentCount === 1
+      ? 'One correction you made has not reached a relay yet'
+      : `${corrections.unsentCount} corrections you made have not reached a relay yet`} —
+    you can see them, nobody else can. They go out on their own the next time this opens with
+    signal.
+  </p>
+{/if}
+
 {#if corrections.partial}
   <!--
     A correction is the one thing a stranger can write into this device. Bounded, and said
