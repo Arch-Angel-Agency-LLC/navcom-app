@@ -1206,3 +1206,43 @@ test.describe('a correction made where there is no signal', () => {
     await expect(notice).toContainText(/go out on their own/i);
   });
 });
+
+test.describe('taking back an endorsement', () => {
+  /**
+   * `revoke` and `isRevokedBy` were both in core, `identity.md` said endorsers publish a
+   * revocation checked when online, and the client neither published one nor ever looked.
+   * An endorser who learned somebody was unsafe had no way to take it back — and
+   * `can take watch` is the gate on who may hold a board.
+   */
+  test('is a control an endorser can actually reach', async ({ page }) => {
+    await seedDevice(page, { callsign: 'Wren' });
+    await open(page, '/terminal/standing/');
+
+    // Vouch for somebody, which is what creates something to take back.
+    await page.getByRole('button', { name: /can take watch/i }).first().click();
+    await expect(page.getByRole('heading', { name: /what you have vouched for/i }))
+      .toBeVisible({ timeout: 10_000 });
+
+    const takeBack = page.locator('[data-withdraw]').first();
+    await expect(takeBack).toBeVisible();
+    await takeBack.click();
+
+    // Gone from the list, because it is no longer something this operator stands behind.
+    await expect(page.locator('[data-withdraw]')).toHaveCount(0);
+  });
+
+  test('says when the withdrawal has not reached anybody else yet', async ({ page }) => {
+    // Honoured on this device either way — the endorser has decided — but everybody else
+    // still sees the credential until it publishes.
+    await seedDevice(page, { callsign: 'Wren', refusePublish: true });
+    await open(page, '/terminal/standing/');
+
+    await page.getByRole('button', { name: /can take watch/i }).first().click();
+    await page.locator('[data-withdraw]').first().click();
+
+    const notice = page.locator('[data-withdrawal-unsent]');
+    await expect(notice).toBeVisible({ timeout: 10_000 });
+    await expect(notice).toContainText(/stopped honouring what you took back/i);
+    await expect(notice).toContainText(/did not reach a relay/i);
+  });
+});

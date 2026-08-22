@@ -11,15 +11,26 @@
 
 import {
   claimCredential,
+  isRevokedBy,
+  KIND_REVOCATION,
   readEndorsement,
+  revoke,
   type Endorsement,
   type Scope
 } from '@navcom/core';
 import type { Event } from 'nostr-tools/core';
 import { loadIdentity } from './identity';
+import { pool } from './pool';
+import { relays } from './relays';
 import { get, set } from './storage';
 
 const FIELD = 'endorsements';
+/** Credentials this operator wrote for other people, so they can be withdrawn later. */
+const WRITTEN = 'endorsements_written';
+/** Revocations seen, cached because standing is checked offline as often as on. */
+const REVOKED = 'revocations';
+
+let closer: { close(): void } | null = null;
 
 /** A presented pair, as stored: the credential somebody wrote, and this persona's claim. */
 interface Held {
@@ -29,11 +40,102 @@ interface Held {
 
 export class StandingError extends Error {}
 
+/**
+ * Endorsements this operator can stand on, with withdrawn ones removed.
+ *
+ * **Withdrawal existed on paper and nowhere else.** `revoke` and `isRevokedBy` were both in
+ * core, `identity.md` said *"endorsers publish a revocation, checked when online"*, and the
+ * client neither published one nor ever looked. An endorser who vouched for somebody and
+ * later learned they were unsafe had no way to take it back — and `can-take-watch` is the
+ * gate on who may hold a board, so a withdrawn endorsement went on opening it forever.
+ *
+ * Checked against the cached revocations rather than the network, because standing is
+ * checked offline at least as often as on — in person, with two phones and no signal.
+ */
 export function held(): Endorsement[] {
   const stored = get<Held[]>('accruing', FIELD) ?? [];
+  const revocations = get<Event[]>('accruing', REVOKED) ?? [];
   return stored
     .map((h) => readEndorsement(h.credential, h.claim))
-    .filter((e): e is Endorsement => e !== null);
+    .filter((e): e is Endorsement => e !== null)
+    // `isRevokedBy` checks the revocation was signed by the key that wrote the credential,
+    // so a stranger cannot strip somebody's standing by publishing one.
+    .filter((e) => !revocations.some((r) => isRevokedBy(e, r)));
+}
+
+/**
+ * Credentials this operator has written for other people.
+ *
+ * Kept so they can be withdrawn. Nothing about the holder is recorded — a credential names
+ * nobody, which is the whole design — so this is a list of things *written*, not of people
+ * vouched for, and it stays that way.
+ */
+export function written(): Event[] {
+  const stored = get<Event[]>('accruing', WRITTEN) ?? [];
+  return Array.isArray(stored) ? stored : [];
+}
+
+/** Records a credential this operator wrote, so withdrawing it is possible later. */
+export function recordWritten(credential: Event): void {
+  set('accruing', WRITTEN, [...written(), credential]);
+}
+
+/**
+ * Withdraws a credential this operator wrote.
+ *
+ * Published, unlike the credential itself, because a reader has to be able to find it — and
+ * a revocation names only the credential, so publishing one still reveals nobody.
+ *
+ * **This is an endorser retracting their own claim, not an appeal.** Nobody adjudicates
+ * between two operators here and nobody is asked to.
+ */
+export async function withdraw(credentialId: string): Promise<boolean> {
+  const secret = loadIdentity()?.secretKey;
+  const urls = relays();
+  if (!secret) return false;
+
+  const event = revoke(secret, credentialId, Math.floor(Date.now() / 1000));
+  // Held locally first: the endorser has decided, and that decision must not depend on
+  // signal. Their own device stops honouring it immediately.
+  set('accruing', REVOKED, [...(get<Event[]>('accruing', REVOKED) ?? []), event]);
+  set('accruing', WRITTEN, written().filter((c) => c.id !== credentialId));
+
+  if (urls.length === 0) return false;
+  const results = await Promise.allSettled(pool().publish(urls, event));
+  return results.some((r) => r.status === 'fulfilled');
+}
+
+/**
+ * Starts listening for withdrawals of the credentials this operator holds.
+ *
+ * Filtered to the endorsers whose credentials are actually held, so this asks for the few
+ * revocations that could matter rather than every one on the network.
+ */
+export function start(): void {
+  const urls = relays();
+  const endorsers = held().map((e) => e.endorserKey);
+  if (urls.length === 0 || endorsers.length === 0) return;
+
+  closer?.close();
+  closer = pool().subscribeMany(urls, { kinds: [KIND_REVOCATION], authors: endorsers }, {
+    onevent: (event: Event) => {
+      const seen = get<Event[]>('accruing', REVOKED) ?? [];
+      if (seen.some((r) => r.id === event.id)) return;
+      // Only revocations that actually withdraw something this device holds are kept, so a
+      // flood of them cannot fill the tier that holds an operator's standing.
+      const stored = get<Held[]>('accruing', FIELD) ?? [];
+      const mine = stored
+        .map((h) => readEndorsement(h.credential, h.claim))
+        .filter((e): e is Endorsement => e !== null);
+      if (!mine.some((e) => isRevokedBy(e, event))) return;
+      set('accruing', REVOKED, [...seen, event]);
+    }
+  });
+}
+
+export function stop(): void {
+  closer?.close();
+  closer = null;
 }
 
 /** The pair, for presenting to somebody who wants to check it themselves. */

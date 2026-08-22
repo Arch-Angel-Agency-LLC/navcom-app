@@ -29,7 +29,7 @@ Each cell is a pass. `—` not started, `✓` done, and a note when it found som
 | **4** Squad with no box | Watch mode, group sealing, board, handover, watch key | **✓** | **✓** | **✓** |
 | **5** Written-down properties | PQC, declined, battery, RTL, watch-state v4 | **✓** | **✓** | **✓** |
 | **6** Knowledge gets in | Corrections, merge, needs-checking, notes, promotion | **✓** | **✓** | **✓** |
-| **7** Standing | Credentials, claims, revocation, the watch gate | — | — | — |
+| **7** Standing | Credentials, claims, revocation, the watch gate | **✓** | — | — |
 | **9** No single point of failure | Backup and restore, capability sentence, funding | — | — | — |
 
 ## Rules for a pass
@@ -518,6 +518,44 @@ merely uninformative — the sentence **asks the operator to get somebody to ope
 a number does not say who to ask. Now *"Raven needs to open the app once"*. `pq` still returns
 pubkeys and knows nothing about naming, which is the right split; the peer list is where names
 live, so the resolution happens on the screen.
+
+## 7.R — Milestone 7, robustness
+
+**An endorsement could not be taken back.** `revoke` and `isRevokedBy` were both written,
+tested and exported from core. `identity.md` says plainly: *"Revocation is possible —
+endorsers publish a revocation, checked when online."* The client **never published one and
+never looked for one**. `revoke` was imported by the standing screen and never called;
+`isRevokedBy` was never called anywhere in the app.
+
+So an endorser who vouched for somebody and later learned they were unsafe had no way to
+withdraw it. And `can-take-watch` is the gate on who may hold a board — the one credential in
+this system that decides whether an operator goes out believing a named human is reading what
+they send. **A withdrawn endorsement went on opening that gate forever.**
+
+`declined.md` has no entry for it, so this was not a gap somebody weighed and let go. It was
+assumed built.
+
+Implemented rather than deferred, because both hard halves already existed and the missing
+piece was the wiring: the endorser keeps a record of what they wrote — **of credentials
+written, never of people vouched for**, since a credential names nobody and that must stay
+true — and withdrawing publishes the revocation core already knew how to make. Holders
+subscribe, filtered to the endorsers whose credentials they actually hold, and only
+revocations that withdraw something this device holds are cached, so a flood of them cannot
+fill the tier that carries an operator's standing.
+
+Two properties kept deliberately:
+
+- **The check is against cached revocations, not the network.** Standing is checked offline at
+  least as often as online — in person, two phones, no signal
+- **Withdrawal is honoured on the endorser's own device immediately**, whether or not it
+  reaches a relay. They have decided; that decision must not wait for signal. What does wait
+  is everybody else, and the screen says so
+
+**A bug in my own fix, caught by the reachability test.** I put the *"this has not reached a
+relay"* notice inside the row it referred to — and withdrawing removes that row, so the one
+case worth reporting rendered nowhere. It passed every unit test. This is the second time in
+this audit that a fix introduced a defect only a browser test could see, and both times the
+defect was in the reporting rather than the mechanism.
 
 ## 6.X — Milestone 6, edge cases
 

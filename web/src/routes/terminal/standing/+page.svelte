@@ -8,7 +8,7 @@
    */
   import { onMount } from 'svelte';
   import { revoke, SCOPES, writeCredential, type Endorsement, type Scope } from '@navcom/core';
-  import { claim, drop, held, presentable, StandingError } from '$lib/terminal/standing';
+  import { StandingError, claim, drop, held, presentable, recordWritten, withdraw, written as writtenCredentials } from '$lib/terminal/standing';
   import { loadIdentity } from '$lib/terminal/identity';
 
   let mine = $state<Endorsement[]>([]);
@@ -21,6 +21,7 @@
   let copied = $state(false);
 
   onMount(() => {
+    mineWritten = writtenCredentials();
     callsign = loadIdentity()?.callsign ?? null;
     mine = held();
   });
@@ -36,6 +37,15 @@
     }
   }
 
+  /** The scope a stored credential asserts, read back out of its content. */
+  function scopeOf(credential: { content: string }): string {
+    try {
+      return String((JSON.parse(credential.content) as { scope?: unknown }).scope ?? '');
+    } catch {
+      return '';
+    }
+  }
+
   function write(scope: Scope) {
     const identity = loadIdentity();
     if (!identity?.callsign) return;
@@ -47,6 +57,27 @@
     written = JSON.stringify(credential);
     writingScope = scope;
     copied = false;
+    // Kept so it can be withdrawn later. Nothing about the holder is recorded — a credential
+    // names nobody — so this is a list of things written, not of people vouched for.
+    recordWritten(credential);
+    mineWritten = writtenCredentials();
+  }
+
+  /** Credentials this operator wrote, which are the ones they can take back. */
+  let mineWritten = $state<ReturnType<typeof writtenCredentials>>([]);
+  let withdrawing = $state<string | null>(null);
+  let unsentWithdrawal = $state<string | null>(null);
+
+  async function takeBack(id: string) {
+    withdrawing = id;
+    try {
+      // Honoured on this device whether or not it reaches a relay: the endorser has decided,
+      // and that decision must not wait for signal.
+      unsentWithdrawal = (await withdraw(id)) ? null : id;
+      mineWritten = writtenCredentials();
+    } finally {
+      withdrawing = null;
+    }
   }
 
   async function copy() {
@@ -177,6 +208,41 @@
       </p>
       <pre class="blob">{written}</pre>
       <button onclick={copy}>{copied ? 'Copied' : 'Copy'}</button>
+    {/if}
+
+    {#if unsentWithdrawal}
+      <!--
+        Deliberately outside the list. This lived inside the row it referred to, and
+        withdrawing removes that row — so the one case worth reporting rendered nowhere.
+      -->
+      <p class="cost" data-withdrawal-unsent>
+        This device has stopped honouring what you took back. It did not reach a relay, so
+        anybody else checking will still see it until you open this with signal.
+      </p>
+    {/if}
+
+    {#if mineWritten.length > 0}
+      <!--
+        Withdrawal existed on paper and nowhere else: `revoke` and `isRevokedBy` were both in
+        core, identity.md said endorsers publish a revocation checked when online, and the
+        client neither published one nor ever looked. An endorser who learned somebody was
+        unsafe had no way to take it back, and `can take watch` is the gate on who may hold
+        a board.
+      -->
+      <h3>What you have vouched for</h3>
+      <p class="cost">
+        Taking one back is you retracting your own claim. It is not an appeal, nobody
+        adjudicates it, and the person is not told.
+      </p>
+      <ul class="written">
+        {#each mineWritten as c (c.id)}
+          <li>
+            <span class="name">{label(scopeOf(c))}</span>
+            <button class="drop" data-withdraw onclick={() => takeBack(c.id)}
+              disabled={withdrawing === c.id}>Take it back</button>
+          </li>
+        {/each}
+      </ul>
     {/if}
   </section>
 {/if}

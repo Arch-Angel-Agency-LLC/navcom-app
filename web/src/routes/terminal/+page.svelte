@@ -9,6 +9,7 @@
   import { pq } from '$lib/terminal/pq.svelte';
   import { loadConfig } from '$lib/terminal/config';
   import { peers } from '$lib/terminal/peers';
+  import * as standing from '$lib/terminal/standing';
   import { loadIdentity } from '$lib/terminal/identity';
   import { corruptTiers } from '$lib/terminal/storage';
   import { offline } from '$lib/terminal/offline.svelte';
@@ -27,10 +28,15 @@
     presence.start();
     void battery.start();
     pq.start();
+    // Withdrawals of credentials this operator holds. Started here rather than on the
+    // standing screen, because a holder who never opens that screen must still stop relying
+    // on an endorsement somebody has taken back — `can take watch` is a gate.
+    standing.start();
     return () => {
       pq.stop();
       watch.stop();
       presence.stop();
+      standing.stop();
     };
   });
 
