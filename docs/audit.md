@@ -28,7 +28,7 @@ Each cell is a pass. `—` not started, `✓` done, and a note when it found som
 | **3** Two who met once | Peers, presence, cards, invites, public presence, buddy | **✓** | **✓** | **✓** |
 | **4** Squad with no box | Watch mode, group sealing, board, handover, watch key | **✓** | **✓** | **✓** |
 | **5** Written-down properties | PQC, declined, battery, RTL, watch-state v4 | **✓** | **✓** | **✓** |
-| **6** Knowledge gets in | Corrections, merge, needs-checking, notes, promotion | **✓** | **✓** | — |
+| **6** Knowledge gets in | Corrections, merge, needs-checking, notes, promotion | **✓** | **✓** | **✓** |
 | **7** Standing | Credentials, claims, revocation, the watch gate | — | — | — |
 | **9** No single point of failure | Backup and restore, capability sentence, funding | — | — | — |
 
@@ -518,6 +518,44 @@ merely uninformative — the sentence **asks the operator to get somebody to ope
 a number does not say who to ask. Now *"Raven needs to open the app once"*. `pq` still returns
 pubkeys and knows nothing about naming, which is the right split; the peer list is where names
 live, so the resolution happens on the screen.
+
+## 6.X — Milestone 6, edge cases
+
+**Two devices could draw different directories from identical evidence.** Ranking settles
+almost everything — an in-person check beats a website scrape, a newer date beats an older one
+— but on an exact tie the first candidate encountered won, and that is relay delivery order.
+Two operators carrying the same area, given the same two corrections in a different order, saw
+**different opening hours for the same shelter**. Each device drawing its own picture is the
+design; drawing a different one from the same evidence is not.
+
+Fixed with a deterministic sort and nothing else — the ranking rules were right and are
+untouched. The tie-break is the author's key, which is arbitrary **and deliberately so**:
+between two people who both stood at that door on the same day there is no ground truth to
+prefer, and inventing one would be worse than admitting there is none. It is not worth gaming,
+because winning a tie means matching the other correction's date and method exactly and anybody
+willing to do that can publish tomorrow's date and win outright. The real answer for the reader
+is unchanged and was already right — **the field carries its provenance**, so they see who said
+it and when.
+
+**And a merge documented as *"additive, never deletes"* could delete.** `buildCorrection`
+refuses a correction that asserts nothing; `readCorrection` did not. A hand-rolled client could
+publish `{"hours": ""}` — an empty string is still a string, so it became a merge candidate,
+and with an in-person method and a recent date it **outranked the published record and won**,
+blanking the field on every device carrying that area. Erasing knowledge, quietly, from
+anybody.
+
+An empty correction also bought a free slot in the store 6.R had just bounded, which is a
+cheaper way to fill somebody else's phone than a real one.
+
+**This is the fourth time the same shape has appeared**: two halves each individually
+reasonable, and the join untested. The forgery memoisation, the PQ envelope, the push
+registration keys — and now a rule enforced by the builder and not by the reader. The lesson
+that keeps holding is that *both sides tested* is not the same as *the boundary tested*.
+
+**Nothing found across the rest of the field rules**, and they are worth naming because they
+are the strongest defended surface in the codebase: an unknown field, a field about a person
+[invariant 1], an over-long value, a bad date and an unknown method are all refused **on read**,
+by a hand-rolled event that never touched the builder.
 
 ## 6.E — Milestone 6, error handling and reporting
 

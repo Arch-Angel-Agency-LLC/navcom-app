@@ -159,8 +159,25 @@ export function readCorrection(event: Event): (Correction & { by: string }) | nu
       // Refused, not trimmed. The field somebody will eventually try to add here is a
       // coordinate, or a sentence about a person.
       if (!CORRECTABLE.includes(k as ResourceField)) return null;
+      /*
+       * Non-empty, and this is the half that was missing.
+       *
+       * `buildCorrection` refuses a correction that asserts nothing; this did not, so a
+       * hand-rolled client could publish `{"hours": ""}`. An empty string is still a string,
+       * so it became a merge candidate — and with an in-person method and today's date it
+       * **outranked the published record and won**, blanking the field for every device
+       * carrying that area. A merge documented as *additive, never deletes* deleted.
+       *
+       * A flag is the exception: it is a report about the record rather than a value, and
+       * `ok` is a meaningful thing to say.
+       */
       if (typeof v !== 'string' || v.length > VALUE_MAX) return null;
+      if (v.trim() === '') return null;
     }
+    // A correction that asserts nothing is not a correction — the same rule the builder
+    // applies, and until now the only place it was applied. It also bought a free slot in
+    // every device's bounded store.
+    if (Object.keys(c.fields).length === 0) return null;
     if (Object.keys(c.fields).length > FIELDS_MAX) return null;
     // The `d` tag is what a relay indexed; if it disagrees with the payload, one of them is
     // lying and neither is worth guessing about.
@@ -209,7 +226,29 @@ export function mergeCorrections(
   corrections: readonly (Correction & { by: string })[],
   now: Date
 ): MergedRecord {
-  const mine = corrections.filter((c) => c.record === base.id);
+  /*
+   * Sorted, so the merge is a function of the data and not of delivery order.
+   *
+   * Ranking already settles almost everything: an in-person check beats a website scrape,
+   * and a newer date beats an older one. What it could not settle was an exact tie — two
+   * people who both stood at the same door on the same day and disagree — and there the
+   * first candidate encountered won. **Two operators carrying the same area, receiving the
+   * same two corrections from relays in a different order, saw different opening hours for
+   * the same shelter.** Each device drawing its own picture is the design; drawing a
+   * different one from identical evidence is not.
+   *
+   * The author's key is an arbitrary tie-break and deliberately so — there is no ground
+   * truth to prefer between two equally recent in-person reports, and inventing one would be
+   * worse than admitting it. It is not worth gaming: winning a tie requires matching the
+   * other correction's date and method exactly, and anybody willing to do that can simply
+   * publish tomorrow's date and win outright. What the reader gets is unchanged and is the
+   * real answer here — **the field carries its provenance**, so they see who said it and
+   * when, and can weigh two names the way this system asks them to everywhere else.
+   */
+  const mine = corrections
+    .filter((c) => c.record === base.id)
+    .slice()
+    .sort((a, b) => (a.by < b.by ? -1 : a.by > b.by ? 1 : 0));
   const record = { ...base };
   const sources: Partial<Record<ResourceField, FieldSource>> = {};
   const reports: (Correction & { by: string })[] = [];

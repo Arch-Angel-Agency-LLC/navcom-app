@@ -10,6 +10,8 @@
  *     field, because `declined.md` declines adjudication and there is nobody to appeal to
  */
 
+import { KIND_CORRECTION } from '../src/events/kinds';
+import { finalizeEvent, generateSecretKey } from 'nostr-tools/pure';
 import { describe, expect, it } from 'vitest';
 import { generateSecretKey, getPublicKey } from 'nostr-tools/pure';
 import type { Event } from 'nostr-tools/core';
@@ -294,5 +296,95 @@ describe('a corrected field carries its own provenance, not the record\'s', () =
     const old = readable(wren, correction({ last_verified: '2025-06-01', method: 'website' }));
     const shown = displayMerged(mergeCorrections(base({ hours: undefined }), [old], NOW), 'hours', NOW);
     expect(shown.display.kind).toBe('call-first');
+  });
+});
+
+describe('two people who disagree, with nothing to choose between them', () => {
+  const now = new Date('2026-08-21T12:00:00Z');
+  const base = {
+    id: 'r1', name: 'Shelter', type: 'shelter', region: 'st-louis',
+    hours: 'Mon-Fri 9-5', last_verified: '2026-03-01', verified_by: 'scrape', method: 'website'
+  } as unknown as ResourceRecord;
+
+  const said = (by: string, hours: string, method = 'in_person', date = '2026-08-20') =>
+    ({ record: 'r1', by, verified_by: by, method, last_verified: date, fields: { hours }, reports: [] }) as never;
+
+  it('gives both devices the same answer, whatever order the relays used', () => {
+    // Ranking settles almost everything; it could not settle an exact tie, and there the
+    // first candidate encountered won. Two operators carrying the same area saw different
+    // opening hours for the same shelter, from identical evidence.
+    const a = said('aaa', 'ANSWER-A');
+    const b = said('bbb', 'ANSWER-B');
+
+    const forward = mergeCorrections(base, [a, b], now).record.hours;
+    const backward = mergeCorrections(base, [b, a], now).record.hours;
+    expect(forward).toBe(backward);
+  });
+
+  it('still lets a better method win regardless of order', () => {
+    // The tie-break must not have displaced the rules that do have an answer.
+    const scrape = said('aaa', 'FROM-A-WEBSITE', 'website');
+    const door = said('zzz', 'FROM-A-DOOR', 'in_person');
+    expect(mergeCorrections(base, [scrape, door], now).record.hours).toBe('FROM-A-DOOR');
+    expect(mergeCorrections(base, [door, scrape], now).record.hours).toBe('FROM-A-DOOR');
+  });
+
+  it('still lets a newer check win regardless of order', () => {
+    const older = said('aaa', 'OLDER', 'in_person', '2026-08-01');
+    const newer = said('zzz', 'NEWER', 'in_person', '2026-08-20');
+    expect(mergeCorrections(base, [older, newer], now).record.hours).toBe('NEWER');
+    expect(mergeCorrections(base, [newer, older], now).record.hours).toBe('NEWER');
+  });
+
+  it('tells the reader who said it, which is what settles a tie in practice', () => {
+    // There is no ground truth to prefer between two equally recent in-person reports, so
+    // the answer the reader gets is a name and a date rather than a verdict.
+    const merged = mergeCorrections(base, [said('aaa', 'ANSWER-A'), said('bbb', 'ANSWER-B')], now);
+    expect(merged.sources.hours?.correction?.verified_by).toBeDefined();
+    expect(merged.sources.hours?.correction?.last_verified).toBe('2026-08-20');
+  });
+});
+
+describe('a correction from a client that does not follow the rules', () => {
+  /** Hand-rolled, ignoring everything `buildCorrection` enforces. */
+  const hostile = (fields: Record<string, unknown>, extra: Record<string, unknown> = {}) => {
+    const secret = generateSecretKey();
+    return finalizeEvent({
+      kind: KIND_CORRECTION,
+      created_at: 1_800_000_000,
+      tags: [['d', 'r1']],
+      content: JSON.stringify({
+        record: 'r1', verified_by: 'Wren', method: 'in_person',
+        last_verified: '2026-08-20', fields, ...extra
+      })
+    }, secret);
+  };
+
+  it('cannot blank a field that somebody stood behind', () => {
+    // buildCorrection refuses a correction that asserts nothing and readCorrection did not,
+    // so `{"hours": ""}` became a merge candidate — and with an in-person method and a
+    // recent date it outranked the published record and won, erasing the field for every
+    // device carrying that area.
+    expect(readCorrection(hostile({ hours: '' }))).toBeNull();
+    expect(readCorrection(hostile({ hours: '   ' }))).toBeNull();
+  });
+
+  it('cannot claim a slot while asserting nothing', () => {
+    // Every device's correction store is bounded, so an empty correction was a cheap way to
+    // fill somebody else's.
+    expect(readCorrection(hostile({}))).toBeNull();
+  });
+
+  it('still accepts a real one', () => {
+    const read = readCorrection(hostile({ hours: '24/7' }));
+    expect(read?.fields.hours).toBe('24/7');
+  });
+
+  it('still refuses everything it already refused', () => {
+    expect(readCorrection(hostile({ latitude: '38.6' }))).toBeNull();
+    expect(readCorrection(hostile({ staff_name: 'Dana' }))).toBeNull();
+    expect(readCorrection(hostile({ hours: 'x'.repeat(5000) }))).toBeNull();
+    expect(readCorrection(hostile({ hours: '24/7' }, { method: 'telepathy' }))).toBeNull();
+    expect(readCorrection(hostile({ hours: '24/7' }, { last_verified: 'yesterday' }))).toBeNull();
   });
 });
