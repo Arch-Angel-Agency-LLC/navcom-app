@@ -1246,3 +1246,66 @@ test.describe('taking back an endorsement', () => {
     await expect(notice).toContainText(/did not reach a relay/i);
   });
 });
+
+test.describe('standing that was taken back', () => {
+  /**
+   * One of these is the gate on holding a board. Filtering a withdrawn endorsement out of
+   * `held` is correct and, on its own, silent — an operator who could take the watch
+   * yesterday and cannot today would find out at the moment they tried.
+   */
+  test('is named on the screen, with who took it back', async ({ page }) => {
+    const { generateSecretKey } = await import('nostr-tools/pure');
+    const { writeCredential, revoke, claimCredential } = await import('@navcom/core');
+    const mine = Uint8Array.from((TEST_SECRET.match(/../g) ?? []).map((b) => parseInt(b, 16)));
+
+    const raven = generateSecretKey();
+    const credential = writeCredential(
+      raven, { scope: 'can-take-watch', endorser: 'Raven', at: '2026-08-01' }, 1_800_000_000
+    );
+    const claim = claimCredential(mine, credential, 1_800_000_001);
+    const withdrawal = revoke(raven, credential.id, 1_800_009_999);
+
+    await seedDevice(page, {
+      callsign: 'Wren',
+      accruing: {
+        endorsements: [{ credential, claim }],
+        revocations: [withdrawal]
+      }
+    });
+    await open(page, '/terminal/standing/');
+
+    const list = page.locator('[data-withdrawn]');
+    await expect(list).toBeVisible({ timeout: 10_000 });
+    await expect(list).toContainText('Raven');
+    await expect(list).toContainText(/no longer counts/i);
+  });
+
+  test('and the watch gate closes with it', async ({ page }) => {
+    // The consequence that matters: holding a board means operators go out believing a named
+    // human is reading what they send.
+    const { generateSecretKey } = await import('nostr-tools/pure');
+    const { writeCredential, revoke, claimCredential } = await import('@navcom/core');
+    const mine = Uint8Array.from((TEST_SECRET.match(/../g) ?? []).map((b) => parseInt(b, 16)));
+
+    const raven = generateSecretKey();
+    const credential = writeCredential(
+      raven, { scope: 'can-take-watch', endorser: 'Raven', at: '2026-08-01' }, 1_800_000_000
+    );
+    const claim = claimCredential(mine, credential, 1_800_000_001);
+
+    await seedDevice(page, {
+      callsign: 'Wren',
+      watchSecret: 'd'.repeat(63) + '7',
+      accruing: {
+        endorsements: [{ credential, claim }],
+        revocations: [revoke(raven, credential.id, 1_800_009_999)],
+        // Joined rather than founded, so the gate is what decides.
+        watch_founded: false
+      }
+    });
+    await open(page, '/terminal/watch/');
+
+    await expect(page.locator('[data-ungated]')).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByRole('button', { name: /take the watch/i })).toHaveCount(0);
+  });
+});

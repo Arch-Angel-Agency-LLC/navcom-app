@@ -120,3 +120,48 @@ describe('an endorser taking back what they wrote', () => {
     expect(await standing.withdraw(credential.id)).toBe(true);
   });
 });
+
+describe('being told, rather than quietly having less standing', () => {
+  it('names what was taken back and who took it', async () => {
+    // Standing is built over years and one of these is the gate on holding a board. An
+    // operator who could take the watch yesterday and cannot today must find out on a
+    // screen they open, not at the moment they try.
+    const credential = takeUp();
+    standing.start();
+    deliver(revokeWith(endorser, credential.id));
+
+    expect(standing.held()).toHaveLength(0);
+    const gone = standing.withdrawn();
+    expect(gone).toHaveLength(1);
+    expect(gone[0]!.endorser).toBe('Raven');
+    expect(gone[0]!.scope).toBe('can-take-watch');
+  });
+
+  it('refuses a credential that was already taken back, instead of appearing to accept it', async () => {
+    // Without this, claiming one succeeded: it was stored, the screen said it had been taken
+    // up, and `held` filtered it straight back out — a success shown for standing the
+    // operator does not have.
+    const credential = writeCredential(
+      endorser, { scope: 'medic', endorser: 'Raven', at: '2026-08-01' }, 1_800_000_000
+    );
+    standing.claim(JSON.stringify(credential));
+    standing.start();
+    deliver(revokeWith(endorser, credential.id));
+
+    // Handed the same bytes again, as somebody might be.
+    standing.drop(credential.id);
+    expect(() => standing.claim(JSON.stringify(credential))).toThrow(/taken that one back/i);
+  });
+
+  it('says who to ask', () => {
+    const credential = writeCredential(
+      endorser, { scope: 'medic', endorser: 'Raven', at: '2026-08-01' }, 1_800_000_000
+    );
+    standing.claim(JSON.stringify(credential));
+    standing.start();
+    deliver(revokeWith(endorser, credential.id));
+    standing.drop(credential.id);
+
+    expect(() => standing.claim(JSON.stringify(credential))).toThrow(/Raven/);
+  });
+});

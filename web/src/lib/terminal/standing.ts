@@ -64,6 +64,23 @@ export function held(): Endorsement[] {
 }
 
 /**
+ * Endorsements this operator held that have since been taken back.
+ *
+ * Shown rather than silently dropped. Standing is the thing an operator builds over years,
+ * and one of these is the gate on holding a board — so somebody who could take the watch
+ * yesterday and cannot today must find that out **on a screen they open**, not at the moment
+ * they try. It names who withdrew it, because that is who they can ask.
+ */
+export function withdrawn(): Endorsement[] {
+  const stored = get<Held[]>('accruing', FIELD) ?? [];
+  const revocations = get<Event[]>('accruing', REVOKED) ?? [];
+  return stored
+    .map((h) => readEndorsement(h.credential, h.claim))
+    .filter((e): e is Endorsement => e !== null)
+    .filter((e) => revocations.some((r) => isRevokedBy(e, r)));
+}
+
+/**
  * Credentials this operator has written for other people.
  *
  * Kept so they can be withdrawn. Nothing about the holder is recorded — a credential names
@@ -173,6 +190,21 @@ export function claim(credentialJson: string): Endorsement {
   const stored = presentable();
   if (stored.some((h) => h.credential.id === credential.id)) {
     throw new StandingError('You already hold that one.');
+  }
+
+  /*
+   * A credential its author has already taken back.
+   *
+   * Without this, claiming one **succeeded**: it was stored, the screen said it had been
+   * taken up, and `held` then filtered it straight back out — so the operator was shown a
+   * success for standing they do not have. Refusing it says the true thing, and says it at
+   * the moment they can still ask the person why.
+   */
+  const revocations = get<Event[]>('accruing', REVOKED) ?? [];
+  if (revocations.some((r) => isRevokedBy(endorsement, r))) {
+    throw new StandingError(
+      `${endorsement.endorser} has taken that one back, so it no longer stands. Ask them about it.`
+    );
   }
   set('accruing', FIELD, [...stored, { credential, claim: claimEvent }]);
   return endorsement;

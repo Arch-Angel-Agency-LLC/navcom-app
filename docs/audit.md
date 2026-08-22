@@ -29,7 +29,7 @@ Each cell is a pass. `—` not started, `✓` done, and a note when it found som
 | **4** Squad with no box | Watch mode, group sealing, board, handover, watch key | **✓** | **✓** | **✓** |
 | **5** Written-down properties | PQC, declined, battery, RTL, watch-state v4 | **✓** | **✓** | **✓** |
 | **6** Knowledge gets in | Corrections, merge, needs-checking, notes, promotion | **✓** | **✓** | **✓** |
-| **7** Standing | Credentials, claims, revocation, the watch gate | **✓** | — | — |
+| **7** Standing | Credentials, claims, revocation, the watch gate | **✓** | **✓** | — |
 | **9** No single point of failure | Backup and restore, capability sentence, funding | — | — | — |
 
 ## Rules for a pass
@@ -518,6 +518,32 @@ merely uninformative — the sentence **asks the operator to get somebody to ope
 a number does not say who to ask. Now *"Raven needs to open the app once"*. `pq` still returns
 pubkeys and knows nothing about naming, which is the right split; the peer list is where names
 live, so the resolution happens on the screen.
+
+## 7.E — Milestone 7, error handling and reporting
+
+Both findings are about the mechanism 7.R had just built, which is the right place to look:
+a new mechanism has no history of anybody noticing what it fails to say.
+
+**An operator was not told that standing had been taken away from them.** Filtering a
+withdrawn endorsement out of `held` is correct, and on its own it is **silent** — somebody who
+could take the watch yesterday and cannot today would have discovered it at the moment they
+tried, which for this particular credential is a bad night. It is now named on a screen they
+open, with **who** took it back, because that is the person they can ask. The browser test
+proves the other half of the consequence: the watch gate actually closes.
+
+**And claiming an already-withdrawn credential appeared to succeed.** It was stored, the
+screen reported it taken up, and `held` filtered it straight back out — so an operator was
+shown a success for standing they do not have. It is refused now, with the endorser's name in
+the sentence, at the moment they can still ask why.
+
+That second one is the same shape as 6.E, and worth naming as a pattern: **a failure that
+leaves visible evidence of success is worse than one that leaves nothing.** Both times it
+happened because a value was stored locally for a good reason and the thing that would later
+reject it lived somewhere else.
+
+**Nothing found in the claim errors**, and they are a good example of the lens being satisfied:
+no identity, malformed JSON, an unsigned credential, one this version cannot read, and one
+already held are five distinct sentences, each true and each pointing at a different action.
 
 ## 7.R — Milestone 7, robustness
 

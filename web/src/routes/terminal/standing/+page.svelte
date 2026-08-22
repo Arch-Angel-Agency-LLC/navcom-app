@@ -8,7 +8,7 @@
    */
   import { onMount } from 'svelte';
   import { revoke, SCOPES, writeCredential, type Endorsement, type Scope } from '@navcom/core';
-  import { StandingError, claim, drop, held, presentable, recordWritten, withdraw, written as writtenCredentials } from '$lib/terminal/standing';
+  import { StandingError, claim, drop, held, presentable, recordWritten, withdraw, withdrawn, written as writtenCredentials } from '$lib/terminal/standing';
   import { loadIdentity } from '$lib/terminal/identity';
 
   let mine = $state<Endorsement[]>([]);
@@ -24,6 +24,7 @@
     mineWritten = writtenCredentials();
     callsign = loadIdentity()?.callsign ?? null;
     mine = held();
+    gone = withdrawn();
   });
 
   function take() {
@@ -65,6 +66,8 @@
 
   /** Credentials this operator wrote, which are the ones they can take back. */
   let mineWritten = $state<ReturnType<typeof writtenCredentials>>([]);
+  /** Endorsements taken back by whoever wrote them. */
+  let gone = $state<ReturnType<typeof withdrawn>>([]);
   let withdrawing = $state<string | null>(null);
   let unsentWithdrawal = $state<string | null>(null);
 
@@ -189,6 +192,28 @@
     {#if error}<p class="error">{error}</p>{/if}
     <button onclick={take} disabled={!pasted.trim()}>Take it up</button>
   </section>
+
+  {#if gone.length > 0}
+    <section class="act">
+      <!--
+        Shown rather than silently dropped. One of these is the gate on holding a board, so
+        somebody who could take the watch yesterday and cannot today has to find out on a
+        screen they open, not at the moment they try.
+      -->
+      <h2>Taken back</h2>
+      <ul class="written" data-withdrawn>
+        {#each gone as e (e.id)}
+          <li>
+            <span class="name">{label(e.scope)}</span>
+            <p class="cost">
+              <strong>{e.endorser}</strong> has taken this back, so it no longer counts for
+              anything. They are the person to ask about it.
+            </p>
+          </li>
+        {/each}
+      </ul>
+    </section>
+  {/if}
 
   <section class="act">
     <h2>Vouch for somebody</h2>
