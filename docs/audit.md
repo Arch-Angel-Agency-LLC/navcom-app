@@ -30,7 +30,7 @@ Each cell is a pass. `—` not started, `✓` done, and a note when it found som
 | **5** Written-down properties | PQC, declined, battery, RTL, watch-state v4 | **✓** | **✓** | **✓** |
 | **6** Knowledge gets in | Corrections, merge, needs-checking, notes, promotion | **✓** | **✓** | **✓** |
 | **7** Standing | Credentials, claims, revocation, the watch gate | **✓** | **✓** | **✓** |
-| **9** No single point of failure | Backup and restore, capability sentence, funding | — | — | — |
+| **9** No single point of failure | Backup and restore, capability sentence, funding | **✓** | — | — |
 
 ## Rules for a pass
 
@@ -518,6 +518,39 @@ merely uninformative — the sentence **asks the operator to get somebody to ope
 a number does not say who to ask. Now *"Raven needs to open the app once"*. `pq` still returns
 pubkeys and knows nothing about naming, which is the right split; the peer list is where names
 live, so the resolution happens on the screen.
+
+## 9.R — Milestone 9, robustness
+
+**A backup is the one blob in this system somebody can hand you**, and restoring it wrote
+whatever keys it contained into the tier that holds the identity, the standing and the patrol
+record. It is decrypted with a passphrase the operator types, so this is not something a
+stranger runs at a distance — but *"here is your backup from the old phone, the passphrase is
+X"* is an ordinary sentence.
+
+Three things were missing, and the middle one is the sharpest:
+
+- **`v` was declared and never checked.** A kit written to a shape this build has never seen
+  restored anyway
+- **`DEVICE_ONLY` was enforced on the way out and not on the way in.** The same list, twelve
+  lines above the restore, calls these *"this device's business rather than this operator's"* —
+  and `relays_own` is the list of relays this phone talks to. A crafted backup could set it,
+  **routing everything this operator sends through relays somebody else chose**. Excluded from
+  a backup we write; accepted from one we read
+- **Nothing bounded the key count**, so a "backup" could be a storage bomb — and 1.E
+  established that a full phone stops saving
+
+That middle one is the **fifth** appearance of the same shape in this audit, and the closest
+together yet: the two halves are in the same file, twelve lines apart. *Both sides tested* is
+not the same as *the boundary tested*, even when the boundary is that short.
+
+**Three honest negatives, all on things worth checking rather than assuming.** The KDF
+parameters are not in the envelope, so the classic *"attacker picks the cost"* attack is closed
+by construction — injecting `N`, `r` and `p` changes the open time not at all, measured rather
+than reasoned. A wrong passphrase and a damaged payload give an identical error, which is the
+property that matters and which my first probe got wrong by corrupting the envelope instead of
+the ciphertext. And the Lightning address validator refuses empty, malformed, `localhost`, a
+bare IP, an oversized string, a script tag and a newline injection while accepting the ordinary
+forms.
 
 ## 7.X — Milestone 7, edge cases
 

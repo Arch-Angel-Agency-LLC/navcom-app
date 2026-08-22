@@ -13,6 +13,15 @@ import { get, set } from './storage';
 /** Keys that are this device's business rather than this operator's. */
 const DEVICE_ONLY = ['relays_own'];
 
+/**
+ * The most keys a real backup carries, with room to spare.
+ *
+ * A restore writes into the tier holding the identity, the standing and the patrol record,
+ * and a full phone stops saving [1.E]. A blob is pasted rather than fetched, so nothing else
+ * bounds it.
+ */
+const MAX_RESTORED_KEYS = 64;
+
 export interface Kit {
   v: 1;
   at: string;
@@ -60,9 +69,41 @@ export function restore(passphrase: string, blob: string): { keys: number } {
   if (!kit || typeof kit !== 'object' || typeof kit.accruing !== 'object' || !kit.accruing) {
     throw new RestoreError('That backup is not one this version understands.');
   }
+  // Declared and never checked. A kit written to a shape this build has never seen may mean
+  // something different by the same key names, and restoring it writes into the tier that
+  // holds an identity.
+  if (kit.v !== 1) {
+    throw new RestoreError('That backup was written by a newer version of NavCom than this one.');
+  }
 
-  for (const [key, value] of Object.entries(kit.accruing)) set('accruing', key, value);
-  return { keys: Object.keys(kit.accruing).length };
+  const entries = Object.entries(kit.accruing);
+
+  /*
+   * A backup is a thing somebody can hand you.
+   *
+   * It is decrypted with a passphrase the operator types, so this is not an attack a stranger
+   * runs at a distance — but *"here is your backup from the old phone, the passphrase is X"*
+   * is an ordinary sentence, and what it wrote was **whatever keys the blob contained**.
+   *
+   * Bounded so that a "backup" cannot simply be a storage bomb: 1.E established that a full
+   * phone stops saving, and this writes into the tier that holds the identity, the standing
+   * and the patrol record.
+   */
+  if (entries.length > MAX_RESTORED_KEYS) {
+    throw new RestoreError('That backup holds far more than a NavCom backup should. Nothing has been restored.');
+  }
+
+  /*
+   * `DEVICE_ONLY` was enforced on the way out and not on the way in.
+   *
+   * The same list, twelve lines above, describes these as *"this device's business rather
+   * than this operator's"* — and `relays_own` is the list of relays this phone talks to. A
+   * crafted backup could set it, which routes everything this operator sends through relays
+   * somebody else chose. Excluded from a backup we write, accepted from one we read.
+   */
+  const restored = entries.filter(([k]) => !DEVICE_ONLY.includes(k));
+  for (const [key, value] of restored) set('accruing', key, value);
+  return { keys: restored.length };
 }
 
 /** Restores from a bare recovery code — who you are, without what you held. */
