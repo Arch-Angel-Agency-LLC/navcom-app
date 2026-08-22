@@ -1309,3 +1309,34 @@ test.describe('standing that was taken back', () => {
     await expect(page.getByRole('button', { name: /take the watch/i })).toHaveCount(0);
   });
 });
+
+test.describe('an endorsement dated in the future', () => {
+  /**
+   * The screen had its own age arithmetic with a `Math.max(0, …)` clamp, so a credential
+   * dated 2099 rendered "0 days ago" — the freshest possible — and never aged. That defeats
+   * the one mechanism this design uses instead of expiry: show the age and let the reader
+   * weigh it.
+   */
+  test('says it is not an age you can weigh, rather than showing it as fresh', async ({ page }) => {
+    const { generateSecretKey } = await import('nostr-tools/pure');
+    const { writeCredential, claimCredential } = await import('@navcom/core');
+    const mine = Uint8Array.from((TEST_SECRET.match(/../g) ?? []).map((b) => parseInt(b, 16)));
+
+    const raven = generateSecretKey();
+    const credential = writeCredential(
+      raven, { scope: 'medic', endorser: 'Raven', at: '2099-01-01' }, 1_800_000_000
+    );
+    const claim = claimCredential(mine, credential, 1_800_000_001);
+
+    await seedDevice(page, {
+      callsign: 'Wren',
+      accruing: { endorsements: [{ credential, claim }] }
+    });
+    await open(page, '/terminal/standing/');
+
+    const said = page.locator('[data-unweighable]');
+    await expect(said).toBeVisible({ timeout: 10_000 });
+    await expect(said).toContainText(/not an age you can weigh/i);
+    await expect(page.getByText('0 days ago')).toHaveCount(0);
+  });
+});

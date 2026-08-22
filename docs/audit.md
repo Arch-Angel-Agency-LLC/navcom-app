@@ -29,7 +29,7 @@ Each cell is a pass. `—` not started, `✓` done, and a note when it found som
 | **4** Squad with no box | Watch mode, group sealing, board, handover, watch key | **✓** | **✓** | **✓** |
 | **5** Written-down properties | PQC, declined, battery, RTL, watch-state v4 | **✓** | **✓** | **✓** |
 | **6** Knowledge gets in | Corrections, merge, needs-checking, notes, promotion | **✓** | **✓** | **✓** |
-| **7** Standing | Credentials, claims, revocation, the watch gate | **✓** | **✓** | — |
+| **7** Standing | Credentials, claims, revocation, the watch gate | **✓** | **✓** | **✓** |
 | **9** No single point of failure | Backup and restore, capability sentence, funding | — | — | — |
 
 ## Rules for a pass
@@ -518,6 +518,32 @@ merely uninformative — the sentence **asks the operator to get somebody to ope
 a number does not say who to ask. Now *"Raven needs to open the app once"*. `pq` still returns
 pubkeys and knows nothing about naming, which is the right split; the peer list is where names
 live, so the resolution happens on the screen.
+
+## 7.X — Milestone 7, edge cases
+
+**A credential dated 2099 read as the freshest possible thing, and never aged.** The screen
+had its own age arithmetic with a `Math.max(0, …)` clamp, so any future date rendered *"0 days
+ago"* — for ever. This module's stated design is *age rather than expiry*: **nothing expires
+on a timer, so the age is the entire mechanism**, and a credential that never ages defeats it
+completely.
+
+This is 1.R's finding again, in the module where showing an age is not a display detail but
+the design. It happened for a plain reason: `ageInDays` already answers this question
+correctly, and the screen had a second implementation. A second implementation of a rule is
+how the two drift apart, and here one of them had already been fixed.
+
+**And a date that was not a date rendered as `NaN days ago`.** The pattern checked the
+*shape* — four digits, two, two — so `2026-13-45` passed it, and a hand-rolled client could
+put a month thirteen on a credential. Refused now on the way in and on the way out, with a
+leap-day test in both directions so the check is a real calendar check rather than a stricter
+regex.
+
+**Nothing found in three places that matter.** The bearer property behaves exactly as
+documented: two people holding the same bytes both produce valid claims, which is the cost
+`endorsement.ts` states plainly rather than a defect. Duplicate claims of one credential are
+refused. And the watch gate's founding route survives leaving and rejoining — `leaveWatch`
+clears the founded flag, so an operator who gives up a watch and joins somebody else's is
+gated, which is right.
 
 ## 7.E — Milestone 7, error handling and reporting
 

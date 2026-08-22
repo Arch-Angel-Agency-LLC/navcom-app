@@ -87,6 +87,20 @@ export interface CredentialPayload {
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 
 /**
+ * A date that is actually a date.
+ *
+ * The pattern above checks the **shape** and nothing else, so `2026-13-45` passed it — a
+ * hand-rolled client could put a month thirteen on a credential, and the screen that renders
+ * *"N days ago"* rendered `NaN days ago`. A date that is not a date is not a weak claim about
+ * when somebody vouched; it is not a claim at all.
+ */
+function realDate(iso: string): boolean {
+  if (!ISO_DATE.test(iso)) return false;
+  const parsed = new Date(`${iso}T00:00:00Z`);
+  return !Number.isNaN(parsed.getTime()) && parsed.toISOString().slice(0, 10) === iso;
+}
+
+/**
  * Writes a credential.
  *
  * Not published. It is handed to somebody however the two of them already talk — this app
@@ -102,7 +116,7 @@ export function writeCredential(
   if (!withinLimit(payload.endorser, CALLSIGN_MAX)) {
     throw new EndorsementError(`A credential needs a callsign of ${CALLSIGN_MAX} characters or fewer.`);
   }
-  if (!ISO_DATE.test(payload.at)) throw new EndorsementError('`at` must be YYYY-MM-DD.');
+  if (!realDate(payload.at)) throw new EndorsementError('`at` must be a real date, as YYYY-MM-DD.');
 
   return finalizeEvent(
     {
@@ -176,7 +190,7 @@ export function readEndorsement(credential: Event, claim: Event): Endorsement | 
     const p = JSON.parse(credential.content) as Partial<CredentialPayload>;
     if (typeof p.scope !== 'string' || !SCOPES.includes(p.scope as Scope)) return null;
     if (!withinLimit(p.endorser, CALLSIGN_MAX)) return null;
-    if (typeof p.at !== 'string' || !ISO_DATE.test(p.at)) return null;
+    if (typeof p.at !== 'string' || !realDate(p.at)) return null;
 
     return {
       scope: p.scope as Scope,

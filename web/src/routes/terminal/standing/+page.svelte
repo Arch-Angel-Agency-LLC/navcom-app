@@ -7,7 +7,7 @@
    * this system.
    */
   import { onMount } from 'svelte';
-  import { revoke, SCOPES, writeCredential, type Endorsement, type Scope } from '@navcom/core';
+  import { SCOPES, ageInDays, revoke, type Endorsement, type Scope, writeCredential } from '@navcom/core';
   import { StandingError, claim, drop, held, presentable, recordWritten, withdraw, withdrawn, written as writtenCredentials } from '$lib/terminal/standing';
   import { loadIdentity } from '$lib/terminal/identity';
 
@@ -99,8 +99,16 @@
   }
 
   const label = (s: string) => s.replace(/-/g, ' ');
-  const days = (iso: string) =>
-    Math.max(0, Math.round((Date.now() - new Date(`${iso}T00:00:00Z`).getTime()) / 86_400_000));
+  /**
+   * How old an endorsement is, using the same rule as everything else that shows an age.
+   *
+   * This had its own arithmetic with a `Math.max(0, …)` clamp, which meant a credential dated
+   * 2099 rendered **"0 days ago" — the freshest possible — and never aged**. That defeats the
+   * one mechanism this design uses instead of expiry: *show the age and let the reader weigh
+   * it*. `ageInDays` already answers this properly, and a second implementation of a rule is
+   * how the two drift apart.
+   */
+  const age = (iso: string) => ageInDays(iso, new Date());
 </script>
 
 <svelte:head>
@@ -169,7 +177,17 @@
         {#each mine as e (e.id)}
           <li data-endorsement={e.scope}>
             <span class="scope">{label(e.scope)}</span>
-            <span class="from">from {e.endorser}, {days(e.at)} days ago</span>
+            <span class="from">
+                from {e.endorser},
+                {#if Number.isFinite(age(e.at))}
+                  {age(e.at)} days ago
+                {:else}
+                  <!-- Dated in the future or not a real date. Either way it is not an age a
+                       reader can weigh, and saying "0 days ago" would be the freshest
+                       possible answer to the least trustworthy input. -->
+                  <span data-unweighable>dated {e.at}, which is not an age you can weigh</span>
+                {/if}
+              </span>
             <button class="drop" onclick={() => put(e)}>Put down</button>
           </li>
         {/each}

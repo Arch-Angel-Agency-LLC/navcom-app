@@ -7,6 +7,9 @@
  * one was never written down.
  */
 
+import { ageInDays } from '../src/attestation';
+import { KIND_CREDENTIAL } from '../src/events/kinds';
+import { finalizeEvent } from 'nostr-tools/pure';
 import { describe, expect, it } from 'vitest';
 import { generateSecretKey, getPublicKey } from 'nostr-tools/pure';
 import type { Event } from 'nostr-tools/core';
@@ -143,5 +146,53 @@ describe('age rather than expiry', () => {
     const e = readEndorsement(old, claimCredential(raven, old, T + 60))!;
     expect(e.at).toBe('2021-01-04');
     expect(e).not.toHaveProperty('expires');
+  });
+});
+
+describe('a credential whose date is not one', () => {
+  const endorser = generateSecretKey();
+  const holder = generateSecretKey();
+
+  const pair = (at: string) => {
+    const credential = writeCredential(endorser, { scope: 'medic', endorser: 'Raven', at }, 1_800_000_000);
+    return { credential, claim: claimCredential(holder, credential, 1_800_000_001) };
+  };
+
+  it('refuses a month thirteen', () => {
+    // The pattern checked the shape and nothing else, so `2026-13-45` passed — and the screen
+    // that renders "N days ago" rendered "NaN days ago". A date that is not a date is not a
+    // weak claim about when somebody vouched; it is not a claim at all.
+    expect(() => writeCredential(endorser, { scope: 'medic', endorser: 'Raven', at: '2026-13-45' }, 1))
+      .toThrow(/real date/i);
+  });
+
+  it('refuses one on the way in as well as on the way out', () => {
+    // A hand-rolled client never touches the builder.
+    const forged = finalizeEvent({
+      kind: KIND_CREDENTIAL,
+      created_at: 1_800_000_000,
+      tags: [],
+      content: JSON.stringify({ scope: 'medic', endorser: 'Raven', at: '2026-13-45' })
+    }, endorser);
+    const claim = claimCredential(holder, forged, 1_800_000_001);
+    expect(readEndorsement(forged, claim)).toBeNull();
+  });
+
+  it('still accepts a real one, including a leap day', () => {
+    expect(readEndorsement(pair('2024-02-29').credential, pair('2024-02-29').claim)).not.toBeNull();
+    expect(() => writeCredential(endorser, { scope: 'medic', endorser: 'Raven', at: '2023-02-29' }, 1))
+      .toThrow(/real date/i);
+  });
+});
+
+describe('an endorsement dated in the future', () => {
+  it('has no age a reader can weigh', () => {
+    // It rendered "0 days ago" — the freshest possible — and never aged, which defeats the
+    // one mechanism this design uses instead of expiry.
+    const now = new Date('2026-08-21T12:00:00Z');
+    expect(Number.isFinite(ageInDays('2099-01-01', now))).toBe(false);
+    // A day of tolerance for timezones, and no more.
+    expect(ageInDays('2026-08-22', now)).toBe(-1);
+    expect(Number.isFinite(ageInDays('2026-09-30', now))).toBe(false);
   });
 });
