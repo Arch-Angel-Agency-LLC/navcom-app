@@ -28,7 +28,7 @@ Each cell is a pass. `—` not started, `✓` done, and a note when it found som
 | **3** Two who met once | Peers, presence, cards, invites, public presence, buddy | **✓** | **✓** | **✓** |
 | **4** Squad with no box | Watch mode, group sealing, board, handover, watch key | **✓** | **✓** | **✓** |
 | **5** Written-down properties | PQC, declined, battery, RTL, watch-state v4 | **✓** | **✓** | **✓** |
-| **6** Knowledge gets in | Corrections, merge, needs-checking, notes, promotion | — | — | — |
+| **6** Knowledge gets in | Corrections, merge, needs-checking, notes, promotion | **✓** | — | — |
 | **7** Standing | Credentials, claims, revocation, the watch gate | — | — | — |
 | **9** No single point of failure | Backup and restore, capability sentence, funding | — | — | — |
 
@@ -518,6 +518,38 @@ merely uninformative — the sentence **asks the operator to get somebody to ope
 a number does not say who to ask. Now *"Raven needs to open the app once"*. `pq` still returns
 pubkeys and knows nothing about naming, which is the right split; the peer list is where names
 live, so the resolution happens on the screen.
+
+## 6.R — Milestone 6, robustness
+
+**A stranger could stop an operator's patrol record from saving.** That is the whole finding,
+and it takes three steps that were each individually reasonable.
+
+A correction is the one thing in this system **anybody** may write into somebody else's
+device: publish one, and every phone carrying that area caches it. It is keyed by
+`author:record`, which bounds one author — and fresh keys are free. Measured: twenty thousand
+corrections is about **11 MB**, past a typical localStorage quota. And 1.E already established
+what a full phone does, which is stop saving. So the chain ends at an operator's own patrol
+record silently failing to record, caused by somebody with no relationship to them at all.
+
+Bounded now, at four hundred overall and twenty-five for any one record — both far above
+anything a real area produces. **New authors are refused rather than old ones evicted**, so a
+flood cannot displace a correction somebody was already relying on, and an author already held
+can still update: a genuine correction from a known author is never turned away because
+strangers filled the space. The directory says when it is holding a partial set, because a
+directory holding a fraction of what was published looks exactly like a directory nobody has
+corrected.
+
+**And a second cost, which was not an attack at all.** Every arrival re-serialised the whole
+map to storage, so three thousand corrections wrote **2.1 GB** for 1.5 MB of data. Relays
+deliver in bursts, so that is the ordinary case rather than the hostile one — the flood only
+made it visible. Writes are coalesced to the end of the tick now.
+
+**The pattern this milestone completes.** Every one of the six flood findings has been the
+same shape — an unbounded intake behind a door the design deliberately leaves open — and each
+has had a different consequence: the on-call human's phone (2.R), the drill storm (2.E), the
+pairing inbox (3.R), the public board (3.X), the watch's board (4.R), and now the operator's
+storage. **The doors are meant to be open. It is the absence of a bound behind them that was
+uniform**, and worth checking first in anything built after this.
 
 ## 5.X — Milestone 5, edge cases
 

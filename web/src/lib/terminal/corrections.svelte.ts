@@ -42,7 +42,44 @@ type Stored = Correction & { by: string };
 
 const FIELD = 'corrections';
 
+/**
+ * How many corrections this device will hold, and how many for any one record.
+ *
+ * A correction is the one thing in this system a **stranger** can write into another
+ * operator's device: anybody may publish one, every device carrying that area caches it, and
+ * it is keyed by author, so fresh keys buy unlimited entries.
+ *
+ * Measured rather than feared: twenty thousand of them is about 11 MB, past a typical
+ * localStorage quota — and 1.E established what a full phone does, which is stop saving.
+ * **The end of that chain is an operator's patrol record silently failing to record, caused
+ * by somebody with no relationship to them at all.**
+ *
+ * Both numbers sit far above anything a real area produces. A record with twenty-five
+ * separate people correcting it is not a directory problem.
+ */
+const MAX_HELD = 400;
+const MAX_PER_RECORD = 25;
+
 let held = $state<Record<string, Stored>>({});
+/** Whether corrections are arriving faster than this device will hold them. */
+let partial = $state(false);
+
+/**
+ * Writes are coalesced to the end of the tick.
+ *
+ * Every arrival re-serialised the entire map, so three thousand of them wrote **2.1 GB** to
+ * storage for 1.5 MB of data. Relays deliver in bursts, so this is the ordinary case rather
+ * than the hostile one — a flood only made it visible.
+ */
+let writeQueued = false;
+function persist(): void {
+  if (writeQueued) return;
+  writeQueued = true;
+  queueMicrotask(() => {
+    writeQueued = false;
+    set('accruing', FIELD, held);
+  });
+}
 let closer: { close(): void } | null = null;
 
 /** Keyed by author and record: one operator's latest word about a place replaces their last. */
@@ -57,6 +94,16 @@ export const corrections = {
   /** What is known about one record. */
   about(recordId: string): Stored[] {
     return Object.values(held).filter((c) => c.record === recordId);
+  },
+
+  /**
+   * Whether more corrections are being published to this area than the device will hold.
+   *
+   * Said on the screen rather than kept quiet: a directory holding a fraction of what was
+   * published looks exactly like a directory nobody has corrected.
+   */
+  get partial(): boolean {
+    return partial;
   },
 
   /**
@@ -80,11 +127,27 @@ export const corrections = {
 
         // Out-of-order delivery is normal. An older correction must not overwrite the same
         // author's newer one.
-        const existing = held[keyOf(read)];
+        const key = keyOf(read);
+        const existing = held[key];
         if (existing && existing.last_verified > read.last_verified) return;
 
-        held = { ...held, [keyOf(read)]: read };
-        set('accruing', FIELD, held);
+        /*
+         * Full: what is here is kept and updated, and new authors are turned away.
+         *
+         * Refusing the new one rather than evicting an old one means a flood cannot displace
+         * a correction somebody actually relies on — an operator carrying good corrections
+         * before the flood still has them afterwards.
+         */
+        if (!existing) {
+          const forRecord = Object.values(held).filter((c) => c.record === read.record).length;
+          if (Object.keys(held).length >= MAX_HELD || forRecord >= MAX_PER_RECORD) {
+            partial = true;
+            return;
+          }
+        }
+
+        held = { ...held, [key]: read };
+        persist();
       }
     });
   },
@@ -121,7 +184,7 @@ export const corrections = {
       // no signal must still see their own correction -- and it will publish the next time
       // this runs with a connection.
       held = { ...held, [keyOf(read)]: read };
-      set('accruing', FIELD, held);
+      persist();
     }
 
     if (urls.length === 0) return;

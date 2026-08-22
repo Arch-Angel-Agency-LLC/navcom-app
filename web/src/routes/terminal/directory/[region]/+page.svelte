@@ -152,6 +152,18 @@
   <h1>{data.region.name}</h1>
 </header>
 
+{#if corrections.partial}
+  <!--
+    A correction is the one thing a stranger can write into this device. Bounded, and said
+    plainly — a directory holding a fraction of what was published looks exactly like a
+    directory nobody has corrected.
+  -->
+  <p class="cost" data-corrections-partial>
+    More corrections are being published for this area than this phone will hold, so some are
+    not shown. What is here is still what you were carrying before they started arriving.
+  </p>
+{/if}
+
 <section>
   <p>
     This is what this phone is holding, and it works with no signal at all.
