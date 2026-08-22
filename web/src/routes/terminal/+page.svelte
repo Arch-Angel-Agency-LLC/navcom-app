@@ -8,6 +8,7 @@
   import { battery } from '$lib/terminal/battery.svelte';
   import { pq } from '$lib/terminal/pq.svelte';
   import { loadConfig } from '$lib/terminal/config';
+  import { peers } from '$lib/terminal/peers';
   import { loadIdentity } from '$lib/terminal/identity';
   import { corruptTiers } from '$lib/terminal/storage';
   import { offline } from '$lib/terminal/offline.svelte';
@@ -31,6 +32,34 @@
       watch.stop();
       presence.stop();
     };
+  });
+
+  /**
+   * Who has not published a key, **by name**.
+   *
+   * It said *"2 people you send to"*, and this project's own rule is provenance by name:
+   * *"an operator being told '2 on-call' learns less than one told 'Wren and Raven'"*. Here
+   * the count is worse than uninformative — the whole sentence asks the operator to get
+   * somebody to open the app, and a number does not say who to ask.
+   *
+   * `pq` returns pubkeys and knows nothing about naming, which is the right split. The peer
+   * list is where names live, so the resolution happens here.
+   */
+  const uncoveredNames = $derived.by(() => {
+    const mine = peers();
+    const watchKeys = new Set(
+      [loadConfig()?.pubkey, ...(loadConfig()?.holders ?? [])].filter(Boolean) as string[]
+    );
+    const names = pq.uncovered().map((key) => {
+      const peer = mine.find((p) => p.pubkey === key);
+      if (peer) return peer.callsign;
+      // Not somebody this operator named, so say what it is rather than showing a key.
+      return watchKeys.has(key) ? 'the watch' : key.slice(0, 8);
+    });
+
+    if (names.length === 0) return '';
+    if (names.length === 1) return names[0];
+    return `${names.slice(0, -1).join(', ')} and ${names.at(-1)}`;
   });
 
   const session = $derived(operator.session);
@@ -245,8 +274,7 @@
   <p class="cover">
     Standard encryption tonight. Unreadable by anyone now — but not covered against being
     stored today and opened by a future quantum computer. That needs
-    {pq.uncovered().length === 1 ? 'one person you send to' : `${pq.uncovered().length} people you send to`}
-    to open the app once, and it happens on its own after that.
+    {uncoveredNames} to open the app once, and it happens on its own after that.
   </p>
 {/if}
 
@@ -410,6 +438,43 @@
       A Watchtower is configured and the relay is still serving its last message, but that
       message is old enough that the daemon may be gone. <strong>Old is treated as Dark</strong>
       — a stale event says what was true, not what is.
+    </p>
+  </section>
+{:else if watch.read.reason === 'absent'}
+  <!--
+    Configured, and the relays have nothing at all. Distinct from "no watch" above, which is
+    an operator who chose to work alone: this one expected somebody and is being shown Dark
+    without being told why. The two fixes are different and neither is guessable.
+  -->
+  <section class="notyet" data-watch-absent>
+    <h2>Nothing from this watch</h2>
+    <p>
+      A Watchtower is configured, but its relays are not serving anything from it — not an
+      old message, nothing. <strong>Dark is the safe answer</strong>, and it is the one you
+      should act on: assume nobody is reading what you send.
+    </p>
+    <p class="cost">
+      Usually one of two things. The relay list may not be the one the watch publishes to —
+      both come from whoever gave you the address, and they have to match. Or the watch is
+      simply not running, which is a question for the person who holds it.
+    </p>
+  </section>
+{:else if watch.read.reason === 'corrupt'}
+  <!--
+    The relay is serving something, and this app cannot read it. Almost always a version
+    gap, which is fixable — and quite different from a watch that is down.
+  -->
+  <section class="notyet" data-watch-corrupt>
+    <h2>This watch is speaking a language this app does not</h2>
+    <p>
+      Something is arriving from the Watchtower and none of it can be read.
+      <strong>Dark is the safe answer</strong> — an unreadable message is not evidence that
+      anybody is watching.
+    </p>
+    <p class="cost">
+      Most often the watch is newer than this app. Reopening this page while you have signal
+      updates it. If that changes nothing, tell whoever holds the watch — they can see what
+      it is publishing and you cannot.
     </p>
   </section>
 {/if}

@@ -27,7 +27,7 @@ Each cell is a pass. `—` not started, `✓` done, and a note when it found som
 | **2** One watch staffed | Executor, pager, drills, web push, on-call | **✓** | **✓** | **✓** |
 | **3** Two who met once | Peers, presence, cards, invites, public presence, buddy | **✓** | **✓** | **✓** |
 | **4** Squad with no box | Watch mode, group sealing, board, handover, watch key | **✓** | **✓** | **✓** |
-| **5** Written-down properties | PQC, declined, battery, RTL, watch-state v4 | **✓** | — | — |
+| **5** Written-down properties | PQC, declined, battery, RTL, watch-state v4 | **✓** | **✓** | — |
 | **6** Knowledge gets in | Corrections, merge, needs-checking, notes, promotion | — | — | — |
 | **7** Standing | Credentials, claims, revocation, the watch gate | — | — | — |
 | **9** No single point of failure | Backup and restore, capability sentence, funding | — | — | — |
@@ -490,6 +490,34 @@ timestamp that crossed a device boundary deserves the question *whose clock is t
 **Method note, third occurrence.** `npx tsc` and `npx vitest --root` bypass the npm scripts
 that rebuild core, so both were type-checking and testing against a stale `dist/`. Use the
 package scripts — `npm run check`, `npm test --prefix` — not the tools directly.
+
+## 5.E — Milestone 5, error handling and reporting
+
+**The parser distinguished four reasons for Dark and the screen explained two.** `absent` and
+`corrupt` fell off the end of the chain — and those are precisely the two cases where an
+operator **has** a watch configured and is being shown Dark. The one the screen did explain
+well, a wrong clock, proves the point: it is fixable in thirty seconds by somebody who is
+told, and unguessable by somebody who is not.
+
+The two that were missing need different actions from each other and from everything else:
+
+- **Nothing at all from a configured watch** is usually one of two things — a relay list that
+  is not the one the watch publishes to, or a watch that is not running. Both come from the
+  person who handed over the address, and neither is inferable from the word *Dark*
+- **Something arriving that cannot be read** is almost always a version gap. That is fixable
+  by the operator; a watch that is down is not
+
+Same shape as 0.E: the mechanism to tell them apart had been there the whole time and nothing
+consulted it. Dark was always the safe answer and stays the safe answer — what changed is that
+the operator now learns which situation they are in.
+
+**And the cover notice counted people where this project's rule is to name them.** It read
+*"2 people you send to"*, against a rule written down in this codebase: *"an operator being
+told '2 on-call' learns less than one told 'Wren and Raven'"*. Here the count is worse than
+merely uninformative — the sentence **asks the operator to get somebody to open the app**, and
+a number does not say who to ask. Now *"Raven needs to open the app once"*. `pq` still returns
+pubkeys and knows nothing about naming, which is the right split; the peer list is where names
+live, so the resolution happens on the screen.
 
 ## 5.R — Milestone 5, robustness
 

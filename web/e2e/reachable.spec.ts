@@ -1107,3 +1107,70 @@ test.describe('a watch that cannot reach a relay', () => {
     await expect(warning).toContainText(/will read Dark/i);
   });
 });
+
+test.describe('being shown Dark, and being told why', () => {
+  /**
+   * `readWatchStateAt` distinguishes four reasons for Dark and the screen explained two of
+   * them. The two it skipped are exactly the cases where an operator **has** a watch
+   * configured and is being shown Dark — which is when they most need to know why, because
+   * the fixes are different and neither is guessable.
+   */
+  const watch = { pubkey: 'e'.repeat(63) + '5', relays: ['wss://fake.relay'] };
+
+  test('says when the relays have nothing at all from a configured watch', async ({ page }) => {
+    // Distinct from "no watch", which is somebody who chose to work alone.
+    await seedDevice(page, { callsign: 'Wren', watchtower: watch, relayEvents: [] });
+    await open(page, '/terminal/');
+
+    const said = page.locator('[data-watch-absent]');
+    await expect(said).toBeVisible({ timeout: 10_000 });
+    await expect(said).toContainText(/not serving anything/i);
+    // Both fixes named, because neither is guessable from "Dark".
+    await expect(said).toContainText(/relay list/i);
+    await expect(said).toContainText(/not running/i);
+  });
+
+  test('says when the watch is publishing something it cannot read', async ({ page }) => {
+    const { finalizeEvent, generateSecretKey, getPublicKey } = await import('nostr-tools/pure');
+    // A generated key, not a hand-written one: `ffff…` is above the curve order.
+    const secret = generateSecretKey();
+    const garbled = finalizeEvent(
+      { kind: 10910, created_at: Math.floor(Date.now() / 1000), tags: [], content: 'not json at all' },
+      secret
+    );
+
+    await seedDevice(page, {
+      callsign: 'Wren',
+      watchtower: { pubkey: getPublicKey(secret), relays: ['wss://fake.relay'] },
+      relayEvents: [garbled]
+    });
+    await open(page, '/terminal/');
+
+    const said = page.locator('[data-watch-corrupt]');
+    await expect(said).toBeVisible({ timeout: 10_000 });
+    await expect(said).toContainText(/none of it can be read/i);
+    await expect(said).toContainText(/safe answer/i);
+  });
+});
+
+test.describe('the post-quantum cover notice', () => {
+  test('names who has to open the app, rather than counting them', async ({ page }) => {
+    // The sentence asks the operator to get somebody to open the app, and a number does not
+    // say who to ask. This project's rule is provenance by name for exactly that reason.
+    const { generateSecretKey, getPublicKey } = await import('nostr-tools/pure');
+    const raven = getPublicKey(generateSecretKey());
+
+    await seedDevice(page, {
+      callsign: 'Wren',
+      peers: [{ pubkey: raven, callsign: 'Raven', since: 1_800_000_000 }]
+    });
+    await open(page, '/terminal/');
+
+    const notice = page.locator('p.cover');
+    await expect(notice).toBeVisible({ timeout: 10_000 });
+    await expect(notice).toContainText('Raven');
+    await expect(notice).not.toContainText(/\d+ people you send to/);
+    // Still a note about what is missing, not a warning that something is broken.
+    await expect(notice).toContainText(/Unreadable by anyone now/i);
+  });
+});
